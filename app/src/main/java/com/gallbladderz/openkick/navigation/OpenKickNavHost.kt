@@ -32,6 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import org.koin.androidx.compose.koinViewModel
 import com.gallbladderz.openkick.features.profile.MainViewModel
+import com.gallbladderz.openkick.features.home.HomeScreen
 
 @Composable
 fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
@@ -84,7 +85,7 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
             startDestination = HOME_ROUTE,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(HOME_ROUTE) { DummyScreen("Главная: Лента стримов") }
+            composable(HOME_ROUTE) { HomeScreen() }
             composable(CATEGORIES_ROUTE) { DummyScreen("Категории") }
             composable(FOLLOWERS_ROUTE) { DummyScreen("Фолловеры") }
             composable(PROFILE_ROUTE) {
