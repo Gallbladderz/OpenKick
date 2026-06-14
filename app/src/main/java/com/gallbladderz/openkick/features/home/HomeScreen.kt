@@ -2,6 +2,7 @@ package com.gallbladderz.openkick.features.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +35,29 @@ fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(text = state, textAlign = TextAlign.Center)
+        when (val uiState = state) {
+            is HomeUiState.Idle -> {
+                Text(text = "Press the button to test Kick API...", textAlign = TextAlign.Center)
+            }
+            is HomeUiState.Loading -> {
+                CircularProgressIndicator()
+            }
+            is HomeUiState.Success -> {
+                val playbackUrl = uiState.data.playbackUrl
+                if (!playbackUrl.isNullOrBlank()) {
+                    KickStreamPlayer(
+                        videoUrl = playbackUrl,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                    )
+                } else {
+                    Text(text = "Offline", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+                }
+            }
+            is HomeUiState.Error -> {
+                Text(text = "Error:\n${uiState.message}", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }
