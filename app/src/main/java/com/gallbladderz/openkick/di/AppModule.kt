@@ -7,8 +7,6 @@ import com.gallbladderz.openkick.features.profile.MainViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
@@ -18,6 +16,7 @@ import org.koin.dsl.module
 val appModule = module {
     single { SettingsRepository(androidContext()) }
 
+    // HttpClient можешь пока оставить, он тебе потом для других экранов пригодится
     single {
         HttpClient(OkHttp) {
             install(ContentNegotiation) {
@@ -26,15 +25,11 @@ val appModule = module {
                     isLenient = true
                 })
             }
-            defaultRequest {
-                url("https://kick.com/api/")
-                header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                header("Accept", "application/json")
-            }
         }
     }
 
-    single { HomeRepository(get()) }
+    // ВОТ ТУТ ГЛАВНЫЙ ФИКС: убрали get(), потому что конструктор пустой
+    single { HomeRepository() }
 
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }

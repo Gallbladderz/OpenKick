@@ -8,25 +8,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 sealed interface HomeUiState {
-    data object Idle : HomeUiState
+    data object NeedsCloudflareBypass : HomeUiState
     data object Loading : HomeUiState
-    data class Success(val data: KickChannelResponse) : HomeUiState
+    data class Success(val streams: List<StreamUiModel>) : HomeUiState
     data class Error(val message: String) : HomeUiState
 }
 
 class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
-    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.NeedsCloudflareBypass)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    fun loadData() {
+    fun processJson(jsonString: String) {
         _uiState.value = HomeUiState.Loading
         viewModelScope.launch {
-            repository.fetchTestStream().collect { result ->
+            repository.parseStreams(jsonString).collect { result ->
                 result.fold(
                     onSuccess = { _uiState.value = HomeUiState.Success(it) },
-                    onFailure = { _uiState.value = HomeUiState.Error(it.message ?: "Unknown error") }
+                    onFailure = { _uiState.value = HomeUiState.Error(it.message ?: "Ошибка парсинга") }
                 )
             }
         }
+    }
+
+    fun triggerBypassAgain() {
+        _uiState.value = HomeUiState.NeedsCloudflareBypass
     }
 }
