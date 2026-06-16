@@ -7,6 +7,8 @@ const val HOME_ROUTE = "home"
 const val CATEGORIES_ROUTE = "categories"
 const val FOLLOWERS_ROUTE = "followers"
 const val PROFILE_ROUTE = "profile"
+const val PLAYER_ROUTE = "player/{streamerName}"
+const val SEARCH_ROUTE = "search"
 
 data class BottomNavItem(
     val title: String,

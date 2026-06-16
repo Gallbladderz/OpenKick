@@ -1,38 +1,22 @@
 package com.gallbladderz.openkick.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import org.koin.androidx.compose.koinViewModel
-import com.gallbladderz.openkick.features.profile.MainViewModel
+import androidx.navigation.compose.*
+import com.gallbladderz.openkick.features.categories.CategoriesScreen
 import com.gallbladderz.openkick.features.home.HomeScreen
+import com.gallbladderz.openkick.features.player.PlayerScreen
+import com.gallbladderz.openkick.features.profile.MainViewModel
+import com.gallbladderz.openkick.features.search.SearchScreen // <-- ИМПОРТ НАШЕГО НОВОГО ЭКРАНА
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
@@ -41,7 +25,8 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
 
     val bottomNavItems = remember(hideCategories) {
         val items = mutableListOf(
-            BottomNavItem("Главная", HOME_ROUTE, Icons.Filled.Home, Icons.Outlined.Home)
+            BottomNavItem("Главная", HOME_ROUTE, Icons.Filled.Home, Icons.Outlined.Home),
+            BottomNavItem("Поиск", SEARCH_ROUTE, Icons.Filled.Search, Icons.Outlined.Search)
         )
         if (!hideCategories) {
             items.add(BottomNavItem("Категории", CATEGORIES_ROUTE, Icons.Filled.List, Icons.Filled.List))
@@ -51,31 +36,36 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
         items
     }
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = currentDestination?.route
+
+    val showBottomBar = currentRoute?.startsWith("player") != true
+
     Scaffold(
         bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-
-            NavigationBar {
-                bottomNavItems.forEach { item ->
-                    val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                imageVector = if (isSelected) item.icon else item.selectedIcon,
-                                contentDescription = item.title
-                            )
-                        },
-                        label = { Text(item.title) },
-                        selected = isSelected,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomNavItems.forEach { item ->
+                        val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    imageVector = if (isSelected) item.icon else item.selectedIcon,
+                                    contentDescription = item.title
+                                )
+                            },
+                            label = { Text(item.title) },
+                            selected = isSelected,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -85,8 +75,23 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
             startDestination = HOME_ROUTE,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(HOME_ROUTE) { HomeScreen() }
-            composable(CATEGORIES_ROUTE) { DummyScreen("Категории") }
+            composable(HOME_ROUTE) {
+                HomeScreen(
+                    onStreamClick = { streamerName ->
+                        navController.navigate("player/$streamerName")
+                    }
+                )
+            }
+
+            composable(SEARCH_ROUTE) {
+                SearchScreen(
+                    onChannelClick = { streamerName ->
+                        navController.navigate("player/$streamerName")
+                    }
+                )
+            }
+
+            composable(CATEGORIES_ROUTE) { CategoriesScreen() }
             composable(FOLLOWERS_ROUTE) { DummyScreen("Фолловеры") }
             composable(PROFILE_ROUTE) {
                 Column(
@@ -99,6 +104,14 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
                         Text(if (hideCategories) "Вернуть Категории" else "Скрыть Категории")
                     }
                 }
+            }
+
+            composable(PLAYER_ROUTE) { backStackEntry ->
+                val streamerName = backStackEntry.arguments?.getString("streamerName") ?: ""
+                PlayerScreen(
+                    streamerName = streamerName,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }

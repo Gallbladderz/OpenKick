@@ -1,6 +1,8 @@
 package com.gallbladderz.openkick.di
 
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
+import com.gallbladderz.openkick.features.categories.CategoriesViewModel
+import com.gallbladderz.openkick.features.search.SearchViewModel
 import com.gallbladderz.openkick.features.home.HomeRepository
 import com.gallbladderz.openkick.features.home.HomeViewModel
 import com.gallbladderz.openkick.features.profile.MainViewModel
@@ -12,11 +14,11 @@ import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import com.gallbladderz.openkick.features.player.PlayerViewModel
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
 
-    // HttpClient можешь пока оставить, он тебе потом для других экранов пригодится
     single {
         HttpClient(OkHttp) {
             install(ContentNegotiation) {
@@ -28,9 +30,11 @@ val appModule = module {
         }
     }
 
-    // ВОТ ТУТ ГЛАВНЫЙ ФИКС: убрали get(), потому что конструктор пустой
     single { HomeRepository() }
 
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }
+    viewModel { PlayerViewModel(get()) }
+    viewModel { CategoriesViewModel() }
+    viewModel { SearchViewModel() }
 }

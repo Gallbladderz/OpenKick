@@ -16,7 +16,7 @@ class HomeRepository {
             val jsonElement = try {
                 Json.parseToJsonElement(jsonString)
             } catch (e: Exception) {
-                throw Exception("Это не JSON! Кусок: ${jsonString.take(150)}")
+                throw Exception("Это не JSON. Кусок: ${jsonString.take(150)}")
             }
 
             if (jsonElement is JsonObject) {
@@ -24,7 +24,7 @@ class HomeRepository {
             }
 
             val streamsArray = findFirstJsonArray(jsonElement)
-                ?: throw Exception("Вообще не нашли массив в JSON! Ключи: ${(jsonElement as? JsonObject)?.keys}")
+                ?: throw Exception("Вообще не нашли массив в JSON. Ключи: ${(jsonElement as? JsonObject)?.keys}")
 
             val uiModels = streamsArray.mapNotNull { element ->
                 try {
@@ -65,13 +65,13 @@ class HomeRepository {
             }
 
             if (uiModels.isEmpty()) {
-                throw Exception("Массив нашли, но он пустой или ключи внутри стримов другие.")
+                throw Exception("Массив нашелся но он пустой или ключи внутри стримов другие.")
             }
 
             emit(Result.success(uiModels))
 
         } catch (e: Exception) {
-            Log.e("OpenKick_API", "Крэш парсинга: ${e.message}", e)
+            Log.e("OpenKick_API", "Краш парсинга: ${e.message}", e)
             emit(Result.failure(e))
         }
     }

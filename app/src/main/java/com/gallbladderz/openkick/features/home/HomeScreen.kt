@@ -3,6 +3,7 @@ package com.gallbladderz.openkick.features.home
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,22 +28,44 @@ class KickJsBridge(private val onJsonReceived: (String) -> Unit) {
 }
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
+fun HomeScreen(
+    viewModel: HomeViewModel = koinViewModel(),
+    onStreamClick: (String) -> Unit = {}
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             when (val uiState = state) {
-                is HomeUiState.NeedsCloudflareBypass -> {
-                    CloudflareBypassWebView(
-                        onBypassSuccess = { jsonString ->
-                            viewModel.processJson(jsonString)
-                        }
-                    )
-                }
+                is HomeUiState.NeedsCloudflareBypass, is HomeUiState.Loading -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 4.dp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Подключение к Kick...",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
 
-                is HomeUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    if (uiState is HomeUiState.NeedsCloudflareBypass) {
+                        CloudflareBypassWebView(
+                            onBypassSuccess = { jsonString ->
+                                viewModel.processJson(jsonString)
+                            }
+                        )
+                    }
                 }
 
                 is HomeUiState.Success -> {
@@ -51,8 +74,16 @@ fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(uiState.streams, key = { it.id }) { stream ->
-                            StreamCard(stream = stream)
+                        items(
+                            uiState.streams,
+                            key = { it.id }
+                        ) { stream ->
+                            StreamCard(
+                                stream = stream,
+                                onClick = {
+                                    onStreamClick(stream.streamerName)
+                                }
+                            )
                         }
                     }
                 }
@@ -62,9 +93,16 @@ fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "Ошибка: ${uiState.message}", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            text = "Ошибка: ${uiState.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.triggerBypassAgain() }) {
+
+                        Button(
+                            onClick = { viewModel.triggerBypassAgain() }
+                        ) {
                             Text("Пройти Cloudflare заново")
                         }
                     }
@@ -112,7 +150,6 @@ fun CloudflareBypassWebView(onBypassSuccess: (json: String) -> Unit) {
                                     return;
                                 }
 
-                                // БЬЕМ В ЖИВОЙ ЭНДПОИНТ web.kick.com!
                                 fetch('https://web.kick.com/api/v1/livestreams/featured?language=ru', {
                                     headers: {
                                         'Accept': 'application/json',
@@ -123,7 +160,6 @@ fun CloudflareBypassWebView(onBypassSuccess: (json: String) -> Unit) {
                                     const text = await response.text();
                                     const trimmed = text.trim();
                                     
-                                    // ТЕПЕРЬ ПРИНИМАЕМ И МАССИВЫ "[", И ОБЪЕКТЫ "{"
                                     if (response.ok && (trimmed.startsWith("[") || trimmed.startsWith("{"))) {
                                         window.AndroidBridge.sendDataToAndroid(trimmed);
                                     } 
@@ -158,16 +194,23 @@ fun CloudflareBypassWebView(onBypassSuccess: (json: String) -> Unit) {
 
     AndroidView(
         factory = { webView },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.size(1.dp)
     )
 }
 
 @Composable
-fun StreamCard(stream: StreamUiModel) {
+fun StreamCard(
+    stream: StreamUiModel,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
         Column {
             AsyncImage(
@@ -186,7 +229,9 @@ fun StreamCard(stream: StreamUiModel) {
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -195,13 +240,16 @@ fun StreamCard(stream: StreamUiModel) {
                         text = stream.streamerName,
                         style = MaterialTheme.typography.bodyMedium
                     )
+
                     Text(
                         text = "👁 ${stream.viewers}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
                     text = stream.category,
                     style = MaterialTheme.typography.labelMedium,
