@@ -4,31 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-
-@Serializable
-data class SearchResponseDto(
-    val channels: List<SearchChannelDto> = emptyList()
-)
-
-@Serializable
-data class SearchChannelDto(
-    val slug: String? = null,
-    val is_live: Boolean? = null,
-    val profile_pic: String? = null,
-    val user: SearchUserDto? = null,
-    val livestream: JsonElement? = null
-)
-
-@Serializable
-data class SearchUserDto(
-    val profile_pic: String? = null
-)
+import kotlinx.serialization.json.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
 
 sealed interface SearchUiState {
     data object Idle : SearchUiState
@@ -37,64 +20,78 @@ sealed interface SearchUiState {
     data class Error(val message: String) : SearchUiState
 }
 
-class SearchViewModel : ViewModel() {
+class SearchViewModel(private val client: OkHttpClient) : ViewModel() {
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState = _uiState.asStateFlow()
 
-    private val jsonParser = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private var searchJob: Job? = null
 
-    fun clearResults() {
-        _uiState.value = SearchUiState.Idle
-    }
+    fun searchStreamer(query: String) {
+        if (query.isBlank()) {
+            _uiState.value = SearchUiState.Idle
+            return
+        }
 
-    fun setLoading() {
         _uiState.value = SearchUiState.Loading
+        searchJob?.cancel()
+
+        searchJob = viewModelScope.launch(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url("https://search.kick.com/api/v1/search/enriched?query=${android.net.Uri.encode(query)}")
+                .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
+                .addHeader("X-App-Platform", "Android")
+                .addHeader("X-App-Version", "40.21.0")
+                .addHeader("X-Kick-App", "mobile")
+                .addHeader("Accept", "application/json")
+                .build()
+
+            try {
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+
+                if (!response.isSuccessful || responseBody == null) {
+                    _uiState.value = SearchUiState.Error("Поиск упал: ${response.code}")
+                    return@launch
+                }
+
+                parseSearchJson(responseBody)
+            } catch (e: IOException) {
+                _uiState.value = SearchUiState.Error("Ошибка сети")
+            }
+        }
     }
 
-    fun processJson(jsonString: String) {
-        viewModelScope.launch(Dispatchers.Default) {
-            try {
-                if (jsonString.startsWith("JS_ERROR")) {
-                    _uiState.value = SearchUiState.Error("Ошибка API: ${jsonString}")
-                    return@launch
-                }
-                if (jsonString.contains("\"empty\":true")) {
-                    clearResults()
-                    return@launch
-                }
+    private fun parseSearchJson(jsonString: String) {
+        try {
+            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
+            val channelsList = mutableListOf<SearchUiModel>()
 
-                val response = jsonParser.decodeFromString<SearchResponseDto>(jsonString)
+            val dataObj = jsonElement.jsonObject["data"]?.jsonObject
+            val channelsArray = dataObj?.get("channels")?.jsonArray
 
-                val channels = response.channels.mapNotNull { dto ->
-                    val slug = dto.slug
-                    if (slug.isNullOrEmpty() || slug.contains(" ")) return@mapNotNull null
+            if (channelsArray != null) {
+                for (element in channelsArray) {
+                    val obj = element.jsonObject
+                    val slug = obj["slug"]?.jsonPrimitive?.content ?: continue
 
-                    val isLive = dto.is_live == true || dto.livestream != null && dto.livestream.toString() != "null"
-                    var pic = dto.profile_pic ?: dto.user?.profile_pic ?: ""
+                    val isLive = obj["is_live"]?.jsonPrimitive?.booleanOrNull == true ||
+                            (obj.containsKey("livestream") && obj["livestream"] !is JsonNull)
 
-                    if (pic.isEmpty() || pic == "null") {
-                        pic = ""
-                    }
+                    var pic = obj["profile_pic"]?.jsonPrimitive?.content ?: ""
                     pic = pic.replace("\\/", "/")
 
-                    SearchUiModel(slug, pic, isLive)
+                    channelsList.add(SearchUiModel(slug, pic, isLive))
                 }
-
-                val uniqueChannels = channels.distinctBy { it.username }
-
-                if (uniqueChannels.isEmpty()) {
-                    _uiState.value = SearchUiState.Error("Ничего не найдено")
-                } else {
-                    _uiState.value = SearchUiState.Success(uniqueChannels)
-                }
-
-            } catch (e: Exception) {
-                Log.e("OpenKick_Search", "Крэш парсинга поиска: ${e.message}", e)
-                _uiState.value = SearchUiState.Error("Крэш парсинга: ${e.message}")
             }
+
+            if (channelsList.isEmpty()) {
+                _uiState.value = SearchUiState.Error("Ничего не найдено")
+            } else {
+                _uiState.value = SearchUiState.Success(channelsList)
+            }
+        } catch (e: Exception) {
+            Log.e("OpenKick_Search", "Ошибка парсинга: ${e.message}")
+            _uiState.value = SearchUiState.Error("Ошибка обработки данных")
         }
     }
 }

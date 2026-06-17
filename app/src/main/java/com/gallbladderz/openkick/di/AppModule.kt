@@ -18,6 +18,7 @@ import com.gallbladderz.openkick.features.player.PlayerViewModel
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
+    single { okhttp3.OkHttpClient() }
 
     single {
         HttpClient(OkHttp) {
@@ -35,6 +36,6 @@ val appModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }
     viewModel { PlayerViewModel(get()) }
-    viewModel { CategoriesViewModel() }
-    viewModel { SearchViewModel() }
+    viewModel { CategoriesViewModel(get()) } // <-- ДОБАВИЛИ get()
+    viewModel { SearchViewModel(get()) }     // <-- ДОБАВИЛИ get()
 }

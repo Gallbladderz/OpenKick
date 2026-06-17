@@ -1,41 +1,21 @@
 package com.gallbladderz.openkick.features.home
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.core.webview.CloudflareBypassWebView
+import coil.request.ImageRequest
 import org.koin.androidx.compose.koinViewModel
-
 
 @Composable
 fun HomeScreen(
@@ -51,7 +31,7 @@ fun HomeScreen(
                 .padding(paddingValues)
         ) {
             when (val uiState = state) {
-                is HomeUiState.NeedsCloudflareBypass, is HomeUiState.Loading -> {
+                is HomeUiState.Loading -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -63,17 +43,9 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = stringResource(R.string.connecting_to_kick),
+                            text = "Грузим API Kick...",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    if (uiState is HomeUiState.NeedsCloudflareBypass) {
-                        CloudflareBypassWebView(
-                            onBypassSuccess = { jsonString ->
-                                viewModel.processJson(jsonString)
-                            }
                         )
                     }
                 }
@@ -111,9 +83,9 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Button(
-                            onClick = { viewModel.triggerBypassAgain() }
+                            onClick = { viewModel.fetchLivestreams() }
                         ) {
-                            Text(stringResource(R.string.retry_cloudflare))
+                            Text("Повторить")
                         }
                     }
                 }
@@ -127,6 +99,7 @@ fun StreamCard(
     stream: StreamUiModel,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -138,7 +111,10 @@ fun StreamCard(
     ) {
         Column {
             AsyncImage(
-                model = stream.thumbnailUrl,
+                model = ImageRequest.Builder(context)
+                    .data(stream.thumbnailUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = "Thumbnail",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

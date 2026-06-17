@@ -7,22 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-
-@Serializable
-data class CategoryResponseDto(
-    val id: String? = null,
-    val name: String? = null,
-    val viewers: Int? = null,
-    val banner: JsonElement? = null,
-    val image: JsonElement? = null
-)
+import kotlinx.serialization.json.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
 
 sealed interface CategoriesUiState {
     data object Loading : CategoriesUiState
@@ -30,117 +18,81 @@ sealed interface CategoriesUiState {
     data class Error(val message: String) : CategoriesUiState
 }
 
-class CategoriesViewModel : ViewModel() {
+class CategoriesViewModel(private val client: OkHttpClient) : ViewModel() {
     private val _uiState = MutableStateFlow<CategoriesUiState>(CategoriesUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    private val jsonParser = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
+    init {
+        fetchCategories()
     }
 
-    fun processJson(jsonString: String) {
-        viewModelScope.launch(Dispatchers.Default) {
+    fun fetchCategories() {
+        _uiState.value = CategoriesUiState.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url("https://kick.com/api/v1/subcategories?limit=100")
+                .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
+                .addHeader("X-App-Platform", "Android")
+                .addHeader("X-App-Version", "40.21.0")
+                .addHeader("X-Kick-App", "mobile")
+                .addHeader("Accept", "application/json")
+                .build()
+
             try {
-                if (jsonString.startsWith("JS_ERROR")) {
-                    _uiState.value = CategoriesUiState.Error("Ошибка API: ${jsonString}")
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+
+                if (!response.isSuccessful || responseBody == null) {
+                    _uiState.value = CategoriesUiState.Error("Ошибка API Категорий: ${response.code}")
                     return@launch
                 }
 
-                val jsonElement = jsonParser.parseToJsonElement(jsonString)
+                parseCategoriesJson(responseBody)
+            } catch (e: IOException) {
+                _uiState.value = CategoriesUiState.Error("Сеть сдохла: ${e.message}")
+            }
+        }
+    }
 
-                val categoriesArray = findCategoriesArray(jsonElement)
-                    ?: throw Exception("В JSON нет массива категорий")
+    private fun parseCategoriesJson(jsonString: String) {
+        try {
+            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
+            val categoriesList = mutableListOf<CategoryUiModel>()
 
-                val uiModels = categoriesArray.mapNotNull { element ->
+            val dataArray = jsonElement.jsonObject["data"]?.jsonArray
+
+            if (dataArray != null) {
+                for (element in dataArray) {
                     try {
-                        val dto = jsonParser.decodeFromJsonElement<CategoryResponseDto>(element)
-                        val id = dto.id ?: "0"
-                        val name = dto.name ?: "Без названия"
-                        val viewers = dto.viewers ?: 0
+                        val obj = element.jsonObject
+                        val id = obj["id"]?.jsonPrimitive?.content ?: "0"
+                        val name = obj["name"]?.jsonPrimitive?.content ?: "Без названия"
+                        val viewers = obj["viewers"]?.jsonPrimitive?.intOrNull ?: 0
 
-                        var bannerUrl = extractBannerUrl(dto.banner, dto.image)
+                        var bannerUrl = obj["banner"]?.jsonObject?.get("responsive")?.jsonPrimitive?.content ?: ""
+
+                        bannerUrl = bannerUrl.replace("\\/", "/")
 
                         if (bannerUrl.contains(" ")) {
                             bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
                         }
 
-                        if (bannerUrl.isEmpty()) {
-                            val rawString = element.toString()
-                            bannerUrl = Regex("https://[^\"]+\\.(webp|png|jpg|jpeg)").find(rawString)?.value ?: ""
-                        }
+                        if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
 
-                        if (bannerUrl.startsWith("/")) {
-                            bannerUrl = "https://kick.com${bannerUrl}"
-                        } else if (bannerUrl.isNotEmpty() && !bannerUrl.startsWith("http")) {
-                            bannerUrl = "https://${bannerUrl}"
-                        }
-
-                        Log.d("OpenKick_Image", "Категория: ${name} | чистый урл: ${bannerUrl}")
-
-                        CategoryUiModel(id, name, viewers, bannerUrl)
+                        categoriesList.add(CategoryUiModel(id, name, viewers, bannerUrl))
                     } catch (e: Exception) {
-                        null
                     }
                 }
-                    .filter { it.bannerUrl.isNotEmpty() }
-                    .sortedByDescending { it.viewers }
-
-                if (uiModels.isEmpty()) {
-                    _uiState.value = CategoriesUiState.Error("Массив найден но он пустой или без картинок")
-                } else {
-                    _uiState.value = CategoriesUiState.Success(uiModels)
-                }
-
-            } catch (e: Exception) {
-                Log.e("OpenKick_Categories", "Краш парсинга: ${e.message}", e)
-                _uiState.value = CategoriesUiState.Error("Краш парсинга: ${e.message}")
             }
+
+            if (categoriesList.isEmpty()) {
+                _uiState.value = CategoriesUiState.Error("Не удалось найти игры в ответе сервера")
+            } else {
+                _uiState.value = CategoriesUiState.Success(categoriesList.sortedByDescending { it.viewers })
+            }
+        } catch (e: Exception) {
+            Log.e("OpenKick_Categories", "Крэш парсинга игр: ${e.message}", e)
+            _uiState.value = CategoriesUiState.Error("Крэш парсинга: ${e.message}")
         }
-    }
-
-    private fun extractBannerUrl(banner: JsonElement?, image: JsonElement?): String {
-        return try {
-            val bannerStr = banner?.toString() ?: ""
-            if (bannerStr.startsWith("\"") && bannerStr.endsWith("\"")) {
-                return bannerStr.trim('\"')
-            }
-            if (banner is JsonObject) {
-                return banner["responsive"]?.toString()?.trim('\"')
-                    ?: banner["url"]?.toString()?.trim('\"')
-                    ?: banner["src"]?.toString()?.trim('\"')
-                    ?: ""
-            }
-            if (image is JsonObject) {
-                return image["url"]?.toString()?.trim('\"')
-                    ?: image["src"]?.toString()?.trim('\"')
-                    ?: ""
-            }
-            ""
-        } catch(e: Exception) {
-            ""
-        }
-    }
-
-    private fun findCategoriesArray(element: JsonElement): JsonArray? {
-        if (element is JsonArray && isCategoriesArray(element)) return element
-        if (element is JsonObject) {
-            val data = element["data"]
-            if (data is JsonArray && isCategoriesArray(data)) return data
-
-            for ((_, value) in element) {
-                if (value is JsonArray && isCategoriesArray(value)) return value
-                if (value is JsonObject) {
-                    val found = findCategoriesArray(value)
-                    if (found != null) return found
-                }
-            }
-        }
-        return null
-    }
-
-    private fun isCategoriesArray(array: JsonArray): Boolean {
-        val first = array.firstOrNull()?.jsonObject ?: return false
-        return first.containsKey("name") && (first.containsKey("banner") || first.containsKey("viewers") || first.containsKey("id"))
     }
 }
