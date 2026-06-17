@@ -15,10 +15,19 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import com.gallbladderz.openkick.features.player.PlayerViewModel
+import com.gallbladderz.openkick.features.player.PlayerRepository
+import com.gallbladderz.openkick.features.search.SearchRepository
+import com.gallbladderz.openkick.features.categories.CategoriesRepository
+import com.gallbladderz.openkick.core.network.MobileHeadersInterceptor
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
-    single { okhttp3.OkHttpClient() }
+
+    single {
+        okhttp3.OkHttpClient.Builder()
+            .addInterceptor(MobileHeadersInterceptor())
+            .build()
+    }
 
     single {
         HttpClient(OkHttp) {
@@ -31,11 +40,14 @@ val appModule = module {
         }
     }
 
-    single { HomeRepository() }
+    single { HomeRepository(get()) }
+    single { SearchRepository(get()) }
+    single { CategoriesRepository(get()) }
+    single { PlayerRepository(get()) }
 
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }
-    viewModel { PlayerViewModel(get()) }
+    viewModel { PlayerViewModel(get(), get()) }
     viewModel { CategoriesViewModel(get()) } // <-- ДОБАВИЛИ get()
     viewModel { SearchViewModel(get()) }     // <-- ДОБАВИЛИ get()
 }

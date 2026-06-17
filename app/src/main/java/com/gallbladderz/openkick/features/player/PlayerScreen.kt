@@ -20,152 +20,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.features.home.KickStreamPlayer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
+import com.gallbladderz.openkick.core.network.KickApiConstants
 import org.koin.androidx.compose.koinViewModel
-import java.io.IOException
-
-sealed interface PlayerUiState {
-    data object Loading : PlayerUiState
-    data class Playing(
-        val url: String,
-        val avatarUrl: String,
-        val viewers: Int,
-        val title: String
-    ) : PlayerUiState
-    data class Error(val message: String) : PlayerUiState
-}
-
-data class ChatMessage(val sender: String, val content: String)
-
-class PlayerViewModel(private val okHttpClient: OkHttpClient) : ViewModel() {
-    private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
-    val uiState = _uiState.asStateFlow()
-
-    private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val chatMessages = _chatMessages.asStateFlow()
-
-    private var webSocket: WebSocket? = null
-
-    fun loadStreamInfo(streamerName: String) {
-        _uiState.value = PlayerUiState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url("https://kick.com/api/v2/channels/$streamerName")
-                .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
-                .addHeader("X-App-Platform", "Android")
-                .addHeader("X-App-Version", "40.21.0")
-                .addHeader("X-Kick-App", "mobile")
-                .addHeader("Accept", "application/json")
-                .build()
-
-            try {
-                val response = okHttpClient.newCall(request).execute()
-                val responseBody = response.body?.string()
-
-                if (!response.isSuccessful || responseBody == null) {
-                    _uiState.value = PlayerUiState.Error("Стример не найден или оффлайн (Код: ${response.code})")
-                    return@launch
-                }
-
-                processJson(responseBody)
-            } catch (e: IOException) {
-                _uiState.value = PlayerUiState.Error("Ошибка сети: ${e.message}")
-            }
-        }
-    }
-
-    private fun processJson(jsonString: String) {
-        try {
-            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
-
-            if (jsonElement is JsonObject) {
-                val livestreamObj = jsonElement["livestream"]?.jsonObject
-                val userObj = jsonElement["user"]?.jsonObject
-
-                val url = jsonElement["playback_url"]?.jsonPrimitive?.content
-                    ?: livestreamObj?.get("playback_url")?.jsonPrimitive?.content
-
-                val chatroomId = jsonElement["chatroom"]?.jsonObject?.get("id")?.jsonPrimitive?.content
-                    ?: jsonElement["chatroom_id"]?.jsonPrimitive?.content
-
-                var avatar = userObj?.get("profile_pic")?.jsonPrimitive?.content ?: ""
-                avatar = avatar.replace("\\/", "/") // чистим слеши
-
-                val viewers = livestreamObj?.get("viewer_count")?.jsonPrimitive?.intOrNull ?: 0
-                val title = livestreamObj?.get("session_title")?.jsonPrimitive?.content ?: "Трансляция"
-
-                if (!url.isNullOrEmpty()) {
-                    _uiState.value = PlayerUiState.Playing(url, avatar, viewers, title)
-
-                    if (chatroomId != null) {
-                        connectToChat(chatroomId)
-                    }
-                } else {
-                    _uiState.value = PlayerUiState.Error("Стример сейчас оффлайн")
-                }
-            } else {
-                _uiState.value = PlayerUiState.Error("Пришел не JSON объект")
-            }
-        } catch (e: Exception) {
-            _uiState.value = PlayerUiState.Error("Ошибка обработки ответа API")
-        }
-    }
-
-    private fun connectToChat(chatroomId: String) {
-        webSocket?.cancel()
-
-        val request = Request.Builder()
-            .url("wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=7.6.0&flash=false")
-            .build()
-
-        webSocket = okHttpClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                val subscribeMsg = """{"event":"pusher:subscribe","data":{"auth":"","channel":"chatrooms.$chatroomId.v2"}}"""
-                webSocket.send(subscribeMsg)
-            }
-
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                try {
-                    val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(text).jsonObject
-                    val event = json["event"]?.jsonPrimitive?.content
-
-                    if (event == "App\\Events\\ChatMessageEvent") {
-                        val dataString = json["data"]?.jsonPrimitive?.content ?: return
-                        val dataJson = Json { ignoreUnknownKeys = true }.parseToJsonElement(dataString).jsonObject
-
-                        val sender = dataJson["sender"]?.jsonObject?.get("username")?.jsonPrimitive?.content ?: "Аноним"
-                        val content = dataJson["content"]?.jsonPrimitive?.content ?: ""
-
-                        val newMessage = ChatMessage(sender, content)
-                        _chatMessages.value = (listOf(newMessage) + _chatMessages.value).take(100)
-                    }
-                } catch (e: Exception) {
-                }
-            }
-        })
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        webSocket?.cancel()
-    }
-}
 
 @Composable
 fun PlayerScreen(
@@ -251,7 +112,7 @@ fun PlayerScreen(
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(playingState.avatarUrl.ifEmpty { "https://ui-avatars.com/api/?name=$streamerName&background=random" })
-                            .addHeader("User-Agent", "KickMobile/40.21.0")
+                            .addHeader("User-Agent", KickApiConstants.USER_AGENT)
                             .crossfade(true)
                             .build(),
                         contentDescription = "Avatar",

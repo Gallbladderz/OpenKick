@@ -9,9 +9,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
 
 sealed interface SearchUiState {
     data object Idle : SearchUiState
@@ -20,7 +17,7 @@ sealed interface SearchUiState {
     data class Error(val message: String) : SearchUiState
 }
 
-class SearchViewModel(private val client: OkHttpClient) : ViewModel() {
+class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState = _uiState.asStateFlow()
 
@@ -36,27 +33,12 @@ class SearchViewModel(private val client: OkHttpClient) : ViewModel() {
         searchJob?.cancel()
 
         searchJob = viewModelScope.launch(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url("https://search.kick.com/api/v1/search/enriched?query=${android.net.Uri.encode(query)}")
-                .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
-                .addHeader("X-App-Platform", "Android")
-                .addHeader("X-App-Version", "40.21.0")
-                .addHeader("X-Kick-App", "mobile")
-                .addHeader("Accept", "application/json")
-                .build()
-
-            try {
-                val response = client.newCall(request).execute()
-                val responseBody = response.body?.string()
-
-                if (!response.isSuccessful || responseBody == null) {
-                    _uiState.value = SearchUiState.Error("Поиск упал: ${response.code}")
-                    return@launch
+            repository.searchStreamer(query).collect { result ->
+                result.onSuccess { responseBody ->
+                    parseSearchJson(responseBody)
+                }.onFailure { exception ->
+                    _uiState.value = SearchUiState.Error(exception.message ?: "Ошибка сети")
                 }
-
-                parseSearchJson(responseBody)
-            } catch (e: IOException) {
-                _uiState.value = SearchUiState.Error("Ошибка сети")
             }
         }
     }

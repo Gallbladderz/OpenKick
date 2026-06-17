@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.gallbladderz.openkick.core.network.KickApiConstants
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,7 +95,7 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(finalImageUrl)
-                .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
+                .addHeader("User-Agent", KickApiConstants.USER_AGENT)
                 .crossfade(true)
                 .build(),
             contentDescription = "Аватар",

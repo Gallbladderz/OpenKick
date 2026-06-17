@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
 
 sealed interface CategoriesUiState {
     data object Loading : CategoriesUiState
@@ -18,7 +15,7 @@ sealed interface CategoriesUiState {
     data class Error(val message: String) : CategoriesUiState
 }
 
-class CategoriesViewModel(private val client: OkHttpClient) : ViewModel() {
+class CategoriesViewModel(private val repository: CategoriesRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<CategoriesUiState>(CategoriesUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
@@ -29,27 +26,12 @@ class CategoriesViewModel(private val client: OkHttpClient) : ViewModel() {
     fun fetchCategories() {
         _uiState.value = CategoriesUiState.Loading
         viewModelScope.launch(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url("https://kick.com/api/v1/subcategories?limit=100")
-                .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
-                .addHeader("X-App-Platform", "Android")
-                .addHeader("X-App-Version", "40.21.0")
-                .addHeader("X-Kick-App", "mobile")
-                .addHeader("Accept", "application/json")
-                .build()
-
-            try {
-                val response = client.newCall(request).execute()
-                val responseBody = response.body?.string()
-
-                if (!response.isSuccessful || responseBody == null) {
-                    _uiState.value = CategoriesUiState.Error("Ошибка API Категорий: ${response.code}")
-                    return@launch
+            repository.fetchCategories().collect { result ->
+                result.onSuccess { responseBody ->
+                    parseCategoriesJson(responseBody)
+                }.onFailure { exception ->
+                    _uiState.value = CategoriesUiState.Error(exception.message ?: "Ошибка сети")
                 }
-
-                parseCategoriesJson(responseBody)
-            } catch (e: IOException) {
-                _uiState.value = CategoriesUiState.Error("Сеть сдохла: ${e.message}")
             }
         }
     }

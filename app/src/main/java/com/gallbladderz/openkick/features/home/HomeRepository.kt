@@ -1,6 +1,7 @@
 package com.gallbladderz.openkick.features.home
 
 import android.util.Log
+import com.gallbladderz.openkick.core.network.KickApiConstants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
@@ -11,8 +12,30 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
 
-class HomeRepository {
+class HomeRepository(private val client: OkHttpClient) {
+
+    fun fetchLivestreams(): Flow<Result<String>> = flow {
+        val request = Request.Builder()
+            .url("${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams/featured?language=ru")
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            if (!response.isSuccessful || responseBody == null) {
+                emit(Result.failure(Exception("Кик послал нахер: код ${response.code}")))
+                return@flow
+            }
+            emit(Result.success(responseBody))
+        } catch (e: IOException) {
+            emit(Result.failure(Exception("Ошибка сети: ${e.message}", e)))
+        }
+    }
 
     fun parseStreams(jsonString: String): Flow<Result<List<StreamUiModel>>> = flow {
         try {

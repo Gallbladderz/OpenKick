@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.gallbladderz.openkick.core.network.KickApiConstants
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -64,7 +66,7 @@ fun CategoryCard(category: CategoryUiModel, onClick: () -> Unit) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(category.bannerUrl)
-                    .addHeader("User-Agent", "KickMobile/40.21.0 (com.kick.mobile; platform: android; build:60006889)")
+                    .addHeader("User-Agent", KickApiConstants.USER_AGENT)
                     .crossfade(true)
                     .build(),
                 contentDescription = category.name,
