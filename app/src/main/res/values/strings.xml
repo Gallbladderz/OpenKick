@@ -1,3 +1,24 @@
 <resources>
     <string name="app_name">OpenKick</string>
+    <string name="loading_categories">Загрузка категорий...</string>
+    <string name="search_streamer">Найти стримера...</string>
+    <string name="enter_nickname_to_search">Введите никнейм для поиска</string>
+    <string name="avatar">Аватар</string>
+    <string name="connecting_to_kick">Подключение к Kick...</string>
+    <string name="retry_cloudflare">Пройти Cloudflare заново</string>
+    <string name="back">Назад</string>
+    <string name="stream_chat">Чат трансляции</string>
+    <string name="home">Главная</string>
+    <string name="search">Поиск</string>
+    <string name="categories">Категории</string>
+    <string name="followers">Фолловеры</string>
+    <string name="profile">Профиль</string>
+    <string name="settings">Настройки</string>
+    <string name="show_categories">Вернуть Категории</string>
+    <string name="hide_categories">Скрыть Категории</string>
+    <string name="anonymous">Аноним</string>
+    <string name="nothing_found">Ничего не найдено</string>
+    <string name="untitled">Без названия</string>
+    <string name="error_no_categories_array">В JSON нет массива категорий</string>
+    <string name="error_empty_array">Массив найден но он пустой или без картинок</string>
 </resources>

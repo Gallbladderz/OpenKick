@@ -1,21 +1,45 @@
 package com.gallbladderz.openkick.navigation
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.features.categories.CategoriesScreen
 import com.gallbladderz.openkick.features.home.HomeScreen
 import com.gallbladderz.openkick.features.player.PlayerScreen
 import com.gallbladderz.openkick.features.profile.MainViewModel
-import com.gallbladderz.openkick.features.search.SearchScreen // <-- ИМПОРТ НАШЕГО НОВОГО ЭКРАНА
+import com.gallbladderz.openkick.features.search.SearchScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -25,37 +49,39 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
 
     val bottomNavItems = remember(hideCategories) {
         val items = mutableListOf(
-            BottomNavItem("Главная", HOME_ROUTE, Icons.Filled.Home, Icons.Outlined.Home),
-            BottomNavItem("Поиск", SEARCH_ROUTE, Icons.Filled.Search, Icons.Outlined.Search)
+            BottomNavItem(R.string.home, HomeRoute, Icons.Filled.Home, Icons.Outlined.Home),
+            BottomNavItem(R.string.search, SearchRoute, Icons.Filled.Search, Icons.Outlined.Search)
         )
         if (!hideCategories) {
-            items.add(BottomNavItem("Категории", CATEGORIES_ROUTE, Icons.Filled.List, Icons.Filled.List))
+            items.add(BottomNavItem(R.string.categories, CategoriesRoute, Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Filled.List))
         }
-        items.add(BottomNavItem("Фолловеры", FOLLOWERS_ROUTE, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder))
-        items.add(BottomNavItem("Профиль", PROFILE_ROUTE, Icons.Filled.AccountCircle, Icons.Outlined.AccountCircle))
+        items.add(BottomNavItem(R.string.followers, FollowersRoute, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder))
+        items.add(BottomNavItem(R.string.profile, ProfileRoute, Icons.Filled.AccountCircle, Icons.Outlined.AccountCircle))
         items
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val currentRoute = currentDestination?.route
 
-    val showBottomBar = currentRoute?.startsWith("player") != true
+    val isPlayerRoute = currentDestination?.route?.contains("PlayerRoute") == true
+    val showBottomBar = !isPlayerRoute
 
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
-                        val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                        val routeName = item.route::class.qualifiedName ?: ""
+                        val isSelected = currentDestination?.hierarchy?.any { it.route?.contains(routeName) == true } == true
+                        val title = stringResource(id = item.titleResId)
                         NavigationBarItem(
                             icon = {
                                 Icon(
                                     imageVector = if (isSelected) item.icon else item.selectedIcon,
-                                    contentDescription = item.title
+                                    contentDescription = title
                                 )
                             },
-                            label = { Text(item.title) },
+                            label = { Text(title) },
                             selected = isSelected,
                             onClick = {
                                 navController.navigate(item.route) {
@@ -72,44 +98,46 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = HOME_ROUTE,
+            startDestination = HomeRoute,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(HOME_ROUTE) {
+            composable<HomeRoute> {
                 HomeScreen(
                     onStreamClick = { streamerName ->
-                        navController.navigate("player/$streamerName")
+                        navController.navigate(PlayerRoute(streamerName))
                     }
                 )
             }
 
-            composable(SEARCH_ROUTE) {
+            composable<SearchRoute> {
                 SearchScreen(
                     onChannelClick = { streamerName ->
-                        navController.navigate("player/$streamerName")
+                        navController.navigate(PlayerRoute(streamerName))
                     }
                 )
             }
 
-            composable(CATEGORIES_ROUTE) { CategoriesScreen() }
-            composable(FOLLOWERS_ROUTE) { DummyScreen("Фолловеры") }
-            composable(PROFILE_ROUTE) {
+            composable<CategoriesRoute> { CategoriesScreen() }
+
+            composable<FollowersRoute> { DummyScreen(stringResource(R.string.followers)) }
+
+            composable<ProfileRoute> {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Настройки")
+                    Text(stringResource(R.string.settings))
                     Button(onClick = { viewModel.toggleCategories(!hideCategories) }) {
-                        Text(if (hideCategories) "Вернуть Категории" else "Скрыть Категории")
+                        Text(if (hideCategories) stringResource(R.string.show_categories) else stringResource(R.string.hide_categories))
                     }
                 }
             }
 
-            composable(PLAYER_ROUTE) { backStackEntry ->
-                val streamerName = backStackEntry.arguments?.getString("streamerName") ?: ""
+            composable<PlayerRoute> { backStackEntry ->
+                val playerRoute = backStackEntry.toRoute<PlayerRoute>()
                 PlayerScreen(
-                    streamerName = streamerName,
+                    streamerName = playerRoute.streamerName,
                     onBackClick = { navController.popBackStack() }
                 )
             }

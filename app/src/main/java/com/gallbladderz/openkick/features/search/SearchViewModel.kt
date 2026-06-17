@@ -7,7 +7,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+
+@Serializable
+data class SearchResponseDto(
+    val channels: List<SearchChannelDto> = emptyList()
+)
+
+@Serializable
+data class SearchChannelDto(
+    val slug: String? = null,
+    val is_live: Boolean? = null,
+    val profile_pic: String? = null,
+    val user: SearchUserDto? = null,
+    val livestream: JsonElement? = null
+)
+
+@Serializable
+data class SearchUserDto(
+    val profile_pic: String? = null
+)
 
 sealed interface SearchUiState {
     data object Idle : SearchUiState
@@ -19,6 +40,11 @@ sealed interface SearchUiState {
 class SearchViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState = _uiState.asStateFlow()
+
+    private val jsonParser = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
 
     fun clearResults() {
         _uiState.value = SearchUiState.Idle
@@ -32,7 +58,7 @@ class SearchViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             try {
                 if (jsonString.startsWith("JS_ERROR")) {
-                    _uiState.value = SearchUiState.Error("Ошибка API: $jsonString")
+                    _uiState.value = SearchUiState.Error("Ошибка API: ${jsonString}")
                     return@launch
                 }
                 if (jsonString.contains("\"empty\":true")) {
@@ -40,44 +66,21 @@ class SearchViewModel : ViewModel() {
                     return@launch
                 }
 
-                val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
-                val channels = mutableListOf<SearchUiModel>()
+                val response = jsonParser.decodeFromString<SearchResponseDto>(jsonString)
 
-                fun extractChannels(element: JsonElement) {
-                    if (element is JsonArray) {
-                        element.forEach { extractChannels(it) }
-                    } else if (element is JsonObject) {
+                val channels = response.channels.mapNotNull { dto ->
+                    val slug = dto.slug
+                    if (slug.isNullOrEmpty() || slug.contains(" ")) return@mapNotNull null
 
-                        if (element.containsKey("slug")) {
-                            val slug = element["slug"]?.jsonPrimitive?.content ?: ""
-                            val rawString = element.toString()
+                    val isLive = dto.is_live == true || dto.livestream != null && dto.livestream.toString() != "null"
+                    var pic = dto.profile_pic ?: dto.user?.profile_pic ?: ""
 
-                            val isLive = rawString.contains("\"is_live\":true") ||
-                                    rawString.contains("\"is_live\":\"true\"") ||
-                                    (rawString.contains("\"livestream\":{") && !rawString.contains("\"livestream\":null"))
-
-                            var pic = element["profile_pic"]?.jsonPrimitive?.content
-                                ?: element["user"]?.jsonObject?.get("profile_pic")?.jsonPrimitive?.content
-                                ?: ""
-
-                            if (pic.isEmpty() || pic == "null") {
-                                pic = Regex("https://[^\"]+\\.(webp|png|jpg|jpeg)").find(rawString)?.value ?: ""
-                            }
-
-                            pic = pic.replace("\\/", "/")
-
-                            if (slug.isNotEmpty() && !slug.contains(" ")) {
-                                channels.add(SearchUiModel(slug, pic, isLive))
-                            }
-                        }
-                        element.values.forEach { extractChannels(it) }
+                    if (pic.isEmpty() || pic == "null") {
+                        pic = ""
                     }
-                }
+                    pic = pic.replace("\\/", "/")
 
-                if (jsonElement is JsonObject && jsonElement.containsKey("channels")) {
-                    extractChannels(jsonElement["channels"]!!)
-                } else {
-                    extractChannels(jsonElement)
+                    SearchUiModel(slug, pic, isLive)
                 }
 
                 val uniqueChannels = channels.distinctBy { it.username }

@@ -1,26 +1,35 @@
 package com.gallbladderz.openkick.features.player
 
-import android.annotation.SuppressLint
 import android.util.Log
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.webview.ChannelBypassWebView
 import com.gallbladderz.openkick.features.home.KickStreamPlayer
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +45,6 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.koin.androidx.compose.koinViewModel
 
-class PlayerJsBridge(private val onJsonReceived: (String) -> Unit) {
-    @android.webkit.JavascriptInterface
-    fun sendDataToAndroid(json: String) {
-        onJsonReceived(json)
-    }
-}
 
 sealed interface PlayerUiState {
     data object Bypassing : PlayerUiState
@@ -160,8 +163,8 @@ fun PlayerScreen(
         ) {
             IconButton(onClick = onBackClick) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Назад",
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
                     tint = Color.White
                 )
             }
@@ -207,7 +210,7 @@ fun PlayerScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
-                text = "Чат трансляции",
+                text = stringResource(R.string.stream_chat),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -238,77 +241,3 @@ fun PlayerScreen(
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun ChannelBypassWebView(streamerName: String, onBypassSuccess: (String) -> Unit) {
-    val context = LocalContext.current
-    val currentOnBypassSuccess by rememberUpdatedState(onBypassSuccess)
-
-    val webView = remember {
-        WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.userAgentString = settings.userAgentString.replace("; wv", "")
-
-            addJavascriptInterface(PlayerJsBridge { json ->
-                post { currentOnBypassSuccess(json) }
-            }, "AndroidBridge")
-
-            webViewClient = object : WebViewClient() {
-                @SuppressLint("WebViewClientOnReceivedSslError")
-                override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
-                    handler?.proceed()
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-
-                    val jsScript = """
-                        (function() {
-                            if (window.kickPlayerBypassInjected) return;
-                            window.kickPlayerBypassInjected = true;
-
-                            function tryFetch() {
-                                if (document.title.includes("Just a moment") || document.title.includes("Cloudflare")) {
-                                    setTimeout(tryFetch, 300);
-                                    return;
-                                }
-
-                                fetch('https://kick.com/api/v2/channels/$streamerName', {
-                                    headers: { 'Accept': 'application/json' }
-                                })
-                                .then(async response => {
-                                    const text = await response.text();
-                                    if (response.ok) {
-                                        window.AndroidBridge.sendDataToAndroid(text);
-                                    } else {
-                                        setTimeout(tryFetch, 500);
-                                    }
-                                })
-                                .catch(err => {
-                                    setTimeout(tryFetch, 500);
-                                });
-                            }
-                            tryFetch();
-                        })();
-                    """.trimIndent()
-
-                    view?.evaluateJavascript(jsScript, null)
-                }
-            }
-            loadDataWithBaseURL("https://kick.com", "<html><body></body></html>", "text/html", "UTF-8", null)
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            webView.stopLoading()
-            webView.destroy()
-        }
-    }
-
-    AndroidView(
-        factory = { webView },
-        modifier = Modifier.size(1.dp)
-    )
-}

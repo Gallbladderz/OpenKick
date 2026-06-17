@@ -1,41 +1,54 @@
 package com.gallbladderz.openkick.features.search
 
-import android.annotation.SuppressLint
 import android.util.Log
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.webview.SearchBypassWebView
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
-class SearchJsBridge(private val onJsonReceived: (String) -> Unit) {
-    @android.webkit.JavascriptInterface
-    fun sendDataToAndroid(json: String) {
-        onJsonReceived(json)
-    }
-}
 
 @Composable
 fun SearchScreen(
@@ -63,7 +76,7 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            placeholder = { Text("Найти стримера...") },
+            placeholder = { Text(stringResource(R.string.search_streamer)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp)
@@ -73,7 +86,7 @@ fun SearchScreen(
             when (val uiState = state) {
                 is SearchUiState.Idle -> {
                     Text(
-                        "Введите никнейм для поиска",
+                        stringResource(R.string.enter_nickname_to_search),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -130,7 +143,7 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
                 .addHeader("Referer", "https://kick.com/")
                 .crossfade(true)
                 .build(),
-            contentDescription = "Аватар",
+            contentDescription = stringResource(R.string.avatar),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(48.dp)
@@ -169,79 +182,3 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun SearchBypassWebView(
-    onWebViewCreated: (WebView) -> Unit,
-    onBypassSuccess: (String) -> Unit
-) {
-    val context = LocalContext.current
-    val currentOnBypassSuccess by rememberUpdatedState(onBypassSuccess)
-
-    val webView = remember {
-        WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.userAgentString = settings.userAgentString.replace("; wv", "")
-
-            addJavascriptInterface(SearchJsBridge { json ->
-                post { currentOnBypassSuccess(json) }
-            }, "AndroidBridge")
-
-            webViewClient = object : WebViewClient() {
-                @SuppressLint("WebViewClientOnReceivedSslError")
-                override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
-                    handler?.proceed()
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-
-                    val jsScript = """
-                        (function() {
-                            if (window.searchInjected) return;
-                            window.searchInjected = true;
-
-                            window.doSearch = function(query) {
-                                if (!query) {
-                                    window.AndroidBridge.sendDataToAndroid('{"empty":true}');
-                                    return;
-                                }
-                                fetch('https://kick.com/api/search?searched_word=' + encodeURIComponent(query), {
-                                    headers: { 'Accept': 'application/json' }
-                                })
-                                .then(async response => {
-                                    const text = await response.text();
-                                    if (response.ok) {
-                                        window.AndroidBridge.sendDataToAndroid(text);
-                                    } else {
-                                        window.AndroidBridge.sendDataToAndroid("JS_ERROR: " + response.status);
-                                    }
-                                })
-                                .catch(err => {
-                                    window.AndroidBridge.sendDataToAndroid("JS_ERROR: fetch failed");
-                                });
-                            };
-                        })();
-                    """.trimIndent()
-
-                    view?.evaluateJavascript(jsScript, null)
-                }
-            }
-            loadDataWithBaseURL("https://kick.com", "<html><body></body></html>", "text/html", "UTF-8", null)
-        }
-    }
-
-    LaunchedEffect(webView) {
-        onWebViewCreated(webView)
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            webView.stopLoading()
-            webView.destroy()
-        }
-    }
-
-    AndroidView(factory = { webView }, modifier = Modifier.size(1.dp))
-}

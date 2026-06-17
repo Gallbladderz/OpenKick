@@ -1,18 +1,30 @@
 package com.gallbladderz.openkick.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.serialization.Serializable
 
-// Routes
-const val HOME_ROUTE = "home"
-const val CATEGORIES_ROUTE = "categories"
-const val FOLLOWERS_ROUTE = "followers"
-const val PROFILE_ROUTE = "profile"
-const val PLAYER_ROUTE = "player/{streamerName}"
-const val SEARCH_ROUTE = "search"
+@Serializable
+object HomeRoute
+
+@Serializable
+object SearchRoute
+
+@Serializable
+object CategoriesRoute
+
+@Serializable
+object FollowersRoute
+
+@Serializable
+object ProfileRoute
+
+@Serializable
+data class PlayerRoute(val streamerName: String)
 
 data class BottomNavItem(
-    val title: String,
-    val route: String,
+    @StringRes val titleResId: Int,
+    val route: Any,
     val icon: ImageVector,
     val selectedIcon: ImageVector
 )

@@ -1,34 +1,40 @@
 package com.gallbladderz.openkick.features.categories
 
-import android.annotation.SuppressLint
 import android.util.Log
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.webview.CategoriesBypassWebView
 import org.koin.androidx.compose.koinViewModel
 
-class CategoriesJsBridge(private val onJsonReceived: (String) -> Unit) {
-    @android.webkit.JavascriptInterface
-    fun sendDataToAndroid(json: String) {
-        onJsonReceived(json)
-    }
-}
 
 @Composable
 fun CategoriesScreen(
@@ -46,7 +52,7 @@ fun CategoriesScreen(
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Загрузка категорий...")
+                    Text(stringResource(R.string.loading_categories))
                 }
 
                 CategoriesBypassWebView { json ->
@@ -105,7 +111,6 @@ fun CategoryCard(category: CategoryUiModel, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
                 onState = { state ->
-                    // Если картинка не грузится, мы точно увидим почему в логах
                     if (state is coil.compose.AsyncImagePainter.State.Error) {
                         Log.e("OpenKick_Image", "Coil обосрался на ${category.name}. Урл: ${category.bannerUrl}", state.result.throwable)
                     }
@@ -127,78 +132,3 @@ fun CategoryCard(category: CategoryUiModel, onClick: () -> Unit) {
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun CategoriesBypassWebView(onBypassSuccess: (String) -> Unit) {
-    val context = LocalContext.current
-    val currentOnBypassSuccess by rememberUpdatedState(onBypassSuccess)
-
-    val webView = remember {
-        WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.userAgentString = settings.userAgentString.replace("; wv", "")
-
-            addJavascriptInterface(CategoriesJsBridge { json ->
-                post { currentOnBypassSuccess(json) }
-            }, "AndroidBridge")
-
-            webViewClient = object : WebViewClient() {
-                @SuppressLint("WebViewClientOnReceivedSslError")
-                override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
-                    handler?.proceed()
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-
-                    val jsScript = """
-                        (function() {
-                            if (window.categoriesBypassInjected) return;
-                            window.categoriesBypassInjected = true;
-
-                            function tryFetch() {
-                                if (document.title.includes("Just a moment") || document.title.includes("Cloudflare")) {
-                                    setTimeout(tryFetch, 1000);
-                                    return;
-                                }
-
-                                fetch('https://kick.com/api/v1/subcategories?limit=100', {
-                                    headers: { 'Accept': 'application/json' }
-                                })
-                                .then(async response => {
-                                    const text = await response.text();
-                                    const trimmed = text.trim();
-                                    if (response.ok) {
-                                        window.AndroidBridge.sendDataToAndroid(trimmed);
-                                    } else {
-                                        setTimeout(tryFetch, 1000); 
-                                    }
-                                })
-                                .catch(err => {
-                                    setTimeout(tryFetch, 1000); 
-                                });
-                            }
-                            setTimeout(tryFetch, 500);
-                        })();
-                    """.trimIndent()
-
-                    view?.evaluateJavascript(jsScript, null)
-                }
-            }
-            loadDataWithBaseURL("https://kick.com", "<html><body></body></html>", "text/html", "UTF-8", null)
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            webView.stopLoading()
-            webView.destroy()
-        }
-    }
-
-    AndroidView(
-        factory = { webView },
-        modifier = Modifier.size(1.dp)
-    )
-}
