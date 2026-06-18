@@ -2,6 +2,7 @@ package com.gallbladderz.openkick.features.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.features.player.models.ChatMessage
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,8 @@ import okhttp3.WebSocketListener
 
 class PlayerViewModel(
     private val repository: PlayerRepository,
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -25,9 +27,18 @@ class PlayerViewModel(
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages = _chatMessages.asStateFlow()
 
+    private val _isFollowed = MutableStateFlow(false)
+    val isFollowed = _isFollowed.asStateFlow()
+
     private var webSocket: WebSocket? = null
 
     fun loadStreamInfo(streamerName: String) {
+        viewModelScope.launch {
+            settingsRepository.followedChannelsFlow.collect { follows ->
+                _isFollowed.value = follows.contains(streamerName)
+            }
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             repository.fetchStreamInfo(streamerName).collect { result ->
                 result.onSuccess { responseBody ->
@@ -36,6 +47,12 @@ class PlayerViewModel(
                     _uiState.value = PlayerUiState.Error("Ошибка сети: ${exception.message}")
                 }
             }
+        }
+    }
+
+    fun toggleFollow(streamerName: String) {
+        viewModelScope.launch {
+            settingsRepository.toggleFollow(streamerName)
         }
     }
 
@@ -54,7 +71,7 @@ class PlayerViewModel(
                     ?: jsonElement["chatroom_id"]?.jsonPrimitive?.content
 
                 var avatar = userObj?.get("profile_pic")?.jsonPrimitive?.content ?: ""
-                avatar = avatar.replace("\\/", "/") // чистим слеши
+                avatar = avatar.replace("\\/", "/")
 
                 val viewers = livestreamObj?.get("viewer_count")?.jsonPrimitive?.intOrNull ?: 0
                 val title = livestreamObj?.get("session_title")?.jsonPrimitive?.content ?: "Трансляция"

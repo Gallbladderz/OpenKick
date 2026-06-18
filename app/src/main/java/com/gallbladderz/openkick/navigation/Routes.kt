@@ -20,6 +20,12 @@ object FollowersRoute
 object ProfileRoute
 
 @Serializable
+object AllFollowsRoute
+
+@Serializable
+data class CategoryDetailsRoute(val slug: String)
+
+@Serializable
 data class PlayerRoute(val streamerName: String)
 
 data class BottomNavItem(

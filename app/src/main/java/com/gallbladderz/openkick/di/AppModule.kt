@@ -6,11 +6,7 @@ import com.gallbladderz.openkick.features.search.SearchViewModel
 import com.gallbladderz.openkick.features.home.HomeRepository
 import com.gallbladderz.openkick.features.home.HomeViewModel
 import com.gallbladderz.openkick.features.profile.MainViewModel
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
+import com.gallbladderz.openkick.features.profile.FollowingViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -19,6 +15,7 @@ import com.gallbladderz.openkick.features.player.PlayerRepository
 import com.gallbladderz.openkick.features.search.SearchRepository
 import com.gallbladderz.openkick.features.categories.CategoriesRepository
 import com.gallbladderz.openkick.core.network.MobileHeadersInterceptor
+import com.gallbladderz.openkick.features.categories.CategoryDetailsViewModel
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
@@ -29,17 +26,6 @@ val appModule = module {
             .build()
     }
 
-    single {
-        HttpClient(OkHttp) {
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                })
-            }
-        }
-    }
-
     single { HomeRepository(get()) }
     single { SearchRepository(get()) }
     single { CategoriesRepository(get()) }
@@ -47,7 +33,9 @@ val appModule = module {
 
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }
-    viewModel { PlayerViewModel(get(), get()) }
-    viewModel { CategoriesViewModel(get()) } // <-- ДОБАВИЛИ get()
-    viewModel { SearchViewModel(get()) }     // <-- ДОБАВИЛИ get()
+    viewModel { PlayerViewModel(get(), get(), get()) } // 🔥 ТРИ ГЕТА, МАТЬ ИХ!
+    viewModel { CategoriesViewModel(get()) }
+    viewModel { SearchViewModel(get()) }
+    viewModel { FollowingViewModel(get(), get()) }
+    viewModel { CategoryDetailsViewModel(get()) }
 }

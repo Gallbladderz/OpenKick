@@ -1,17 +1,26 @@
 package com.gallbladderz.openkick.features.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -20,16 +29,38 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
-    onStreamClick: (String) -> Unit = {}
+    onStreamClick: (String) -> Unit = {},
+    onSearchClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold { paddingValues ->
-        Box(
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            Text(
+                text = "OpenKick",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary
+            )
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Поиск",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when (val uiState = state) {
                 is HomeUiState.Loading -> {
                     Column(
@@ -52,7 +83,12 @@ fun HomeScreen(
 
                 is HomeUiState.Success -> {
                     LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(
+                            top = 0.dp,
+                            bottom = 8.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -62,9 +98,7 @@ fun HomeScreen(
                         ) { stream ->
                             StreamCard(
                                 stream = stream,
-                                onClick = {
-                                    onStreamClick(stream.streamerName)
-                                }
+                                onClick = { onStreamClick(stream.streamerName) }
                             )
                         }
                     }
@@ -79,12 +113,8 @@ fun HomeScreen(
                             text = "Ошибка: ${uiState.message}",
                             color = MaterialTheme.colorScheme.error
                         )
-
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        Button(
-                            onClick = { viewModel.fetchLivestreams() }
-                        ) {
+                        Button(onClick = { viewModel.fetchLivestreams() }) {
                             Text("Повторить")
                         }
                     }
@@ -100,60 +130,73 @@ fun StreamCard(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    Card(
+
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = Color.Transparent
         )
     ) {
         Column {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(stream.thumbnailUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Thumbnail",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(stream.thumbnailUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Thumbnail",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(8.dp))
+                )
 
-            Column(modifier = Modifier.padding(12.dp)) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color.Red)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "${stream.viewers}",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
                 Text(
                     text = stream.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stream.streamerName,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        text = "👁 ${stream.viewers}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = stream.category,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary
+                    text = "${stream.streamerName} • ${stream.category}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

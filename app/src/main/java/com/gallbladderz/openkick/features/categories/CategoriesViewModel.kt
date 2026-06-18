@@ -49,6 +49,7 @@ class CategoriesViewModel(private val repository: CategoriesRepository) : ViewMo
                         val obj = element.jsonObject
                         val id = obj["id"]?.jsonPrimitive?.content ?: "0"
                         val name = obj["name"]?.jsonPrimitive?.content ?: "Без названия"
+                        val slug = obj["slug"]?.jsonPrimitive?.content ?: ""
                         val viewers = obj["viewers"]?.jsonPrimitive?.intOrNull ?: 0
 
                         var bannerUrl = obj["banner"]?.jsonObject?.get("responsive")?.jsonPrimitive?.content ?: ""
@@ -61,7 +62,7 @@ class CategoriesViewModel(private val repository: CategoriesRepository) : ViewMo
 
                         if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
 
-                        categoriesList.add(CategoryUiModel(id, name, viewers, bannerUrl))
+                        categoriesList.add(CategoryUiModel(id, name, slug, viewers, bannerUrl))
                     } catch (e: Exception) {
                     }
                 }

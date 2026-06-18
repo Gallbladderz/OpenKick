@@ -1,21 +1,14 @@
 package com.gallbladderz.openkick.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +32,8 @@ import com.gallbladderz.openkick.features.home.HomeScreen
 import com.gallbladderz.openkick.features.player.PlayerScreen
 import com.gallbladderz.openkick.features.profile.MainViewModel
 import com.gallbladderz.openkick.features.search.SearchScreen
+import com.gallbladderz.openkick.features.categories.CategoryDetailsScreen
+import com.gallbladderz.openkick.features.profile.SettingsScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -50,7 +44,6 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
     val bottomNavItems = remember(hideCategories) {
         val items = mutableListOf(
             BottomNavItem(R.string.home, HomeRoute, Icons.Filled.Home, Icons.Outlined.Home),
-            BottomNavItem(R.string.search, SearchRoute, Icons.Filled.Search, Icons.Outlined.Search)
         )
         if (!hideCategories) {
             items.add(BottomNavItem(R.string.categories, CategoriesRoute, Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Filled.List))
@@ -105,7 +98,18 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
                 HomeScreen(
                     onStreamClick = { streamerName ->
                         navController.navigate(PlayerRoute(streamerName))
+                    },
+                    onSearchClick = {
+                        navController.navigate(SearchRoute)
                     }
+                )
+            }
+
+            composable<CategoryDetailsRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<CategoryDetailsRoute>()
+                CategoryDetailsScreen(
+                    slug = route.slug,
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -117,21 +121,36 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
                 )
             }
 
-            composable<CategoriesRoute> { CategoriesScreen() }
+            composable<CategoriesRoute> {
+                CategoriesScreen(
+                    onCategoryClick = { slug ->
+                        navController.navigate(CategoryDetailsRoute(slug))
+                    }
+                )
+            }
 
-            composable<FollowersRoute> { DummyScreen(stringResource(R.string.followers)) }
+            composable<FollowersRoute> {
+                com.gallbladderz.openkick.features.profile.FollowingScreen(
+                    onNavigateToAllFollows = {
+                        navController.navigate(AllFollowsRoute)
+                    },
+                    onStreamerClick = { streamerName ->
+                        navController.navigate(PlayerRoute(streamerName))
+                    }
+                )
+            }
+
+            composable<AllFollowsRoute> {
+                com.gallbladderz.openkick.features.profile.AllFollowsScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onStreamerClick = { streamerName ->
+                        navController.navigate(PlayerRoute(streamerName))
+                    }
+                )
+            }
 
             composable<ProfileRoute> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(stringResource(R.string.settings))
-                    Button(onClick = { viewModel.toggleCategories(!hideCategories) }) {
-                        Text(if (hideCategories) stringResource(R.string.show_categories) else stringResource(R.string.hide_categories))
-                    }
-                }
+                SettingsScreen()
             }
 
             composable<PlayerRoute> { backStackEntry ->
@@ -142,12 +161,5 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
                 )
             }
         }
-    }
-}
-
-@Composable
-fun DummyScreen(title: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = title)
     }
 }
