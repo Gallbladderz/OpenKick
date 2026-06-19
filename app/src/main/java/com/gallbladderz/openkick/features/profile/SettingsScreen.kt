@@ -11,6 +11,9 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
+
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -26,7 +29,7 @@ fun SettingsScreen() {
             ListItem(
                 headlineContent = {
                     Text(
-                        text = "Войдите или зарегистрируйтесь",
+                        text = stringResource(R.string.login_or_register),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -51,12 +54,12 @@ fun SettingsScreen() {
                 modifier = Modifier.padding(vertical = 8.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
-            SettingsGroupHeader("Внешний вид")
+            SettingsGroupHeader(stringResource(R.string.appearance))
         }
         item {
             SettingsListItem(
-                headline = "Оформление",
-                supporting = "Тема, цвета, настройка интерфейса",
+                headline = stringResource(R.string.theme_settings),
+                supporting = stringResource(R.string.theme_settings_desc),
                 icon = Icons.Default.Edit,
                 onClick = { /* TODO */ }
             )
@@ -70,13 +73,13 @@ fun SettingsScreen() {
         }
         item {
             SettingsListItem(
-                headline = "Уведомления",
+                headline = stringResource(R.string.notifications),
                 supporting = "UnifiedPush, подписки",
                 icon = Icons.Default.Notifications,
                 onClick = { /* TODO */ }
             )
             SettingsListItem(
-                headline = "Язык и регион",
+                headline = stringResource(R.string.language_and_region),
                 supporting = "Язык приложения, фильтр стримов",
                 icon = Icons.Default.LocationOn,
                 onClick = { /* TODO */ }
@@ -92,7 +95,7 @@ fun SettingsScreen() {
         }
         item {
             SettingsListItem(
-                headline = "О приложении",
+                headline = stringResource(R.string.about_app),
                 supporting = "Версия 0.1-alpha",
                 icon = Icons.Default.Info,
                 onClick = { /* TODO */ }

@@ -13,6 +13,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import com.gallbladderz.openkick.features.player.PlayerViewModel
 import com.gallbladderz.openkick.features.player.PlayerRepository
+import com.gallbladderz.openkick.features.player.ChatRepository
 import com.gallbladderz.openkick.features.search.SearchRepository
 import com.gallbladderz.openkick.features.categories.CategoriesRepository
 import com.gallbladderz.openkick.core.network.MobileHeadersInterceptor
@@ -34,6 +35,7 @@ val appModule = module {
     single { SearchRepository(get()) }
     single { CategoriesRepository(get()) }
     single { PlayerRepository(get()) }
+    single { ChatRepository(get()) }
 
     single {
         Room.databaseBuilder(

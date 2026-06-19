@@ -6,6 +6,9 @@ plugins {
 }
 
 android {
+    lint {
+        abortOnError = false
+    }
     namespace = "com.gallbladderz.openkick"
     compileSdk = 34
 

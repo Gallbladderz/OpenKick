@@ -1,14 +1,20 @@
 package com.gallbladderz.openkick.features.player
 
 import com.gallbladderz.openkick.core.network.KickApiConstants
+import com.gallbladderz.openkick.features.player.models.StreamInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 
 class PlayerRepository(private val client: OkHttpClient) {
-    fun fetchStreamInfo(streamerName: String): Flow<Result<String>> = flow {
+    fun fetchStreamInfo(streamerName: String): Flow<Result<StreamInfo>> = flow {
         val request = Request.Builder()
             .url("${KickApiConstants.KICK_API_V2_BASE_URL}/channels/$streamerName")
             .build()
@@ -20,9 +26,42 @@ class PlayerRepository(private val client: OkHttpClient) {
                 emit(Result.failure(Exception("Kick отбил запрос: код ${response.code}")))
                 return@flow
             }
-            emit(Result.success(responseBody))
+            emit(parseJson(responseBody))
         } catch (e: IOException) {
             emit(Result.failure(e))
+        }
+    }
+
+    private fun parseJson(jsonString: String): Result<StreamInfo> {
+        return try {
+            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
+
+            if (jsonElement is JsonObject) {
+                val livestreamObj = jsonElement["livestream"]?.jsonObject
+                val userObj = jsonElement["user"]?.jsonObject
+
+                val url = jsonElement["playback_url"]?.jsonPrimitive?.content
+                    ?: livestreamObj?.get("playback_url")?.jsonPrimitive?.content
+
+                val chatroomId = jsonElement["chatroom"]?.jsonObject?.get("id")?.jsonPrimitive?.content
+                    ?: jsonElement["chatroom_id"]?.jsonPrimitive?.content
+
+                var avatar = userObj?.get("profile_pic")?.jsonPrimitive?.content ?: ""
+                avatar = avatar.replace("\\/", "/")
+
+                val viewers = livestreamObj?.get("viewer_count")?.jsonPrimitive?.intOrNull ?: 0
+                val title = livestreamObj?.get("session_title")?.jsonPrimitive?.content ?: "Трансляция"
+
+                if (!url.isNullOrEmpty()) {
+                    Result.success(StreamInfo(url, avatar, viewers, title, chatroomId))
+                } else {
+                    Result.failure(Exception("Стример сейчас оффлайн"))
+                }
+            } else {
+                Result.failure(Exception("Пришел не JSON объект"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Ошибка обработки ответа API"))
         }
     }
 }

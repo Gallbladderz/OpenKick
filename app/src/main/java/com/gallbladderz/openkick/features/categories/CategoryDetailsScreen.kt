@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +37,7 @@ fun CategoryDetailsScreen(
     val context = LocalContext.current
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Стримы", "Клипы")
+    val tabs = listOf(stringResource(R.string.streams_tab), stringResource(R.string.clips_tab))
 
     var isFollowed by remember { mutableStateOf(false) }
 
@@ -50,7 +52,7 @@ fun CategoryDetailsScreen(
                     Text(
                         text = if (state is CategoryDetailsUiState.Success)
                             (state as CategoryDetailsUiState.Success).name
-                        else "Загрузка...",
+                        else stringResource(R.string.loading),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )

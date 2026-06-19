@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +49,7 @@ fun SearchScreen(
             value = query,
             onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            placeholder = { Text("Найти стримера...") },
+            placeholder = { Text(stringResource(R.string.search_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp)
@@ -56,7 +58,7 @@ fun SearchScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             when (val uiState = state) {
                 is SearchUiState.Idle -> {
-                    Text("Введите никнейм для поиска", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.Center))
+                    Text(stringResource(R.string.search_idle), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.Center))
                 }
                 is SearchUiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))

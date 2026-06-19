@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +33,7 @@ import coil.request.ImageRequest
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
-val KickGreen = Color(0xFF53FC18)
+
 
 @Composable
 fun FollowingScreen(
@@ -48,13 +50,13 @@ fun FollowingScreen(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Отслеживаемое", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+            Text(stringResource(R.string.followed_streams), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
         }
 
         when (val uiState = state) {
             is FollowingUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = KickGreen)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
             is FollowingUiState.Error -> {
@@ -67,16 +69,14 @@ fun FollowingScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    // УПРАВЛЕНИЕ ПОДПИСКАМИ
                     item {
                         ListItem(
                             headlineContent = { Text("Управление подписками", fontWeight = FontWeight.Bold) },
-                            leadingContent = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Управление") },
+                            leadingContent = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.manage)) },
                             modifier = Modifier.clickable { onManageClick() }
                         )
                     }
 
-                    // В ЭФИРЕ
                     item { SectionHeader("В эфире") }
                     item {
                         if (uiState.liveChannels.isEmpty()) {
@@ -97,9 +97,8 @@ fun FollowingScreen(
                         }
                     }
 
-                    // ОТСЛЕЖИВАЕМЫЕ КАТЕГОРИИ
                     item { Spacer(modifier = Modifier.height(16.dp)) }
-                    item { SectionHeader("Категории") }
+                    item { SectionHeader(stringResource(R.string.categories)) }
                     item {
                         if (uiState.categories.isEmpty()) {
                             Text(
@@ -148,7 +147,7 @@ private fun LiveChannelItem(channel: LiveChannelUi, onClick: () -> Unit) {
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
-                .border(2.dp, KickGreen, CircleShape)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(

@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +47,7 @@ fun CategoriesScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Категории",
+                text = stringResource(R.string.categories),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
@@ -143,7 +145,7 @@ fun CategoryCard(
             }
 
             IconButton(
-                onClick = { viewModel.toggleCategoryFollow(category.slug, isFollowed) }, // 🔥 ПИШЕМ В БАЗУ ДАННЫХ ПРИ КЛИКЕ
+                onClick = { viewModel.toggleCategoryFollow(category.slug, isFollowed) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(4.dp)

@@ -1,24 +1,41 @@
 <resources>
     <string name="app_name">OpenKick</string>
-    <string name="loading_categories">Загрузка категорий...</string>
-    <string name="search_streamer">Найти стримера...</string>
-    <string name="enter_nickname_to_search">Введите никнейм для поиска</string>
-    <string name="avatar">Аватар</string>
-    <string name="connecting_to_kick">Подключение к Kick...</string>
-    <string name="retry_cloudflare">Пройти Cloudflare заново</string>
     <string name="back">Назад</string>
-    <string name="stream_chat">Чат трансляции</string>
+    <string name="chat_tab">Чат</string>
+    <string name="info_tab">Инфо</string>
+    <string name="clips_tab">Клипы</string>
+    <string name="avatar_desc">Аватар</string>
+    <string name="uptime_desc">Время трансляции</string>
+    <string name="unfollow">Отписаться</string>
+    <string name="follow">Отслеживать</string>
+    <string name="info_placeholder">Здесь скоро будет описание канала</string>
+    <string name="clips_placeholder">Здесь скоро будут клипы</string>
+
     <string name="home">Главная</string>
-    <string name="search">Поиск</string>
     <string name="categories">Категории</string>
-    <string name="followers">Фолловеры</string>
-    <string name="profile">Настройки</string>
-    <string name="settings">Настройки</string>
-    <string name="show_categories">Вернуть Категории</string>
-    <string name="hide_categories">Скрыть Категории</string>
-    <string name="anonymous">Аноним</string>
-    <string name="nothing_found">Ничего не найдено</string>
-    <string name="untitled">Без названия</string>
-    <string name="error_no_categories_array">В JSON нет массива категорий</string>
-    <string name="error_empty_array">Массив найден но он пустой или без картинок</string>
+    <string name="followers">Отслеживаемое</string>
+    <string name="profile">Профиль</string>
+
+    <!-- App Strings -->
+    <string name="search">Поиск</string>
+    <string name="search_placeholder">Найти стримера...</string>
+    <string name="search_idle">Введите никнейм для поиска</string>
+    <string name="loading_api">Грузим API Kick...</string>
+    <string name="error_prefix">Ошибка: %s</string>
+    <string name="retry">Повторить</string>
+    <string name="streams_tab">Стримы</string>
+    <string name="loading">Загрузка...</string>
+    <string name="no_streams_found">Стримов не найдено</string>
+    <string name="login_or_register">Войдите или зарегистрируйтесь</string>
+    <string name="appearance">Внешний вид</string>
+    <string name="theme_settings">Оформление</string>
+    <string name="theme_settings_desc">Тема, цвета, настройка интерфейса</string>
+    <string name="notifications">Уведомления</string>
+    <string name="push_and_email">Push и Email</string>
+    <string name="language_and_region">Язык и регион</string>
+    <string name="language_desc">Русский</string>
+    <string name="about_app">О приложении</string>
+    <string name="version_info">Версия 1.0.0-alpha</string>
+    <string name="followed_streams">Отслеживаемое</string>
+    <string name="manage">Управление</string>
 </resources>
