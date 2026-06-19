@@ -5,5 +5,6 @@ data class CategoryUiModel(
     val name: String,
     val slug: String,
     val viewers: Int,
-    val bannerUrl: String
+    val bannerUrl: String,
+    val tags: List<String> = emptyList()
 )

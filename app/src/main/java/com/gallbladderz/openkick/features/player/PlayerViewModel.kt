@@ -2,9 +2,9 @@ package com.gallbladderz.openkick.features.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.features.player.models.ChatMessage
+import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +19,7 @@ import okhttp3.WebSocketListener
 class PlayerViewModel(
     private val repository: PlayerRepository,
     private val okHttpClient: OkHttpClient,
-    private val settingsRepository: SettingsRepository
+    private val followsRepository: FollowsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -27,18 +27,17 @@ class PlayerViewModel(
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages = _chatMessages.asStateFlow()
 
-    private val _isFollowed = MutableStateFlow(false)
-    val isFollowed = _isFollowed.asStateFlow()
-
     private var webSocket: WebSocket? = null
 
-    fun loadStreamInfo(streamerName: String) {
-        viewModelScope.launch {
-            settingsRepository.followedChannelsFlow.collect { follows ->
-                _isFollowed.value = follows.contains(streamerName)
-            }
-        }
+    fun isStreamerFollowed(streamerName: String) = followsRepository.isStreamerFollowed(streamerName)
 
+    fun toggleFollow(streamerName: String, isCurrentlyFollowed: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            followsRepository.toggleStreamerFollow(streamerName, isCurrentlyFollowed)
+        }
+    }
+
+    fun loadStreamInfo(streamerName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.fetchStreamInfo(streamerName).collect { result ->
                 result.onSuccess { responseBody ->
@@ -47,12 +46,6 @@ class PlayerViewModel(
                     _uiState.value = PlayerUiState.Error("Ошибка сети: ${exception.message}")
                 }
             }
-        }
-    }
-
-    fun toggleFollow(streamerName: String) {
-        viewModelScope.launch {
-            settingsRepository.toggleFollow(streamerName)
         }
     }
 

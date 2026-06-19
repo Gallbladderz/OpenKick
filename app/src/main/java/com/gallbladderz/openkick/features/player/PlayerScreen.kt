@@ -37,7 +37,9 @@ fun PlayerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
-    val isFollowed by viewModel.isFollowed.collectAsStateWithLifecycle()
+
+    val isFollowed by viewModel.isStreamerFollowed(streamerName).collectAsStateWithLifecycle(initialValue = false)
+
     val context = LocalContext.current
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -177,7 +179,7 @@ fun PlayerScreen(
                     }
 
                     FilledTonalButton(
-                        onClick = { viewModel.toggleFollow(streamerName) }
+                        onClick = { viewModel.toggleFollow(streamerName, isFollowed) }
                     ) {
                         Text(if (isFollowed) "Отписаться" else "Отслеживать")
                     }

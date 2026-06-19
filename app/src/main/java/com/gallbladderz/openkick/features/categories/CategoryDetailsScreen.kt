@@ -34,11 +34,9 @@ fun CategoryDetailsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Вкладки
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Стримы", "Клипы")
 
-    // Локальный стейт подписки для визуала
     var isFollowed by remember { mutableStateOf(false) }
 
     LaunchedEffect(slug) {

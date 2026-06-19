@@ -35,6 +35,7 @@ import com.gallbladderz.openkick.features.search.SearchScreen
 import com.gallbladderz.openkick.features.categories.CategoryDetailsScreen
 import com.gallbladderz.openkick.features.profile.SettingsScreen
 import org.koin.androidx.compose.koinViewModel
+import com.gallbladderz.openkick.features.following.FollowingScreen
 
 @Composable
 fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
@@ -130,21 +131,10 @@ fun OpenKickNavHost(viewModel: MainViewModel = koinViewModel()) {
             }
 
             composable<FollowersRoute> {
-                com.gallbladderz.openkick.features.profile.FollowingScreen(
-                    onNavigateToAllFollows = {
-                        navController.navigate(AllFollowsRoute)
-                    },
-                    onStreamerClick = { streamerName ->
-                        navController.navigate(PlayerRoute(streamerName))
-                    }
-                )
-            }
-
-            composable<AllFollowsRoute> {
-                com.gallbladderz.openkick.features.profile.AllFollowsScreen(
-                    onBackClick = { navController.popBackStack() },
-                    onStreamerClick = { streamerName ->
-                        navController.navigate(PlayerRoute(streamerName))
+                FollowingScreen(
+                    onManageClick = {
+                        // TODO: позже тут будет переход на новый экран управления
+                        // navController.navigate(ManageFollowsRoute)
                     }
                 )
             }

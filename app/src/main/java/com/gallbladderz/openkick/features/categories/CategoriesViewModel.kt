@@ -3,6 +3,7 @@ package com.gallbladderz.openkick.features.categories
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,12 +16,23 @@ sealed interface CategoriesUiState {
     data class Error(val message: String) : CategoriesUiState
 }
 
-class CategoriesViewModel(private val repository: CategoriesRepository) : ViewModel() {
+class CategoriesViewModel(
+    private val repository: CategoriesRepository,
+    private val followsRepository: FollowsRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow<CategoriesUiState>(CategoriesUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
     init {
         fetchCategories()
+    }
+
+    fun isCategoryFollowed(slug: String) = followsRepository.isCategoryFollowed(slug)
+
+    fun toggleCategoryFollow(slug: String, isCurrentlyFollowed: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            followsRepository.toggleCategoryFollow(slug, isCurrentlyFollowed)
+        }
     }
 
     fun fetchCategories() {
@@ -52,6 +64,9 @@ class CategoriesViewModel(private val repository: CategoriesRepository) : ViewMo
                         val slug = obj["slug"]?.jsonPrimitive?.content ?: ""
                         val viewers = obj["viewers"]?.jsonPrimitive?.intOrNull ?: 0
 
+                        val tagsArray = obj["tags"]?.jsonArray
+                        val tags = tagsArray?.mapNotNull { it.jsonPrimitive.content } ?: emptyList()
+
                         var bannerUrl = obj["banner"]?.jsonObject?.get("responsive")?.jsonPrimitive?.content ?: ""
 
                         bannerUrl = bannerUrl.replace("\\/", "/")
@@ -62,7 +77,7 @@ class CategoriesViewModel(private val repository: CategoriesRepository) : ViewMo
 
                         if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
 
-                        categoriesList.add(CategoryUiModel(id, name, slug, viewers, bannerUrl))
+                        categoriesList.add(CategoryUiModel(id, name, slug, viewers, bannerUrl, tags))
                     } catch (e: Exception) {
                     }
                 }

@@ -1,12 +1,13 @@
 package com.gallbladderz.openkick.di
 
+import androidx.room.Room
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.features.categories.CategoriesViewModel
 import com.gallbladderz.openkick.features.search.SearchViewModel
 import com.gallbladderz.openkick.features.home.HomeRepository
 import com.gallbladderz.openkick.features.home.HomeViewModel
 import com.gallbladderz.openkick.features.profile.MainViewModel
-import com.gallbladderz.openkick.features.profile.FollowingViewModel
+import com.gallbladderz.openkick.features.following.FollowingViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -16,6 +17,9 @@ import com.gallbladderz.openkick.features.search.SearchRepository
 import com.gallbladderz.openkick.features.categories.CategoriesRepository
 import com.gallbladderz.openkick.core.network.MobileHeadersInterceptor
 import com.gallbladderz.openkick.features.categories.CategoryDetailsViewModel
+
+import com.gallbladderz.openkick.data.local.AppDatabase
+import com.gallbladderz.openkick.data.local.FollowsRepository
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
@@ -31,11 +35,25 @@ val appModule = module {
     single { CategoriesRepository(get()) }
     single { PlayerRepository(get()) }
 
+    single {
+        Room.databaseBuilder(
+            androidContext(),
+            AppDatabase::class.java,
+            "openkick_db"
+        ).build()
+    }
+
+    single { get<AppDatabase>().followsDao() }
+    single { FollowsRepository(get()) }
+
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }
-    viewModel { PlayerViewModel(get(), get(), get()) } // 🔥 ТРИ ГЕТА, МАТЬ ИХ!
-    viewModel { CategoriesViewModel(get()) }
+
+    viewModel { PlayerViewModel(get(), get(), get()) }
+
+    viewModel { CategoriesViewModel(get(), get()) }
+
     viewModel { SearchViewModel(get()) }
-    viewModel { FollowingViewModel(get(), get()) }
     viewModel { CategoryDetailsViewModel(get()) }
+    viewModel { FollowingViewModel(get(), get()) }
 }
