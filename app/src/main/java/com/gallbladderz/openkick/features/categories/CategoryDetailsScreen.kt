@@ -2,6 +2,7 @@ package com.gallbladderz.openkick.features.categories
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -10,20 +11,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.res.stringResource
-import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +84,7 @@ fun CategoryDetailsScreen(
                     }
                 }
                 is CategoryDetailsUiState.Success -> {
+                    
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -146,6 +149,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
+                    
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface
@@ -159,19 +163,55 @@ fun CategoryDetailsScreen(
                         }
                     }
 
+                    
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
+                            
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text("Здесь скоро появятся стримы", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         } else {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("Здесь скоро будут клипы", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            
+                            if (currentState.clips.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("Нет популярных клипов", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            } else {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(vertical = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    val clipRows = currentState.clips.chunked(2)
+                                    items(clipRows) { rowItems ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            ClipCard(
+                                                clip = rowItems[0],
+                                                modifier = Modifier.weight(1f),
+                                                onClick = { /* TODO: Открыть плеер */ }
+                                            )
+                                            if (rowItems.size > 1) {
+                                                ClipCard(
+                                                    clip = rowItems[1],
+                                                    modifier = Modifier.weight(1f),
+                                                    onClick = { /* TODO: Открыть плеер */ }
+                                                )
+                                            } else {
+                                                Spacer(modifier = Modifier.weight(1f))
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
@@ -18,9 +19,11 @@ import java.io.IOException
 
 class HomeRepository(private val client: OkHttpClient) {
 
+    
     fun fetchLivestreams(): Flow<Result<String>> = flow {
         val request = Request.Builder()
-            .url("${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams/featured?language=ru")
+            
+            .url("https://mobile.kick.com/api/v1/livestreams/featured?language=ru")
             .build()
 
         try {
@@ -28,15 +31,37 @@ class HomeRepository(private val client: OkHttpClient) {
             val responseBody = response.body?.string()
 
             if (!response.isSuccessful || responseBody == null) {
-                emit(Result.failure(Exception("Кик послал нахер: код ${response.code}")))
+                emit(Result.failure(Exception("Кик зажал стримы: код ${response.code} (Стримы)")))
                 return@flow
             }
             emit(Result.success(responseBody))
         } catch (e: IOException) {
-            emit(Result.failure(Exception("Ошибка сети: ${e.message}", e)))
+            emit(Result.failure(Exception("Сеть отвалилась (Стримы): ${e.message}", e)))
         }
     }
 
+    
+    fun fetchTopClips(): Flow<Result<String>> = flow {
+        
+        val request = Request.Builder()
+            .url("https://kick.com/api/v2/clips?sort=view&time=week")
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            if (!response.isSuccessful || responseBody == null) {
+                emit(Result.failure(Exception("Кик послал нахер: код ${response.code} (Клипы)")))
+                return@flow
+            }
+            emit(Result.success(responseBody))
+        } catch (e: IOException) {
+            emit(Result.failure(Exception("Ошибка сети (Клипы): ${e.message}", e)))
+        }
+    }
+
+    
     fun parseStreams(jsonString: String): Flow<Result<List<StreamUiModel>>> = flow {
         try {
             if (jsonString.startsWith("JS_ERROR")) {
@@ -47,10 +72,6 @@ class HomeRepository(private val client: OkHttpClient) {
                 Json.parseToJsonElement(jsonString)
             } catch (e: Exception) {
                 throw Exception("Это не JSON. Кусок: ${jsonString.take(150)}")
-            }
-
-            if (jsonElement is JsonObject) {
-                Log.d("OpenKick_API", "Ключи в корне: ${jsonElement.keys}")
             }
 
             val streamsArray = findFirstJsonArray(jsonElement)
@@ -95,13 +116,55 @@ class HomeRepository(private val client: OkHttpClient) {
             }
 
             if (uiModels.isEmpty()) {
-                throw Exception("Массив нашелся но он пустой или ключи внутри стримов другие.")
+                throw Exception("Массив стримов нашелся но он пустой или ключи другие.")
             }
 
             emit(Result.success(uiModels))
 
         } catch (e: Exception) {
-            Log.e("OpenKick_API", "Краш парсинга: ${e.message}", e)
+            Log.e("OpenKick_API", "Краш парсинга стримов: ${e.message}", e)
+            emit(Result.failure(e))
+        }
+    }
+
+    
+    fun parseClips(jsonString: String): Flow<Result<List<ClipUiModel>>> = flow {
+        try {
+            val jsonElement = Json.parseToJsonElement(jsonString)
+            val rootObj = jsonElement.jsonObject
+
+            
+            val clipsArray = rootObj["clips"]?.jsonArray
+                ?: throw Exception("Не нашли массив 'clips' в ответе")
+
+            val uiModels = clipsArray.mapNotNull { element ->
+                try {
+                    val clipObj = element.jsonObject
+
+                    val id = clipObj["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                    val title = clipObj["title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val clipUrl = clipObj["clip_url"]?.jsonPrimitive?.content ?: ""
+                    val thumbnailUrl = clipObj["thumbnail_url"]?.jsonPrimitive?.content ?: ""
+                    val views = clipObj["views"]?.jsonPrimitive?.intOrNull ?: 0
+                    val duration = clipObj["duration"]?.jsonPrimitive?.intOrNull ?: 0
+
+                    
+                    val minutes = duration / 60
+                    val seconds = duration % 60
+                    val durationStr = String.format("%02d:%02d", minutes, seconds)
+
+                    ClipUiModel(id, title, thumbnailUrl, clipUrl, views, durationStr)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            if (uiModels.isEmpty()) throw Exception("Массив клипов пуст.")
+
+            emit(Result.success(uiModels))
+
+        } catch (e: Exception) {
+            Log.e("OpenKick_API", "Краш парсинга клипов: ${e.message}", e)
             emit(Result.failure(e))
         }
     }

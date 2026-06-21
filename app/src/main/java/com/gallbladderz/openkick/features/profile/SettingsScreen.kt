@@ -1,5 +1,6 @@
 package com.gallbladderz.openkick.features.profile
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,8 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.gallbladderz.openkick.R
-
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,7 +23,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SettingsScreen() {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background), 
         contentPadding = PaddingValues(vertical = 16.dp)
     ) {
         item {
@@ -42,6 +45,7 @@ fun SettingsScreen() {
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent), 
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
@@ -109,7 +113,7 @@ fun SettingsGroupHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
+        color = MaterialTheme.colorScheme.primary, 
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
     )
@@ -132,6 +136,7 @@ fun SettingsListItem(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent), 
         modifier = Modifier.clickable { onClick() }
     )
 }

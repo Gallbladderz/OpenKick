@@ -13,8 +13,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.res.stringResource
-import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,27 +31,13 @@ import java.util.Locale
 
 @Composable
 fun CategoriesScreen(
+    modifier: Modifier = Modifier, 
     viewModel: CategoriesViewModel = koinViewModel(),
     onCategoryClick: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.categories),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
+    Box(modifier = modifier.fillMaxSize()) {
         when (val uiState = state) {
             is CategoriesUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -95,7 +79,6 @@ fun CategoryCard(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-
     val isFollowed by viewModel.isCategoryFollowed(category.slug).collectAsStateWithLifecycle(initialValue = false)
 
     Column(
@@ -128,12 +111,7 @@ fun CategoryCard(
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(Color.Red)
-                    )
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color.Red))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = formatViewers(category.viewers),

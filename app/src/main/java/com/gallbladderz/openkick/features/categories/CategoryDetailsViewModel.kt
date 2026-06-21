@@ -3,7 +3,9 @@ package com.gallbladderz.openkick.features.categories
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.features.home.ClipUiModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -17,7 +19,8 @@ sealed interface CategoryDetailsUiState {
         val name: String,
         val bannerUrl: String,
         val viewers: Int,
-        val tags: List<String>
+        val tags: List<String>,
+        val clips: List<ClipUiModel> 
     ) : CategoryDetailsUiState
     data class Error(val message: String) : CategoryDetailsUiState
 }
@@ -42,31 +45,44 @@ class CategoryDetailsViewModel(
 
             val cleanSlug = slug.trim().lowercase()
 
-            val request = Request.Builder()
+            
+            val detailsRequest = Request.Builder()
                 .url("https://kick.com/api/v1/subcategories/$cleanSlug")
                 .build()
 
+            val clipsRequest = Request.Builder()
+                .url("https://kick.com/api/v2/categories/$cleanSlug/clips?sort=view&time=week")
+                .build()
+
             try {
-                val response = okHttpClient.newCall(request).execute()
-                val body = response.body?.string()
+                
+                val detailsDeferred = async { okHttpClient.newCall(detailsRequest).execute() }
+                val clipsDeferred = async { okHttpClient.newCall(clipsRequest).execute() }
 
-                Log.d("OpenKick_Category", "Код: ${response.code} | Ответ: ${body?.take(200)}")
+                val detailsResponse = detailsDeferred.await()
+                val clipsResponse = clipsDeferred.await()
 
-                if (!response.isSuccessful || body == null) {
-                    _uiState.value = CategoryDetailsUiState.Error("Ошибка загрузки: ${response.code}")
+                val detailsBody = detailsResponse.body?.string()
+                val clipsBody = clipsResponse.body?.string()
+
+                if (!detailsResponse.isSuccessful || detailsBody == null) {
+                    _uiState.value = CategoryDetailsUiState.Error("Ошибка загрузки: ${detailsResponse.code}")
                     return@launch
                 }
 
-                parseCategoryJson(body)
+                
+                parseResponses(detailsBody, clipsBody)
+
             } catch (e: Exception) {
                 _uiState.value = CategoryDetailsUiState.Error("Ошибка сети: ${e.message}")
             }
         }
     }
 
-    private fun parseCategoryJson(jsonString: String) {
+    private fun parseResponses(detailsJson: String, clipsJson: String?) {
         try {
-            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString).jsonObject
+            
+            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(detailsJson).jsonObject
 
             val name = jsonElement["name"]?.jsonPrimitive?.content ?: "Категория"
             val viewers = jsonElement["viewers"]?.jsonPrimitive?.intOrNull ?: 0
@@ -80,9 +96,42 @@ class CategoryDetailsViewModel(
                 bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
             }
 
-            _uiState.value = CategoryDetailsUiState.Success(name, bannerUrl, viewers, tags)
+            
+            val parsedClips = parseClipsArray(clipsJson)
+
+            
+            _uiState.value = CategoryDetailsUiState.Success(name, bannerUrl, viewers, tags, parsedClips)
         } catch (e: Exception) {
             _uiState.value = CategoryDetailsUiState.Error("Ошибка парсинга JSON")
+        }
+    }
+
+    private fun parseClipsArray(jsonString: String?): List<ClipUiModel> {
+        if (jsonString == null) return emptyList()
+        return try {
+            val rootObj = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString).jsonObject
+            val clipsArray = rootObj["clips"]?.jsonArray ?: emptyList()
+
+            clipsArray.mapNotNull { element ->
+                try {
+                    val clipObj = element.jsonObject
+                    val id = clipObj["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                    val title = clipObj["title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val clipUrl = clipObj["clip_url"]?.jsonPrimitive?.content ?: ""
+                    val thumbnailUrl = clipObj["thumbnail_url"]?.jsonPrimitive?.content ?: ""
+                    val views = clipObj["views"]?.jsonPrimitive?.intOrNull ?: 0
+                    val duration = clipObj["duration"]?.jsonPrimitive?.intOrNull ?: 0
+
+                    val minutes = duration / 60
+                    val seconds = duration % 60
+                    val durationStr = String.format("%02d:%02d", minutes, seconds)
+
+                    ClipUiModel(id, title, thumbnailUrl, clipUrl, views, durationStr)
+                } catch (e: Exception) { null }
+            }
+        } catch (e: Exception) {
+            Log.e("OpenKick_Category", "Ошибка парсинга клипов: ${e.message}")
+            emptyList()
         }
     }
 }

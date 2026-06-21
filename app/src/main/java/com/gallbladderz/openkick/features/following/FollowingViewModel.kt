@@ -18,13 +18,25 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-data class LiveChannelUi(val slug: String, val name: String, val avatarUrl: String)
+
+data class FollowedStreamerUi(
+    val slug: String,
+    val username: String,
+    val avatarUrl: String,
+    val isLive: Boolean,
+    val streamTitle: String = "",
+    val viewers: Int = 0,
+    val categoryName: String = "",
+    val streamThumbnailUrl: String = ""
+)
+
 data class FollowedCategoryUi(val slug: String, val name: String, val bannerUrl: String, val viewers: Int)
 
 sealed interface FollowingUiState {
     data object Loading : FollowingUiState
     data class Success(
-        val liveChannels: List<LiveChannelUi>,
+        val liveStreamers: List<FollowedStreamerUi>,
+        val offlineStreamers: List<FollowedStreamerUi>, 
         val categories: List<FollowedCategoryUi>
     ) : FollowingUiState
     data class Error(val message: String) : FollowingUiState
@@ -36,6 +48,13 @@ class FollowingViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
+
+    fun unfollowStreamer(slug: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            
+            followsRepository.toggleStreamerFollow(slug, true)
+        }
+    }
 
     init {
         observeFollows()
@@ -51,28 +70,72 @@ class FollowingViewModel(
             }.collect { (categorySlugs, streamerSlugs) ->
 
                 if (categorySlugs.isEmpty() && streamerSlugs.isEmpty()) {
-                    _uiState.value = FollowingUiState.Success(emptyList(), emptyList())
+                    _uiState.value = FollowingUiState.Success(emptyList(), emptyList(), emptyList())
                     return@collect
                 }
 
+                
                 val categoriesDeferred = categorySlugs.map { slug ->
                     async { fetchCategoryDetails(slug) }
                 }
-                val fetchedCategories = categoriesDeferred.awaitAll().filterNotNull()
 
-                val localStreamers = streamerSlugs.map { slug ->
-                    LiveChannelUi(
-                        slug = slug,
-                        name = slug,
-                        avatarUrl = "https://ui-avatars.com/api/?name=$slug&background=random"
-                    )
+                
+                val streamersDeferred = streamerSlugs.map { slug ->
+                    async { fetchChannelDetails(slug) }
                 }
 
+                val fetchedCategories = categoriesDeferred.awaitAll().filterNotNull()
+                val fetchedStreamers = streamersDeferred.awaitAll().filterNotNull()
+
+                
+                val liveStreamers = fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }
+                val offlineStreamers = fetchedStreamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
+
                 _uiState.value = FollowingUiState.Success(
-                    liveChannels = localStreamers,
+                    liveStreamers = liveStreamers,
+                    offlineStreamers = offlineStreamers,
                     categories = fetchedCategories.sortedByDescending { it.viewers }
                 )
             }
+        }
+    }
+
+    private fun fetchChannelDetails(slug: String): FollowedStreamerUi? {
+        val request = Request.Builder()
+            .url("https://kick.com/api/v1/channels/$slug")
+            .build()
+
+        return try {
+            val response = okHttpClient.newCall(request).execute()
+            val body = response.body?.string() ?: return null
+            if (!response.isSuccessful) return null
+
+            val root = Json { ignoreUnknownKeys = true }.parseToJsonElement(body).jsonObject
+            val userObj = root["user"]?.jsonObject
+
+            val username = userObj?.get("username")?.jsonPrimitive?.content ?: slug
+            val avatarUrl = userObj?.get("profile_pic")?.jsonPrimitive?.content ?: ""
+
+            
+            val livestreamObj = root["livestream"]?.jsonObject
+            if (livestreamObj != null) {
+                val title = livestreamObj["session_title"]?.jsonPrimitive?.content ?: "Без названия"
+                val viewers = livestreamObj["viewer_count"]?.jsonPrimitive?.intOrNull ?: 0
+                val categoryName = livestreamObj["category"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
+
+                
+                val thumbObj = livestreamObj["thumbnail"]?.jsonObject
+                val streamThumbnailUrl = thumbObj?.get("url")?.jsonPrimitive?.content
+                    ?: thumbObj?.get("src")?.jsonPrimitive?.content ?: ""
+
+                FollowedStreamerUi(slug, username, avatarUrl, true, title, viewers, categoryName, streamThumbnailUrl)
+            } else {
+                
+                FollowedStreamerUi(slug, username, avatarUrl, false)
+            }
+        } catch (e: Exception) {
+            Log.e("FollowingVM", "Ошибка загрузки канала $slug: ${e.message}")
+            null
         }
     }
 

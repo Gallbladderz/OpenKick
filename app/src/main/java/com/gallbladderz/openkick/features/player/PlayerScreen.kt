@@ -1,54 +1,86 @@
 package com.gallbladderz.openkick.features.player
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.ui.PlayerView
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
-import com.gallbladderz.openkick.features.home.KickStreamPlayer
 import com.gallbladderz.openkick.features.player.models.ChatMessage
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
+@OptIn(UnstableApi::class)
+@Composable
+fun KickStreamPlayer(videoUrl: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val exoPlayer = remember { ExoPlayer.Builder(context).build() }
+
+    DisposableEffect(videoUrl) {
+        
+        val dataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent(KickApiConstants.USER_AGENT)
+            .setDefaultRequestProperties(
+                mapOf(
+                    "Origin" to "https://kick.com",
+                    "Referer" to "https://kick.com/"
+                )
+            )
+
+        val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(MediaItem.fromUri(videoUrl))
+
+        exoPlayer.setMediaSource(mediaSource)
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = true
+
+        onDispose {
+            exoPlayer.stop()
+            exoPlayer.clearMediaItems()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+
+    AndroidView(
+        factory = {
+            PlayerView(context).apply {
+                player = exoPlayer
+                useController = true
+            }
+        },
+        modifier = modifier
+    )
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     streamerName: String,
@@ -57,7 +89,6 @@ fun PlayerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
-
     val isFollowed by viewModel.isStreamerFollowed(streamerName).collectAsStateWithLifecycle(initialValue = false)
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -67,17 +98,43 @@ fun PlayerScreen(
         stringResource(R.string.clips_tab)
     )
 
+    
     LaunchedEffect(streamerName) {
         viewModel.loadStreamInfo(streamerName)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        PlayerVideoArea(
-            state = state,
-            streamerName = streamerName,
-            onBackClick = onBackClick
-        )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .background(Color.Black)
+        ) {
+            when (val currentState = state) {
+                is PlayerUiState.Loading -> {
+                    CircularProgressIndicator(
+                        color = Color(0xFF7CFC00),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                is PlayerUiState.Playing -> {
+                    KickStreamPlayer(
+                        videoUrl = currentState.url,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                is PlayerUiState.Error -> {
+                    Text(
+                        text = currentState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+        }
 
+        
         if (state is PlayerUiState.Playing) {
             val playingState = state as PlayerUiState.Playing
             StreamerInfoCard(
@@ -90,16 +147,25 @@ fun PlayerScreen(
             )
         }
 
-        PlayerTabs(
-            tabs = tabs,
+        
+        PrimaryTabRow(
             selectedTabIndex = selectedTabIndex,
-            onTabSelected = { selectedTabIndex = it }
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title, fontWeight = FontWeight.Medium) }
+                )
+            }
+        }
 
+        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1f) 
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             when (selectedTabIndex) {
@@ -111,74 +177,6 @@ fun PlayerScreen(
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-fun PlayerVideoArea(
-    state: PlayerUiState,
-    streamerName: String,
-    onBackClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(16f / 9f)
-            .background(Color.Black)
-    ) {
-        when (state) {
-            is PlayerUiState.Loading -> {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            is PlayerUiState.Playing -> {
-                KickStreamPlayer(videoUrl = state.url, modifier = Modifier.fillMaxSize())
-            }
-            is PlayerUiState.Error -> {
-                Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.8f), Color.Transparent)
-                    )
-                )
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
-                    tint = Color.White
-                )
-            }
-            Text(
-                text = streamerName,
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-    }
-}
-
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun StreamerInfoCard(
     streamerName: String,
@@ -188,7 +186,6 @@ fun StreamerInfoCard(
     isFollowed: Boolean,
     onToggleFollow: () -> Unit
 ) {
-
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Text(
             text = title,
@@ -198,9 +195,7 @@ fun StreamerInfoCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -210,9 +205,7 @@ fun StreamerInfoCard(
                 streamerName = streamerName,
                 size = 44.dp
             )
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = streamerName,
@@ -231,51 +224,26 @@ fun StreamerInfoCard(
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
-                        text = "2:15:34", // TODO: replace with dynamic uptime
+                        text = "LIVE",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-
-            FilledTonalButton(
-                onClick = onToggleFollow
-            ) {
+            FilledTonalButton(onClick = onToggleFollow) {
                 Text(if (isFollowed) stringResource(R.string.unfollow) else stringResource(R.string.follow))
             }
         }
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-fun PlayerTabs(
-    tabs: List<String>,
-    selectedTabIndex: Int,
-    onTabSelected: (Int) -> Unit
-) {
-    PrimaryTabRow(
-        selectedTabIndex = selectedTabIndex,
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
-        tabs.forEachIndexed { index, title ->
-            Tab(
-                selected = selectedTabIndex == index,
-                onClick = { onTabSelected(index) },
-                text = { Text(title, fontWeight = FontWeight.Medium) }
-            )
-        }
-    }
-}
-
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ChatList(chatMessages: List<ChatMessage>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        reverseLayout = true,
+        reverseLayout = true, 
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(chatMessages) { message ->
@@ -288,7 +256,6 @@ fun ChatList(chatMessages: List<ChatMessage>) {
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun InfoPlaceholder() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -299,7 +266,6 @@ fun InfoPlaceholder() {
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ClipsPlaceholder() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
