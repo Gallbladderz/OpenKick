@@ -1,4 +1,9 @@
 package com.gallbladderz.openkick.di
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import com.gallbladderz.openkick.core.network.KickApiConstants
+import com.gallbladderz.openkick.features.player.PlayerManager
+
 
 import androidx.room.Room
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
@@ -51,7 +56,21 @@ val appModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get()) }
 
-    viewModel { PlayerViewModel(get(), get(), get()) }
+
+    single<DataSource.Factory> {
+        DefaultHttpDataSource.Factory()
+            .setUserAgent(KickApiConstants.USER_AGENT)
+            .setDefaultRequestProperties(
+                mapOf(
+                    "Origin" to "https://kick.com",
+                    "Referer" to "https://kick.com/"
+                )
+            )
+    }
+
+    factory { PlayerManager(androidContext(), get()) }
+
+    viewModel { PlayerViewModel(get(), get(), get(), get()) }
 
     viewModel { CategoriesViewModel(get(), get()) }
 

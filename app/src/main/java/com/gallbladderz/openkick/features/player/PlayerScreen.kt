@@ -1,11 +1,15 @@
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.gallbladderz.openkick.features.player
 
+import android.view.LayoutInflater
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,75 +21,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.media3.common.MediaItem
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 import com.gallbladderz.openkick.features.player.models.ChatMessage
 import org.koin.androidx.compose.koinViewModel
 
-
-@OptIn(UnstableApi::class)
 @Composable
-fun KickStreamPlayer(videoUrl: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val exoPlayer = remember { ExoPlayer.Builder(context).build() }
-
-    DisposableEffect(videoUrl) {
-        
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent(KickApiConstants.USER_AGENT)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Origin" to "https://kick.com",
-                    "Referer" to "https://kick.com/"
-                )
-            )
-
-        val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(MediaItem.fromUri(videoUrl))
-
-        exoPlayer.setMediaSource(mediaSource)
-        exoPlayer.prepare()
-        exoPlayer.playWhenReady = true
-
-        onDispose {
-            exoPlayer.stop()
-            exoPlayer.clearMediaItems()
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer.release()
-        }
-    }
-
+fun KickStreamPlayer(player: Player, modifier: Modifier = Modifier) {
     AndroidView(
-        factory = {
-            PlayerView(context).apply {
-                player = exoPlayer
-                useController = true
+        factory = { context ->
+            
+            val view = LayoutInflater.from(context)
+                .inflate(R.layout.view_kick_player, null, false) as PlayerView
+            view.apply {
+                keepScreenOn = true
             }
+        },
+        update = { view ->
+            view.player = player
+        },
+        onRelease = { view ->
+            
+            view.player = null
         },
         modifier = modifier
     )
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     streamerName: String,
-    viewModel: PlayerViewModel = koinViewModel(),
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: PlayerViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
@@ -98,13 +73,28 @@ fun PlayerScreen(
         stringResource(R.string.clips_tab)
     )
 
-    
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> viewModel.pause()
+                Lifecycle.Event.ON_RESUME -> viewModel.play()
+                Lifecycle.Event.ON_DESTROY -> viewModel.playerManager.release()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     LaunchedEffect(streamerName) {
         viewModel.loadStreamInfo(streamerName)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -120,9 +110,23 @@ fun PlayerScreen(
                 }
                 is PlayerUiState.Playing -> {
                     KickStreamPlayer(
-                        videoUrl = currentState.url,
+                        player = viewModel.playerManager.player,
                         modifier = Modifier.fillMaxSize()
                     )
+
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), shape = MaterialTheme.shapes.small)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
                 }
                 is PlayerUiState.Error -> {
                     Text(
@@ -134,7 +138,6 @@ fun PlayerScreen(
             }
         }
 
-        
         if (state is PlayerUiState.Playing) {
             val playingState = state as PlayerUiState.Playing
             StreamerInfoCard(
@@ -147,7 +150,6 @@ fun PlayerScreen(
             )
         }
 
-        
         PrimaryTabRow(
             selectedTabIndex = selectedTabIndex,
             containerColor = MaterialTheme.colorScheme.surface
@@ -161,11 +163,10 @@ fun PlayerScreen(
             }
         }
 
-        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f) 
+                .weight(1f)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             when (selectedTabIndex) {
@@ -243,7 +244,7 @@ fun ChatList(chatMessages: List<ChatMessage>) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        reverseLayout = true, 
+        reverseLayout = true,
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(chatMessages) { message ->
