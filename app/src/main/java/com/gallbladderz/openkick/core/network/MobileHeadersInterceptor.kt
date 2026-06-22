@@ -8,10 +8,10 @@ class MobileHeadersInterceptor : Interceptor {
         val originalRequest = chain.request()
         val requestWithHeaders = originalRequest.newBuilder()
             .header("User-Agent", KickApiConstants.USER_AGENT)
-            .header("X-App-Platform", "Android")
-            .header("X-App-Version", "40.21.0")
+            .header("X-App-Platform", KickApiConstants.HEADER_PLATFORM)
+            .header("X-App-Version", KickApiConstants.APP_VERSION)
             .header("X-Kick-App", "mobile")
-            .header("Accept", "application/json")
+            .header("X-Kick-App", KickApiConstants.HEADER_APP)
             .build()
         return chain.proceed(requestWithHeaders)
     }

@@ -28,6 +28,9 @@ data class CategoryDetailsRoute(val slug: String)
 @Serializable
 data class PlayerRoute(val streamerName: String)
 
+@Serializable
+data class StreamerProfileRoute(val slug: String)
+
 data class BottomNavItem(
     @StringRes val titleResId: Int,
     val route: Any,

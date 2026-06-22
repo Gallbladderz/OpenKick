@@ -23,6 +23,10 @@ class CategoriesViewModel(
     private val _uiState = MutableStateFlow<CategoriesUiState>(CategoriesUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    private var currentPage = 1
+    private var isLoadingMore = false
+    private var isLastPage = false
+
     init {
         fetchCategories()
     }
@@ -36,11 +40,14 @@ class CategoriesViewModel(
     }
 
     fun fetchCategories() {
+        currentPage = 1
+        isLastPage = false
         _uiState.value = CategoriesUiState.Loading
+
         viewModelScope.launch(Dispatchers.IO) {
-            repository.fetchCategories().collect { result ->
+            repository.fetchCategories(currentPage).collect { result ->
                 result.onSuccess { responseBody ->
-                    parseCategoriesJson(responseBody)
+                    parseCategoriesJson(responseBody, isAppend = false)
                 }.onFailure { exception ->
                     _uiState.value = CategoriesUiState.Error(exception.message ?: "Ошибка сети")
                 }
@@ -48,7 +55,23 @@ class CategoriesViewModel(
         }
     }
 
-    private fun parseCategoriesJson(jsonString: String) {
+    fun loadMoreCategories() {
+        if (isLoadingMore || isLastPage || _uiState.value !is CategoriesUiState.Success) return
+        isLoadingMore = true
+        currentPage++
+
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.fetchCategories(currentPage).collect { result ->
+                result.onSuccess { responseBody ->
+                    parseCategoriesJson(responseBody, isAppend = true)
+                }.onFailure {
+                    isLoadingMore = false
+                }
+            }
+        }
+    }
+
+    private fun parseCategoriesJson(jsonString: String, isAppend: Boolean) {
         try {
             val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
             val categoriesList = mutableListOf<CategoryUiModel>()
@@ -68,29 +91,36 @@ class CategoriesViewModel(
                         val tags = tagsArray?.mapNotNull { it.jsonPrimitive.content } ?: emptyList()
 
                         var bannerUrl = obj["banner"]?.jsonObject?.get("responsive")?.jsonPrimitive?.content ?: ""
-
                         bannerUrl = bannerUrl.replace("\\/", "/")
-
                         if (bannerUrl.contains(" ")) {
                             bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
                         }
-
                         if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
 
                         categoriesList.add(CategoryUiModel(id, name, slug, viewers, bannerUrl, tags))
-                    } catch (e: Exception) {
-                    }
+                    } catch (e: Exception) {}
                 }
             }
 
             if (categoriesList.isEmpty()) {
-                _uiState.value = CategoriesUiState.Error("Не удалось найти игры в ответе сервера")
+                if (!isAppend) {
+                    _uiState.value = CategoriesUiState.Error("Не удалось найти игры")
+                }
+                isLastPage = true
             } else {
-                _uiState.value = CategoriesUiState.Success(categoriesList.sortedByDescending { it.viewers })
+                val currentList = if (isAppend && _uiState.value is CategoriesUiState.Success) {
+                    (_uiState.value as CategoriesUiState.Success).categories
+                } else emptyList()
+
+                
+                val newList = (currentList + categoriesList.sortedByDescending { it.viewers }).distinctBy { it.id }
+                _uiState.value = CategoriesUiState.Success(newList)
             }
+            isLoadingMore = false
         } catch (e: Exception) {
             Log.e("OpenKick_Categories", "Крэш парсинга игр: ${e.message}", e)
-            _uiState.value = CategoriesUiState.Error("Крэш парсинга: ${e.message}")
+            if (!isAppend) _uiState.value = CategoriesUiState.Error("Крэш парсинга: ${e.message}")
+            isLoadingMore = false
         }
     }
 }

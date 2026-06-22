@@ -40,6 +40,7 @@ import com.gallbladderz.openkick.features.following.FollowingScreen
 import com.gallbladderz.openkick.features.home.HomeScreen
 import com.gallbladderz.openkick.features.player.PlayerScreen
 import com.gallbladderz.openkick.features.profile.SettingsScreen
+import com.gallbladderz.openkick.features.profile.StreamerProfileScreen
 import com.gallbladderz.openkick.features.search.SearchScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -186,11 +187,21 @@ fun OpenKickNavHost() {
             )
         }
 
+        composable<StreamerProfileRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<StreamerProfileRoute>()
+            StreamerProfileScreen(
+                slug = route.slug,
+                onBackClick = { navController.popBackStack() },
+                onVideoClick = { /* Сюда потом прикрутим плеер для VOD-ов */ }
+            )
+        }
+
         composable<PlayerRoute> { backStackEntry ->
             val playerRoute = backStackEntry.toRoute<PlayerRoute>()
             PlayerScreen(
                 streamerName = playerRoute.streamerName,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
             )
         }
     }

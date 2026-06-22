@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed 
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -47,14 +48,13 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    
     var selectedFilter by remember { mutableStateOf("Все") }
     var isGridMode by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) 
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Row(
             modifier = Modifier
@@ -79,7 +79,6 @@ fun HomeScreen(
             }
         }
 
-        
         HomeFilterChipsRow(
             selectedFilter = selectedFilter,
             onFilterSelected = { selectedFilter = it },
@@ -87,14 +86,11 @@ fun HomeScreen(
             onGridModeChange = { isGridMode = it }
         )
 
-        
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
 
-            
             if (selectedFilter == "Категории") {
                 CategoriesScreen(onCategoryClick = onCategoryClick)
             } else {
-                
                 when (val uiState = state) {
                     is HomeUiState.Loading -> {
                         CircularProgressIndicator(
@@ -110,7 +106,6 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             if (selectedFilter == "Клипы") {
-                                
                                 item {
                                     Text(
                                         text = "Топ клипов за неделю",
@@ -121,7 +116,15 @@ fun HomeScreen(
                                 }
 
                                 val clipRows = uiState.clips.chunked(2)
-                                items(clipRows) { rowItems ->
+                                itemsIndexed(clipRows) { index, rowItems ->
+
+                                    
+                                    if (index == clipRows.lastIndex) {
+                                        LaunchedEffect(index) {
+                                            viewModel.loadMoreClips()
+                                        }
+                                    }
+
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -145,7 +148,7 @@ fun HomeScreen(
                                     }
                                 }
                             } else {
-                                
+
                                 val heroStreams = uiState.streams.take(5)
                                 val feedStreams = uiState.streams.drop(5)
 
@@ -169,11 +172,17 @@ fun HomeScreen(
                                     }
                                 }
 
-                                
                                 if (isGridMode) {
-                                    
                                     val streamRows = feedStreams.chunked(2)
-                                    items(streamRows) { rowItems ->
+                                    itemsIndexed(streamRows) { index, rowItems ->
+
+                                        
+                                        if (index == streamRows.lastIndex) {
+                                            LaunchedEffect(index) {
+                                                viewModel.loadMoreStreams()
+                                            }
+                                        }
+
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -197,8 +206,15 @@ fun HomeScreen(
                                         }
                                     }
                                 } else {
-                                    
-                                    items(feedStreams, key = { it.id }) { stream ->
+                                    itemsIndexed(feedStreams, key = { _, it -> it.id }) { index, stream ->
+
+                                        
+                                        if (index == feedStreams.lastIndex) {
+                                            LaunchedEffect(stream.id) {
+                                                viewModel.loadMoreStreams()
+                                            }
+                                        }
+
                                         StreamCard(
                                             stream = stream,
                                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -234,10 +250,9 @@ fun HomeFilterChipsRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp), 
+            .padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        
         Box(modifier = Modifier.weight(1f)) {
             val filters = listOf("Все", "Категории", "Клипы")
 
@@ -267,8 +282,6 @@ fun HomeFilterChipsRow(
         }
 
         if (selectedFilter == "Все") {
-            
-            
             Box(
                 modifier = Modifier
                     .padding(end = 16.dp)
@@ -279,7 +292,7 @@ fun HomeFilterChipsRow(
                     onClick = { onGridModeChange(!isGridMode) },
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                        .size(36.dp) 
+                        .size(36.dp)
                 ) {
                     Icon(
                         imageVector = if (isGridMode) Icons.AutoMirrored.Filled.List else rememberGridViewIcon(),

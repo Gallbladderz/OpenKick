@@ -41,10 +41,18 @@ class ChatRepository(private val okHttpClient: OkHttpClient) {
                         val dataString = json["data"]?.jsonPrimitive?.content ?: return
                         val dataJson = Json { ignoreUnknownKeys = true }.parseToJsonElement(dataString).jsonObject
 
-                        val sender = dataJson["sender"]?.jsonObject?.get("username")?.jsonPrimitive?.content ?: "Аноним"
+                        
+                        val id = dataJson["id"]?.jsonPrimitive?.content ?: java.util.UUID.randomUUID().toString()
+
+                        val senderObj = dataJson["sender"]?.jsonObject
+                        val sender = senderObj?.get("username")?.jsonPrimitive?.content ?: "Аноним"
+
+                        
+                        val senderColor = senderObj?.get("identity")?.jsonObject?.get("color")?.jsonPrimitive?.content ?: ""
+
                         val content = dataJson["content"]?.jsonPrimitive?.content ?: ""
 
-                        val newMessage = ChatMessage(sender, content)
+                        val newMessage = ChatMessage(id, sender, senderColor, content)
                         _chatMessages.value = (listOf(newMessage) + _chatMessages.value).take(100)
                     }
                 } catch (e: Exception) {

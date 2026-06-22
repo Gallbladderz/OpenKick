@@ -8,9 +8,10 @@ import okhttp3.Request
 import java.io.IOException
 
 class CategoriesRepository(private val client: OkHttpClient) {
-    fun fetchCategories(): Flow<Result<String>> = flow {
+    fun fetchCategories(page: Int = 1): Flow<Result<String>> = flow {
         val request = Request.Builder()
-            .url("${KickApiConstants.KICK_API_BASE_URL}/subcategories?limit=100")
+            
+            .url("${KickApiConstants.KICK_API_BASE_URL}/subcategories?limit=50&page=$page")
             .build()
 
         try {

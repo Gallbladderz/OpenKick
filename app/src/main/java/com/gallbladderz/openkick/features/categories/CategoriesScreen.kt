@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,7 +31,7 @@ import java.util.Locale
 
 @Composable
 fun CategoriesScreen(
-    modifier: Modifier = Modifier, 
+    modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = koinViewModel(),
     onCategoryClick: (String) -> Unit = {}
 ) {
@@ -53,7 +53,16 @@ fun CategoriesScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(uiState.categories, key = { it.id }) { category ->
+                    
+                    itemsIndexed(uiState.categories, key = { _, it -> it.id }) { index, category ->
+
+                        
+                        if (index == uiState.categories.lastIndex) {
+                            LaunchedEffect(category.id) {
+                                viewModel.loadMoreCategories()
+                            }
+                        }
+
                         CategoryCard(
                             category = category,
                             viewModel = viewModel,
