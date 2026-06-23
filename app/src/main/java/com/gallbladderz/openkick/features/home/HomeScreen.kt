@@ -38,6 +38,9 @@ import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 import com.gallbladderz.openkick.features.categories.CategoriesScreen
 import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 
 @Composable
 fun HomeScreen(
@@ -100,7 +103,28 @@ fun HomeScreen(
                     }
 
                     is HomeUiState.Success -> {
+
+                        val listState = rememberLazyListState()
+
+                        LaunchedEffect(listState) {
+                            snapshotFlow {
+                                listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                            }.collect { lastVisible ->
+
+                                val totalItems =
+                                    listState.layoutInfo.totalItemsCount
+
+                                if (
+                                    lastVisible != null &&
+                                    lastVisible >= totalItems - 5
+                                ) {
+                                    viewModel.loadMoreStreams()
+                                }
+                            }
+                        }
+
                         LazyColumn(
+                            state = listState,
                             contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.fillMaxSize()
@@ -116,14 +140,8 @@ fun HomeScreen(
                                 }
 
                                 val clipRows = uiState.clips.chunked(2)
-                                itemsIndexed(clipRows) { index, rowItems ->
 
-                                    
-                                    if (index == clipRows.lastIndex) {
-                                        LaunchedEffect(index) {
-                                            viewModel.loadMoreClips()
-                                        }
-                                    }
+                                itemsIndexed(clipRows) { _, rowItems ->
 
                                     Row(
                                         modifier = Modifier
@@ -136,6 +154,7 @@ fun HomeScreen(
                                             modifier = Modifier.weight(1f),
                                             onClick = { /* TODO: Плеер клипа */ }
                                         )
+
                                         if (rowItems.size > 1) {
                                             ClipCard(
                                                 clip = rowItems[1],
@@ -147,6 +166,7 @@ fun HomeScreen(
                                         }
                                     }
                                 }
+
                             } else {
 
                                 val heroStreams = uiState.streams.take(5)
@@ -173,15 +193,10 @@ fun HomeScreen(
                                 }
 
                                 if (isGridMode) {
-                                    val streamRows = feedStreams.chunked(2)
-                                    itemsIndexed(streamRows) { index, rowItems ->
 
-                                        
-                                        if (index == streamRows.lastIndex) {
-                                            LaunchedEffect(index) {
-                                                viewModel.loadMoreStreams()
-                                            }
-                                        }
+                                    val streamRows = feedStreams.chunked(2)
+
+                                    itemsIndexed(streamRows) { _, rowItems ->
 
                                         Row(
                                             modifier = Modifier
@@ -192,33 +207,38 @@ fun HomeScreen(
                                             StreamCard(
                                                 stream = rowItems[0],
                                                 modifier = Modifier.weight(1f),
-                                                onClick = { onStreamClick(rowItems[0].streamerName) }
+                                                onClick = {
+                                                    onStreamClick(rowItems[0].streamerName)
+                                                }
                                             )
+
                                             if (rowItems.size > 1) {
                                                 StreamCard(
                                                     stream = rowItems[1],
                                                     modifier = Modifier.weight(1f),
-                                                    onClick = { onStreamClick(rowItems[1].streamerName) }
+                                                    onClick = {
+                                                        onStreamClick(rowItems[1].streamerName)
+                                                    }
                                                 )
                                             } else {
                                                 Spacer(modifier = Modifier.weight(1f))
                                             }
                                         }
                                     }
-                                } else {
-                                    itemsIndexed(feedStreams, key = { _, it -> it.id }) { index, stream ->
 
-                                        
-                                        if (index == feedStreams.lastIndex) {
-                                            LaunchedEffect(stream.id) {
-                                                viewModel.loadMoreStreams()
-                                            }
-                                        }
+                                } else {
+
+                                    itemsIndexed(
+                                        feedStreams,
+                                        key = { _, it -> it.id }
+                                    ) { _, stream ->
 
                                         StreamCard(
                                             stream = stream,
                                             modifier = Modifier.padding(horizontal = 16.dp),
-                                            onClick = { onStreamClick(stream.streamerName) }
+                                            onClick = {
+                                                onStreamClick(stream.streamerName)
+                                            }
                                         )
                                     }
                                 }

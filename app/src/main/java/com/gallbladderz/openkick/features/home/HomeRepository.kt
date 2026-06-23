@@ -10,27 +10,49 @@ import okhttp3.Request
 
 class HomeRepository(private val client: OkHttpClient) {
 
-    suspend fun fetchLivestreams(page: Int = 1): Result<List<StreamUiModel>> = withContext(Dispatchers.IO) {
-        
-        val url = if (page <= 1) {
-            "${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams/featured?language=ru"
+    suspend fun fetchLivestreams(cursor: String? = null): Result<Pair<List<StreamUiModel>, String?>> = withContext(Dispatchers.IO) {
+        val url = if (cursor.isNullOrEmpty()) {
+            "${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams?limit=24&sort=viewer_count_desc"
         } else {
-            
-            "${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams/featured?language=ru&page=$page"
+            "${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams?limit=24&sort=viewer_count_desc&after=$cursor"
         }
+
+        Log.d("CURSOR_URL", url)
 
         val request = Request.Builder().url(url).build()
 
         try {
             val response = client.newCall(request).execute()
+
+            Log.d("STREAMS_PAGINATION", "cursor=$cursor")
+
             val responseBody = response.body?.string()
+            Log.d("RAW_RESPONSE_LENGTH", responseBody?.length.toString())
+            responseBody?.takeLast(2000)?.let {
+                Log.d("RAW_RESPONSE_END", it)
+            }
 
             if (!response.isSuccessful || responseBody == null) {
-                return@withContext Result.failure(Exception("Кик зажал стримы: код ${response.code} по урлу $url"))
+                return@withContext Result.failure(
+                    Exception("Кик зажал стримы: код ${response.code} по урлу $url")
+                )
             }
-            return@withContext parseStreams(responseBody)
+
+            val result = parseStreams(responseBody)
+
+            result.onSuccess { (uiModels, nextCursor) ->
+                Log.d(
+                    "STREAM_IDS",
+                    "cursor=$cursor nextCursor=$nextCursor firstIds=${uiModels.take(10).map { it.id }}"
+                )
+            }
+
+            return@withContext result
+
         } catch (e: Exception) {
-            return@withContext Result.failure(Exception("Сеть отвалилась (Стримы): ${e.message}", e))
+            return@withContext Result.failure(
+                Exception("Сеть отвалилась (Стримы): ${e.message}", e)
+            )
         }
     }
 
@@ -40,6 +62,9 @@ class HomeRepository(private val client: OkHttpClient) {
         } else {
             "${KickApiConstants.KICK_API_V2_BASE_URL}/clips?sort=view&time=week&cursor=$cursor"
         }
+
+        
+        Log.d("CURSOR_URL", url)
 
         val request = Request.Builder().url(url).build()
 
@@ -56,30 +81,45 @@ class HomeRepository(private val client: OkHttpClient) {
         }
     }
 
-    private fun parseStreams(jsonString: String): Result<List<StreamUiModel>> {
+    private fun parseStreams(jsonString: String): Result<Pair<List<StreamUiModel>, String?>> {
         return try {
             if (jsonString.startsWith("JS_ERROR")) return Result.failure(Exception("Скрипт подавился: $jsonString"))
 
             val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
-            val streamsArray = findFirstJsonArray(jsonElement)
-                ?: return Result.failure(Exception("Вообще не нашли массив в JSON."))
+            val rootObj = jsonElement.jsonObject
+
+            val nextCursor = rootObj["data"]
+                ?.jsonObject
+                ?.get("pagination")
+                ?.jsonObject
+                ?.get("next_cursor")
+                ?.jsonPrimitive
+                ?.content
+
+            Log.d("CURSOR_TEST", "parsedNextCursor=$nextCursor")
+
+            val streamsArray = rootObj["data"]
+                ?.jsonObject
+                ?.get("livestreams")
+                ?.jsonArray
+                ?: return Result.failure(Exception("Не нашли data.livestreams"))
 
             val uiModels = streamsArray.mapNotNull { element ->
                 try {
-                    val rootObj = element.jsonObject
-                    val streamObj = rootObj["livestream"]?.jsonObject ?: rootObj
+                    val streamObjRoot = element.jsonObject
+                    val streamObj = streamObjRoot["livestream"]?.jsonObject ?: streamObjRoot
 
-                    val id = streamObj["id"]?.jsonPrimitive?.content ?: rootObj["id"]?.jsonPrimitive?.content ?: "0"
+                    val id = streamObj["id"]?.jsonPrimitive?.content ?: streamObjRoot["id"]?.jsonPrimitive?.content ?: "0"
                     val title = streamObj["session_title"]?.jsonPrimitive?.content ?: streamObj["title"]?.jsonPrimitive?.content ?: "Без названия"
-                    val viewers = streamObj["viewer_count"]?.jsonPrimitive?.intOrNull ?: streamObj["viewers"]?.jsonPrimitive?.intOrNull ?: rootObj["viewer_count"]?.jsonPrimitive?.intOrNull ?: 0
+                    val viewers = streamObj["viewer_count"]?.jsonPrimitive?.intOrNull ?: streamObj["viewers"]?.jsonPrimitive?.intOrNull ?: streamObjRoot["viewer_count"]?.jsonPrimitive?.intOrNull ?: 0
 
-                    val channelObj = rootObj["channel"]?.jsonObject ?: streamObj["channel"]?.jsonObject
+                    val channelObj = streamObjRoot["channel"]?.jsonObject ?: streamObj["channel"]?.jsonObject
                     val streamerName = channelObj?.get("slug")?.jsonPrimitive?.content ?: channelObj?.get("username")?.jsonPrimitive?.content ?: "Unknown"
 
-                    val categoryObj = streamObj["category"]?.jsonObject ?: rootObj["category"]?.jsonObject
+                    val categoryObj = streamObj["category"]?.jsonObject ?: streamObjRoot["category"]?.jsonObject
                     val categoryName = categoryObj?.get("name")?.jsonPrimitive?.content ?: "No Category"
 
-                    val thumbnail = streamObj["thumbnail"] ?: rootObj["thumbnail"]
+                    val thumbnail = streamObj["thumbnail"] ?: streamObjRoot["thumbnail"]
                     val thumbnailUrl = when (thumbnail) {
                         is JsonObject -> thumbnail["url"]?.jsonPrimitive?.content ?: thumbnail["src"]?.jsonPrimitive?.content ?: ""
                         is JsonPrimitive -> thumbnail.content
@@ -93,9 +133,9 @@ class HomeRepository(private val client: OkHttpClient) {
             }
 
             if (uiModels.isEmpty()) {
-                Result.failure(Exception("Массив стримов пустой."))
+                Result.success(Pair(emptyList(), null))
             } else {
-                Result.success(uiModels)
+                Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
             }
         } catch (e: Exception) {
             Log.e("OpenKick_API", "Краш парсинга стримов: ${e.message}", e)
@@ -111,7 +151,6 @@ class HomeRepository(private val client: OkHttpClient) {
             val clipsArray = rootObj["clips"]?.jsonArray ?: rootObj["data"]?.jsonArray
             ?: return Result.failure(Exception("Не нашли массив 'clips' в ответе"))
 
-            
             val nextCursor = rootObj["next_cursor"]?.jsonPrimitive?.content
                 ?: rootObj["cursor"]?.jsonPrimitive?.content
                 ?: rootObj["pagination"]?.jsonObject?.get("next_cursor")?.jsonPrimitive?.content
@@ -137,27 +176,23 @@ class HomeRepository(private val client: OkHttpClient) {
             }
 
             if (uiModels.isEmpty()) {
-                Result.failure(Exception("Массив клипов пуст."))
+                return Result.success(
+                    Pair(
+                        emptyList<ClipUiModel>(),
+                        null
+                    )
+                )
             } else {
-                Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
+                return Result.success(
+                    Pair(
+                        uiModels,
+                        if (nextCursor.isNullOrBlank()) null else nextCursor
+                    )
+                )
             }
         } catch (e: Exception) {
             Log.e("OpenKick_API", "Краш парсинга клипов: ${e.message}", e)
             Result.failure(e)
         }
-    }
-
-    private fun findFirstJsonArray(element: JsonElement): JsonArray? {
-        if (element is JsonArray) return element
-        if (element is JsonObject) {
-            for ((_, value) in element) {
-                if (value is JsonArray) return value
-                if (value is JsonObject) {
-                    val found = findFirstJsonArray(value)
-                    if (found != null) return found
-                }
-            }
-        }
-        return null
     }
 }

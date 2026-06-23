@@ -1,5 +1,6 @@
 package com.gallbladderz.openkick.features.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -21,8 +22,9 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    private var streamsPage = 1
-    private var clipsCursor: String? = null 
+    
+    private var streamsCursor: String? = null
+    private var clipsCursor: String? = null
     private var isStreamsLoading = false
     private var isClipsLoading = false
     private var isStreamsEnd = false
@@ -34,27 +36,30 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
 
     fun fetchHomeData() {
         _uiState.value = HomeUiState.Loading
-        streamsPage = 1
+        streamsCursor = null 
         clipsCursor = null
         isStreamsEnd = false
         isClipsEnd = false
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val streamsDeferred = async { repository.fetchLivestreams(streamsPage) }
-                val clipsDeferred = async { repository.fetchTopClips(clipsCursor) }
+                
+                val streamsDeferred = async { repository.fetchLivestreams(null) }
+                val clipsDeferred = async { repository.fetchTopClips(null) }
 
                 val streamsResult = streamsDeferred.await()
                 val clipsResult = clipsDeferred.await()
 
                 
-                val streamsList = streamsResult.getOrDefault(emptyList())
-                val clipsPair = clipsResult.getOrNull()
+                val streamsPair = streamsResult.getOrNull()
+                val streamsList = streamsPair?.first ?: emptyList()
+                streamsCursor = streamsPair?.second 
 
+                
+                val clipsPair = clipsResult.getOrNull()
                 val clipsList = clipsPair?.first ?: emptyList()
                 clipsCursor = clipsPair?.second
 
-                
                 if (streamsResult.isFailure && clipsResult.isFailure) {
                     val ex = streamsResult.exceptionOrNull() ?: clipsResult.exceptionOrNull()
                     _uiState.value = HomeUiState.Error(ex?.message ?: "Полный провал, ничего не загрузилось")
@@ -71,24 +76,49 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     }
 
     fun loadMoreStreams() {
+        Log.d("PAGINATION", "loadMoreStreams called")
+
         if (isStreamsLoading || isStreamsEnd || _uiState.value !is HomeUiState.Success) return
+
         isStreamsLoading = true
-        streamsPage++
+
+        Log.d("PAGINATION", "request cursor=$streamsCursor")
 
         viewModelScope.launch(Dispatchers.IO) {
-            val result = repository.fetchLivestreams(streamsPage)
+            
+            val result = repository.fetchLivestreams(streamsCursor)
+
             if (result.isSuccess) {
-                val newStreams = result.getOrThrow()
+                
+                val (newStreams, nextCursor) = result.getOrThrow()
+
+                
+                streamsCursor = nextCursor
+
+                Log.d("PAGINATION", "nextCursor=$nextCursor count=${newStreams.size}")
+
                 if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {
+                    
+                    if (nextCursor.isNullOrBlank()) {
+                        isStreamsEnd = true
+                    }
+
                     val currentState = _uiState.value as HomeUiState.Success
+                    
+                    
                     val merged = (currentState.streams + newStreams).distinctBy { it.id }
-                    _uiState.value = currentState.copy(streams = merged)
+                    Log.d("PAGINATION", "merged size=${merged.size}")
+
+                    _uiState.value = currentState.copy(
+                        streams = merged
+                    )
                 }
             } else {
                 isStreamsEnd = true
             }
+
             isStreamsLoading = false
         }
     }
