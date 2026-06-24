@@ -8,6 +8,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.gallbladderz.openkick.core.datastore.SettingsRepository
 
 sealed interface HomeUiState {
     data object Loading : HomeUiState
@@ -18,11 +19,16 @@ sealed interface HomeUiState {
     data class Error(val message: String) : HomeUiState
 }
 
-class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
-    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+class HomeViewModel(
+    private val repository: HomeRepository,
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
+
+    private val _uiState =
+        MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+
     val uiState = _uiState.asStateFlow()
 
-    
     private var streamsCursor: String? = null
     private var clipsCursor: String? = null
     private var isStreamsLoading = false
@@ -30,11 +36,24 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     private var isStreamsEnd = false
     private var isClipsEnd = false
 
+    private var currentLanguages: Set<String>? = null
+
     init {
-        fetchHomeData()
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.selectedLanguagesFlow.collect { langs ->
+
+                if (currentLanguages != langs) {
+                    currentLanguages = langs
+                    fetchHomeData()
+                }
+            }
+        }
     }
 
     fun fetchHomeData() {
+
+        val langs = currentLanguages ?: return
+
         _uiState.value = HomeUiState.Loading
         streamsCursor = null 
         clipsCursor = null
@@ -43,8 +62,14 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                
-                val streamsDeferred = async { repository.fetchLivestreams(null) }
+
+                val streamsDeferred = async {
+                    repository.fetchLivestreams(
+                        cursor = null,
+                        languages = langs
+                    )
+                }
+
                 val clipsDeferred = async { repository.fetchTopClips(null) }
 
                 val streamsResult = streamsDeferred.await()
@@ -76,17 +101,25 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     }
 
     fun loadMoreStreams() {
+
+        val langs = currentLanguages ?: return
+
         Log.d("PAGINATION", "loadMoreStreams called")
 
-        if (isStreamsLoading || isStreamsEnd || _uiState.value !is HomeUiState.Success) return
+        if (isStreamsLoading || isStreamsEnd || _uiState.value !is HomeUiState.Success) {
+            return
+        }
 
         isStreamsLoading = true
 
         Log.d("PAGINATION", "request cursor=$streamsCursor")
 
         viewModelScope.launch(Dispatchers.IO) {
-            
-            val result = repository.fetchLivestreams(streamsCursor)
+
+            val result = repository.fetchLivestreams(
+                cursor = streamsCursor,
+                languages = langs
+            )
 
             if (result.isSuccess) {
                 

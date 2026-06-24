@@ -64,7 +64,7 @@ val appModule = module {
     single { FollowsRepository(get()) }
 
     viewModel { MainViewModel(get()) }
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), get()) }
 
     single<DataSource.Factory> {
         DefaultHttpDataSource.Factory()

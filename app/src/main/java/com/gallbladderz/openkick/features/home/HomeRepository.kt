@@ -10,11 +10,22 @@ import okhttp3.Request
 
 class HomeRepository(private val client: OkHttpClient) {
 
-    suspend fun fetchLivestreams(cursor: String? = null): Result<Pair<List<StreamUiModel>, String?>> = withContext(Dispatchers.IO) {
-        val url = if (cursor.isNullOrEmpty()) {
+    suspend fun fetchLivestreams(
+        cursor: String? = null,
+        languages: Set<String> = emptySet()
+    ): Result<Pair<List<StreamUiModel>, String?>> = withContext(Dispatchers.IO) {
+
+        val langQuery = languages.joinToString("") {
+            "&language=$it"
+        }
+
+        val baseUrl =
             "${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams?limit=24&sort=viewer_count_desc"
+
+        val url = if (cursor.isNullOrEmpty()) {
+            "$baseUrl$langQuery"
         } else {
-            "${KickApiConstants.KICK_MOBILE_API_BASE_URL}/livestreams?limit=24&sort=viewer_count_desc&after=$cursor"
+            "$baseUrl&after=$cursor$langQuery"
         }
 
         Log.d("CURSOR_URL", url)

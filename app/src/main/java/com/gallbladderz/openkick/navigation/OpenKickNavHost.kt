@@ -39,6 +39,7 @@ import com.gallbladderz.openkick.features.following.AllFollowsScreen
 import com.gallbladderz.openkick.features.following.FollowingScreen
 import com.gallbladderz.openkick.features.home.HomeScreen
 import com.gallbladderz.openkick.features.player.PlayerScreen
+import com.gallbladderz.openkick.features.profile.LanguageSettingsScreen
 import com.gallbladderz.openkick.features.profile.SettingsScreen
 import com.gallbladderz.openkick.features.profile.StreamerProfileScreen
 import com.gallbladderz.openkick.features.search.SearchScreen
@@ -157,7 +158,11 @@ fun OpenKickNavHost() {
                             )
                         }
                         MainTab.PROFILE -> {
-                            SettingsScreen()
+                            SettingsScreen(
+                                onLanguageSettingsClick = {
+                                    navController.navigate(LanguageSettingsRoute)
+                                }
+                            )
                         }
                     }
                 }
@@ -177,6 +182,12 @@ fun OpenKickNavHost() {
         composable<SearchRoute> {
             SearchScreen(
                 onChannelClick = { streamerName -> navController.navigate(PlayerRoute(streamerName)) }
+            )
+        }
+
+        composable<LanguageSettingsRoute> {
+            LanguageSettingsScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

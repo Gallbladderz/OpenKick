@@ -20,6 +20,9 @@ object FollowersRoute
 object ProfileRoute
 
 @Serializable
+object LanguageSettingsRoute
+
+@Serializable
 object AllFollowsRoute
 
 @Serializable
