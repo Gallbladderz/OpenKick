@@ -17,6 +17,7 @@ import com.gallbladderz.openkick.features.following.FollowingRepository
 import com.gallbladderz.openkick.features.following.FollowingViewModel
 import com.gallbladderz.openkick.features.home.HomeRepository
 import com.gallbladderz.openkick.features.home.HomeViewModel
+import com.gallbladderz.openkick.features.notifications.StreamCheckWorker
 import com.gallbladderz.openkick.features.player.ChatRepository
 import com.gallbladderz.openkick.features.player.PlayerManager
 import com.gallbladderz.openkick.features.player.PlayerRepository
@@ -28,10 +29,12 @@ import com.gallbladderz.openkick.features.search.SearchRepository
 import com.gallbladderz.openkick.features.search.SearchViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.dsl.module
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
+    workerOf(::StreamCheckWorker)
 
     single {
         okhttp3.OkHttpClient.Builder()

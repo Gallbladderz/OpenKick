@@ -19,4 +19,7 @@ interface FollowsDao {
 
     @Query("DELETE FROM follows WHERE slug = :slug AND type = :type")
     suspend fun delete(slug: String, type: FollowType)
+
+    @Query("UPDATE follows SET isLive = :isLive WHERE slug = :slug AND type = :type")
+    suspend fun updateLiveStatus(slug: String, type: FollowType, isLive: Boolean)
 }

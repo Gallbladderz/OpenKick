@@ -6,7 +6,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "follows")
 data class FollowedEntity(
     @PrimaryKey val slug: String,
-    val type: FollowType
+    val type: FollowType,
+    val isLive: Boolean = false
 )
 
 enum class FollowType {
