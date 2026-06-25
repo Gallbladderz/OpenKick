@@ -85,6 +85,6 @@ val appModule = module {
     viewModel { CategoryDetailsViewModel(get()) }
     viewModel { FollowingViewModel(get(), get()) }
 
-    
-    viewModel { StreamerProfileViewModel(get()) }
+
+    viewModel { StreamerProfileViewModel(get(), get()) }
 }

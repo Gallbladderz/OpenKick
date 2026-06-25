@@ -3,6 +3,7 @@ package com.gallbladderz.openkick.features.profile
 import android.util.Log
 import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.features.home.ClipUiModel
+import com.gallbladderz.openkick.features.player.models.ChannelLink
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -56,6 +57,39 @@ class StreamerProfileRepository(private val client: OkHttpClient) {
         }
     }
 
+    suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url("${KickApiConstants.KICK_API_BASE_URL}/channels/$streamerName/links")
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: return@withContext Result.success(emptyList())
+
+            if (!response.isSuccessful) return@withContext Result.failure(Exception("Error code: ${response.code}"))
+
+            val jsonArray = Json { ignoreUnknownKeys = true }.parseToJsonElement(body).jsonArray
+
+            val links = jsonArray.mapNotNull { element ->
+                try {
+                    val obj = element.jsonObject
+                    ChannelLink(
+                        id = obj["id"]?.jsonPrimitive?.intOrNull ?: 0,
+                        description = obj["description"]?.jsonPrimitive?.content ?: "",
+                        link = obj["link"]?.jsonPrimitive?.content ?: "",
+                        title = obj["title"]?.jsonPrimitive?.content ?: "",
+                        imageUrl = obj["image"]?.jsonObject?.get("url")?.jsonPrimitive?.content ?: ""
+                    )
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            Result.success(links)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun fetchVideos(channelId: Int): Result<List<VideoUiModel>> = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url("${KickApiConstants.KICK_MOBILE_API_BASE_URL}/channels/$channelId/videos")
@@ -64,13 +98,11 @@ class StreamerProfileRepository(private val client: OkHttpClient) {
             val response = client.newCall(request).execute()
             val body = response.body?.string() ?: return@withContext Result.success(emptyList())
 
-
             val rootArray = Json { ignoreUnknownKeys = true }.parseToJsonElement(body).jsonArray
 
             val videos = rootArray.mapNotNull { element ->
                 try {
                     val obj = element.jsonObject
-
 
                     val isLive = obj["is_live"]?.jsonPrimitive?.booleanOrNull ?: false
                     if (isLive) return@mapNotNull null
@@ -84,7 +116,6 @@ class StreamerProfileRepository(private val client: OkHttpClient) {
 
                     val thumbObj = obj["thumbnail"]?.jsonObject
                     val thumbUrl = thumbObj?.get("src")?.jsonPrimitive?.content ?: ""
-
 
                     val durationMs = obj["duration"]?.jsonPrimitive?.longOrNull ?: 0L
                     val totalSeconds = durationMs / 1000

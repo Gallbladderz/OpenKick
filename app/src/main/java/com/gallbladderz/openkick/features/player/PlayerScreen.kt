@@ -83,7 +83,7 @@ fun PlayerScreen(
 
     val tabs = listOf(
         stringResource(R.string.chat_tab),
-        stringResource(R.string.info_tab)
+        stringResource(R.string.description)
     )
 
     val lifecycleOwner = LocalLifecycleOwner.current

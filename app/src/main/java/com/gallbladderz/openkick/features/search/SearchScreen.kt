@@ -26,11 +26,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.foundation.layout.statusBarsPadding
 
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = koinViewModel(),
-    onChannelClick: (String) -> Unit = {}
+    onChannelClick: (String, Boolean) -> Unit = { _, _ -> }
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
@@ -44,15 +45,38 @@ fun SearchScreen(
         viewModel.searchStreamer(query)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // Задал фон, чтобы тема вообще начала работать на этом экране
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+    ) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             placeholder = { Text(stringResource(R.string.search_placeholder)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             singleLine = true,
-            shape = RoundedCornerShape(12.dp)
+            shape = CircleShape, // Твой многострадальный круглый инпут
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = Color.Transparent,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+            )
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -61,7 +85,7 @@ fun SearchScreen(
                     Text(stringResource(R.string.search_idle), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.Center))
                 }
                 is SearchUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.primary)
                 }
                 is SearchUiState.Success -> {
                     LazyColumn(
@@ -70,7 +94,11 @@ fun SearchScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(uiState.channels, key = { it.username }) { channel ->
-                            SearchChannelCard(channel = channel, onClick = { onChannelClick(channel.username) })
+                            // Вот тут передаем статус лайва, чтобы твой навигатор понял, куда слать юзера
+                            SearchChannelCard(
+                                channel = channel,
+                                onClick = { onChannelClick(channel.username, channel.isLive) }
+                            )
                         }
                     }
                 }
@@ -89,7 +117,10 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
     val finalImageUrl = if (channel.profilePic.isBlank()) fallbackAvatar else channel.profilePic
 
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
@@ -99,13 +130,26 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
                 .build(),
             contentDescription = "Аватар",
             contentScale = ContentScale.Crop,
-            modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         )
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text = channel.username, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(
+            text = channel.username,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
         if (channel.isLive) {
-            Box(modifier = Modifier.background(Color.Red, RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                Text(text = "LIVE", color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(text = "LIVE", color = MaterialTheme.colorScheme.onError, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
             }
         }
     }

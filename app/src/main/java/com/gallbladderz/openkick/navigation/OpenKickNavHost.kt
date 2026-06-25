@@ -128,7 +128,15 @@ fun OpenKickNavHost() {
 
         composable<SearchRoute> {
             SearchScreen(
-                onChannelClick = { streamerName -> navController.navigate(PlayerRoute(streamerName)) }
+                onChannelClick = { streamerName, isLive ->
+                    if (isLive) {
+                        // Стример онлайн — закидываем в плеер смотреть стрим
+                        navController.navigate(PlayerRoute(streamerName))
+                    } else {
+                        // Стример оффлайн — отправляем в профиль изучать его биографию
+                        navController.navigate(StreamerProfileRoute(slug = streamerName))
+                    }
+                }
             )
         }
 

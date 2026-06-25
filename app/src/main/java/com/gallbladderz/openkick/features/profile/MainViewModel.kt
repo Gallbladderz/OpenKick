@@ -50,9 +50,4 @@ class MainViewModel(
             settingsRepository.updateSelectedLanguages(newSelection)
         }
     }
-
-    fun changeAppLanguage(code: String) {
-        val appLocale = LocaleListCompat.forLanguageTags(code)
-        AppCompatDelegate.setApplicationLocales(appLocale)
-    }
 }
