@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 @Serializable
 data class KickStreamDto(
     val id: Int? = null,
-    @SerialName("session_title") val sessionTitle: String = "Без названия",
+    @SerialName("session_title") val sessionTitle: String = "Untitled",
     val viewers: Int = 0,
     val channel: KickChannelDto? = null,
     val category: KickCategoryDto? = null,

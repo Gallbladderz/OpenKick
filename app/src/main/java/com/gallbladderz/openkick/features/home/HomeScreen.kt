@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed 
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,7 +51,8 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var selectedFilter by remember { mutableStateOf("Все") }
+    val defaultFilter = stringResource(R.string.filter_all)
+    var selectedFilter by remember { mutableStateOf(defaultFilter) }
     var isGridMode by remember { mutableStateOf(false) }
 
     Column(
@@ -91,7 +92,7 @@ fun HomeScreen(
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
 
-            if (selectedFilter == "Категории") {
+            if (selectedFilter == stringResource(R.string.filter_categories)) {
                 CategoriesScreen(onCategoryClick = onCategoryClick)
             } else {
                 when (val uiState = state) {
@@ -123,16 +124,18 @@ fun HomeScreen(
                             }
                         }
 
+                        val clipsFilter = stringResource(R.string.filter_clips)
+                        val liveFilter = stringResource(R.string.live)
                         LazyColumn(
                             state = listState,
                             contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            if (selectedFilter == "Клипы") {
+                            if (selectedFilter == clipsFilter) {
                                 item {
                                     Text(
-                                        text = "Топ клипов за неделю",
+                                        text = stringResource(R.string.top_clips_week),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -184,7 +187,7 @@ fun HomeScreen(
                                 if (feedStreams.isNotEmpty()) {
                                     item {
                                         Text(
-                                            text = "В эфире",
+                                            text = liveFilter,
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(horizontal = 16.dp)
@@ -274,7 +277,7 @@ fun HomeFilterChipsRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(1f)) {
-            val filters = listOf("Все", "Категории", "Клипы")
+            val filters = listOf(stringResource(R.string.filter_all), stringResource(R.string.filter_categories), stringResource(R.string.filter_clips))
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -301,7 +304,7 @@ fun HomeFilterChipsRow(
             }
         }
 
-        if (selectedFilter == "Все") {
+        if (selectedFilter == stringResource(R.string.filter_all)) {
             Box(
                 modifier = Modifier
                     .padding(end = 16.dp)
@@ -316,7 +319,7 @@ fun HomeFilterChipsRow(
                 ) {
                     Icon(
                         imageVector = if (isGridMode) Icons.AutoMirrored.Filled.List else rememberGridViewIcon(),
-                        contentDescription = "Переключить вид",
+                        contentDescription = stringResource(R.string.toggle_view),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )

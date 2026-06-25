@@ -7,6 +7,7 @@ import com.gallbladderz.openkick.features.home.ClipUiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -20,7 +21,7 @@ sealed interface CategoryDetailsUiState {
         val bannerUrl: String,
         val viewers: Int,
         val tags: List<String>,
-        val clips: List<ClipUiModel> 
+        val clips: List<ClipUiModel>
     ) : CategoryDetailsUiState
     data class Error(val message: String) : CategoryDetailsUiState
 }
@@ -33,19 +34,19 @@ class CategoryDetailsViewModel(
     val uiState = _uiState.asStateFlow()
 
     fun loadCategory(slug: String) {
-        _uiState.value = CategoryDetailsUiState.Loading
+        _uiState.update { CategoryDetailsUiState.Loading }
         viewModelScope.launch(Dispatchers.IO) {
 
-            Log.d("OpenKick_Category", "Пытаемся загрузить слаг: '$slug'")
+            Log.d("OpenKick_Category", "Trying to load slug: '$slug'")
 
             if (slug.isBlank()) {
-                _uiState.value = CategoryDetailsUiState.Error("Ошибка: slug пустой!")
+                _uiState.update { CategoryDetailsUiState.Error("Error: empty slug!") }
                 return@launch
             }
 
             val cleanSlug = slug.trim().lowercase()
 
-            
+
             val detailsRequest = Request.Builder()
                 .url("https://kick.com/api/v1/subcategories/$cleanSlug")
                 .build()
@@ -55,7 +56,7 @@ class CategoryDetailsViewModel(
                 .build()
 
             try {
-                
+
                 val detailsDeferred = async { okHttpClient.newCall(detailsRequest).execute() }
                 val clipsDeferred = async { okHttpClient.newCall(clipsRequest).execute() }
 
@@ -66,25 +67,25 @@ class CategoryDetailsViewModel(
                 val clipsBody = clipsResponse.body?.string()
 
                 if (!detailsResponse.isSuccessful || detailsBody == null) {
-                    _uiState.value = CategoryDetailsUiState.Error("Ошибка загрузки: ${detailsResponse.code}")
+                    _uiState.update { CategoryDetailsUiState.Error("Load error: ${detailsResponse.code}") }
                     return@launch
                 }
 
-                
+
                 parseResponses(detailsBody, clipsBody)
 
             } catch (e: Exception) {
-                _uiState.value = CategoryDetailsUiState.Error("Ошибка сети: ${e.message}")
+                _uiState.update { CategoryDetailsUiState.Error("Network error: ${e.message}") }
             }
         }
     }
 
     private fun parseResponses(detailsJson: String, clipsJson: String?) {
         try {
-            
+
             val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(detailsJson).jsonObject
 
-            val name = jsonElement["name"]?.jsonPrimitive?.content ?: "Категория"
+            val name = jsonElement["name"]?.jsonPrimitive?.content ?: "Category"
             val viewers = jsonElement["viewers"]?.jsonPrimitive?.intOrNull ?: 0
 
             val tagsArray = jsonElement["tags"]?.jsonArray
@@ -96,13 +97,13 @@ class CategoryDetailsViewModel(
                 bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
             }
 
-            
+
             val parsedClips = parseClipsArray(clipsJson)
 
-            
-            _uiState.value = CategoryDetailsUiState.Success(name, bannerUrl, viewers, tags, parsedClips)
+
+            _uiState.update { CategoryDetailsUiState.Success(name, bannerUrl, viewers, tags, parsedClips) }
         } catch (e: Exception) {
-            _uiState.value = CategoryDetailsUiState.Error("Ошибка парсинга JSON")
+            _uiState.update { CategoryDetailsUiState.Error("JSON parsing error") }
         }
     }
 
@@ -116,7 +117,7 @@ class CategoryDetailsViewModel(
                 try {
                     val clipObj = element.jsonObject
                     val id = clipObj["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                    val title = clipObj["title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val title = clipObj["title"]?.jsonPrimitive?.content ?: "Untitled"
                     val clipUrl = clipObj["clip_url"]?.jsonPrimitive?.content ?: ""
                     val thumbnailUrl = clipObj["thumbnail_url"]?.jsonPrimitive?.content ?: ""
                     val views = clipObj["views"]?.jsonPrimitive?.intOrNull ?: 0
@@ -130,7 +131,7 @@ class CategoryDetailsViewModel(
                 } catch (e: Exception) { null }
             }
         } catch (e: Exception) {
-            Log.e("OpenKick_Category", "Ошибка парсинга клипов: ${e.message}")
+            Log.e("OpenKick_Category", "Clip parsing error: ${e.message}")
             emptyList()
         }
     }

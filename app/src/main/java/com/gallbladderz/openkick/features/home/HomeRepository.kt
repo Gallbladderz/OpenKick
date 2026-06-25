@@ -45,7 +45,7 @@ class HomeRepository(private val client: OkHttpClient) {
 
             if (!response.isSuccessful || responseBody == null) {
                 return@withContext Result.failure(
-                    Exception("Кик зажал стримы: код ${response.code} по урлу $url")
+                    Exception("Kick hid streams: code ${response.code} for url $url")
                 )
             }
 
@@ -62,7 +62,7 @@ class HomeRepository(private val client: OkHttpClient) {
 
         } catch (e: Exception) {
             return@withContext Result.failure(
-                Exception("Сеть отвалилась (Стримы): ${e.message}", e)
+                Exception("Network dropped (Streams): ${e.message}", e)
             )
         }
     }
@@ -74,7 +74,7 @@ class HomeRepository(private val client: OkHttpClient) {
             "${KickApiConstants.KICK_API_V2_BASE_URL}/clips?sort=view&time=week&cursor=$cursor"
         }
 
-        
+
         Log.d("CURSOR_URL", url)
 
         val request = Request.Builder().url(url).build()
@@ -84,17 +84,17 @@ class HomeRepository(private val client: OkHttpClient) {
             val responseBody = response.body?.string()
 
             if (!response.isSuccessful || responseBody == null) {
-                return@withContext Result.failure(Exception("Кик послал нахер: код ${response.code} (Клипы)"))
+                return@withContext Result.failure(Exception("Kick rejected: code ${response.code} (Clips)"))
             }
             return@withContext parseClips(responseBody)
         } catch (e: Exception) {
-            return@withContext Result.failure(Exception("Ошибка сети (Клипы): ${e.message}", e))
+            return@withContext Result.failure(Exception("Network error (Clips): ${e.message}", e))
         }
     }
 
     private fun parseStreams(jsonString: String): Result<Pair<List<StreamUiModel>, String?>> {
         return try {
-            if (jsonString.startsWith("JS_ERROR")) return Result.failure(Exception("Скрипт подавился: $jsonString"))
+            if (jsonString.startsWith("JS_ERROR")) return Result.failure(Exception("Script choked: $jsonString"))
 
             val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
             val rootObj = jsonElement.jsonObject
@@ -113,7 +113,7 @@ class HomeRepository(private val client: OkHttpClient) {
                 ?.jsonObject
                 ?.get("livestreams")
                 ?.jsonArray
-                ?: return Result.failure(Exception("Не нашли data.livestreams"))
+                ?: return Result.failure(Exception("data.livestreams not found"))
 
             val uiModels = streamsArray.mapNotNull { element ->
                 try {
@@ -121,7 +121,7 @@ class HomeRepository(private val client: OkHttpClient) {
                     val streamObj = streamObjRoot["livestream"]?.jsonObject ?: streamObjRoot
 
                     val id = streamObj["id"]?.jsonPrimitive?.content ?: streamObjRoot["id"]?.jsonPrimitive?.content ?: "0"
-                    val title = streamObj["session_title"]?.jsonPrimitive?.content ?: streamObj["title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val title = streamObj["session_title"]?.jsonPrimitive?.content ?: streamObj["title"]?.jsonPrimitive?.content ?: "Untitled"
                     val viewers = streamObj["viewer_count"]?.jsonPrimitive?.intOrNull ?: streamObj["viewers"]?.jsonPrimitive?.intOrNull ?: streamObjRoot["viewer_count"]?.jsonPrimitive?.intOrNull ?: 0
 
                     val channelObj = streamObjRoot["channel"]?.jsonObject ?: streamObj["channel"]?.jsonObject
@@ -149,7 +149,7 @@ class HomeRepository(private val client: OkHttpClient) {
                 Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
             }
         } catch (e: Exception) {
-            Log.e("OpenKick_API", "Краш парсинга стримов: ${e.message}", e)
+            Log.e("OpenKick_API", "Stream parsing crash: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -160,7 +160,7 @@ class HomeRepository(private val client: OkHttpClient) {
             val rootObj = jsonElement.jsonObject
 
             val clipsArray = rootObj["clips"]?.jsonArray ?: rootObj["data"]?.jsonArray
-            ?: return Result.failure(Exception("Не нашли массив 'clips' в ответе"))
+            ?: return Result.failure(Exception("'clips' array not found in response"))
 
             val nextCursor = rootObj["next_cursor"]?.jsonPrimitive?.content
                 ?: rootObj["cursor"]?.jsonPrimitive?.content
@@ -170,7 +170,7 @@ class HomeRepository(private val client: OkHttpClient) {
                 try {
                     val clipObj = element.jsonObject
                     val id = clipObj["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                    val title = clipObj["title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val title = clipObj["title"]?.jsonPrimitive?.content ?: "Untitled"
                     val clipUrl = clipObj["clip_url"]?.jsonPrimitive?.content ?: ""
                     val thumbnailUrl = clipObj["thumbnail_url"]?.jsonPrimitive?.content ?: ""
                     val views = clipObj["views"]?.jsonPrimitive?.intOrNull ?: 0
@@ -202,7 +202,7 @@ class HomeRepository(private val client: OkHttpClient) {
                 )
             }
         } catch (e: Exception) {
-            Log.e("OpenKick_API", "Краш парсинга клипов: ${e.message}", e)
+            Log.e("OpenKick_API", "Clip parsing crash: ${e.message}", e)
             Result.failure(e)
         }
     }

@@ -8,6 +8,7 @@ import com.gallbladderz.openkick.data.local.FollowsRepository
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
@@ -65,12 +66,14 @@ class PlayerViewModel(
 
                     result.onSuccess { streamInfo ->
 
-                        _uiState.value = PlayerUiState.Playing(
-                            url = streamInfo.playbackUrl,
-                            avatarUrl = streamInfo.avatarUrl,
-                            viewers = streamInfo.viewers,
-                            title = streamInfo.title
-                        )
+                        _uiState.update {
+                            PlayerUiState.Playing(
+                                url = streamInfo.playbackUrl,
+                                avatarUrl = streamInfo.avatarUrl,
+                                viewers = streamInfo.viewers,
+                                title = streamInfo.title
+                            )
+                        }
 
                         loadChannelLinks(streamerName)
 
@@ -84,9 +87,11 @@ class PlayerViewModel(
                             }
                         }
                     }.onFailure { exception ->
-                        _uiState.value = PlayerUiState.Error(
-                            exception.message ?: "Неизвестная ошибка"
-                        )
+                        _uiState.update {
+                            PlayerUiState.Error(
+                                exception.message ?: "Unknown error"
+                            )
+                        }
                     }
                 }
         }
@@ -101,7 +106,7 @@ class PlayerViewModel(
                 .onFailure {
                     Log.e(
                         "PlayerVM",
-                        "Панели не загрузились",
+                        "Panels did not load",
                         it
                     )
                 }

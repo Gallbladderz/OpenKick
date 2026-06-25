@@ -10,7 +10,7 @@ import java.io.IOException
 class CategoriesRepository(private val client: OkHttpClient) {
     fun fetchCategories(page: Int = 1): Flow<Result<String>> = flow {
         val request = Request.Builder()
-            
+
             .url("${KickApiConstants.KICK_API_BASE_URL}/subcategories?limit=50&page=$page")
             .build()
 
@@ -19,13 +19,13 @@ class CategoriesRepository(private val client: OkHttpClient) {
             val responseBody = response.body?.string()
 
             if (!response.isSuccessful || responseBody == null) {
-                emit(Result.failure(Exception("Ошибка API Категорий: ${response.code}")))
+                emit(Result.failure(Exception("Categories API error: ${response.code}")))
                 return@flow
             }
 
             emit(Result.success(responseBody))
         } catch (e: IOException) {
-            emit(Result.failure(Exception("Сеть сдохла: ${e.message}", e)))
+            emit(Result.failure(Exception("Network died: ${e.message}", e)))
         }
     }
 }

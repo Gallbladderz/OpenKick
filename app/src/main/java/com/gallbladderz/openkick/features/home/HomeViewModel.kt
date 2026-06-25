@@ -55,7 +55,7 @@ class HomeViewModel(
         val langs = currentLanguages ?: return
 
         _uiState.value = HomeUiState.Loading
-        streamsCursor = null 
+        streamsCursor = null
         clipsCursor = null
         isStreamsEnd = false
         isClipsEnd = false
@@ -75,19 +75,19 @@ class HomeViewModel(
                 val streamsResult = streamsDeferred.await()
                 val clipsResult = clipsDeferred.await()
 
-                
+
                 val streamsPair = streamsResult.getOrNull()
                 val streamsList = streamsPair?.first ?: emptyList()
-                streamsCursor = streamsPair?.second 
+                streamsCursor = streamsPair?.second
 
-                
+
                 val clipsPair = clipsResult.getOrNull()
                 val clipsList = clipsPair?.first ?: emptyList()
                 clipsCursor = clipsPair?.second
 
                 if (streamsResult.isFailure && clipsResult.isFailure) {
                     val ex = streamsResult.exceptionOrNull() ?: clipsResult.exceptionOrNull()
-                    _uiState.value = HomeUiState.Error(ex?.message ?: "Полный провал, ничего не загрузилось")
+                    _uiState.value = HomeUiState.Error(ex?.message ?: "Total failure, nothing loaded")
                 } else {
                     _uiState.value = HomeUiState.Success(
                         streams = streamsList,
@@ -95,7 +95,7 @@ class HomeViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Непредвиденная ошибка")
+                _uiState.value = HomeUiState.Error(e.message ?: "Unexpected error")
             }
         }
     }
@@ -122,10 +122,10 @@ class HomeViewModel(
             )
 
             if (result.isSuccess) {
-                
+
                 val (newStreams, nextCursor) = result.getOrThrow()
 
-                
+
                 streamsCursor = nextCursor
 
                 Log.d("PAGINATION", "nextCursor=$nextCursor count=${newStreams.size}")
@@ -133,14 +133,14 @@ class HomeViewModel(
                 if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {
-                    
+
                     if (nextCursor.isNullOrBlank()) {
                         isStreamsEnd = true
                     }
 
                     val currentState = _uiState.value as HomeUiState.Success
-                    
-                    
+
+
                     val merged = (currentState.streams + newStreams).distinctBy { it.id }
                     Log.d("PAGINATION", "merged size=${merged.size}")
 

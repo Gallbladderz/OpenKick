@@ -36,11 +36,11 @@ class StreamerProfileRepository(private val client: OkHttpClient) {
             .build()
         try {
             val response = client.newCall(request).execute()
-            val body = response.body?.string() ?: return@withContext Result.failure(Exception("Пустой ответ"))
-            if (!response.isSuccessful) return@withContext Result.failure(Exception("Ошибка: ${response.code}"))
+            val body = response.body?.string() ?: return@withContext Result.failure(Exception("Empty response"))
+            if (!response.isSuccessful) return@withContext Result.failure(Exception("Error: ${response.code}"))
 
             val root = Json { ignoreUnknownKeys = true }.parseToJsonElement(body).jsonObject
-            val channelId = root["id"]?.jsonPrimitive?.intOrNull ?: return@withContext Result.failure(Exception("Нет ID канала"))
+            val channelId = root["id"]?.jsonPrimitive?.intOrNull ?: return@withContext Result.failure(Exception("No channel ID"))
             val userObj = root["user"]?.jsonObject
 
             val username = userObj?.get("username")?.jsonPrimitive?.content ?: slug
@@ -64,28 +64,28 @@ class StreamerProfileRepository(private val client: OkHttpClient) {
             val response = client.newCall(request).execute()
             val body = response.body?.string() ?: return@withContext Result.success(emptyList())
 
-            
+
             val rootArray = Json { ignoreUnknownKeys = true }.parseToJsonElement(body).jsonArray
 
             val videos = rootArray.mapNotNull { element ->
                 try {
                     val obj = element.jsonObject
 
-                    
+
                     val isLive = obj["is_live"]?.jsonPrimitive?.booleanOrNull ?: false
                     if (isLive) return@mapNotNull null
 
                     val id = obj["video"]?.jsonObject?.get("uuid")?.jsonPrimitive?.content
                         ?: obj["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
 
-                    val title = obj["session_title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val title = obj["session_title"]?.jsonPrimitive?.content ?: "Untitled"
                     val views = obj["views"]?.jsonPrimitive?.intOrNull ?: 0
                     val videoUrl = obj["source"]?.jsonPrimitive?.content ?: ""
 
                     val thumbObj = obj["thumbnail"]?.jsonObject
                     val thumbUrl = thumbObj?.get("src")?.jsonPrimitive?.content ?: ""
 
-                    
+
                     val durationMs = obj["duration"]?.jsonPrimitive?.longOrNull ?: 0L
                     val totalSeconds = durationMs / 1000
                     val hours = totalSeconds / 3600
@@ -122,7 +122,7 @@ class StreamerProfileRepository(private val client: OkHttpClient) {
                 try {
                     val obj = element.jsonObject
                     val id = obj["id"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                    val title = obj["title"]?.jsonPrimitive?.content ?: "Без названия"
+                    val title = obj["title"]?.jsonPrimitive?.content ?: "Untitled"
                     val views = obj["views"]?.jsonPrimitive?.intOrNull ?: 0
                     val duration = obj["duration"]?.jsonPrimitive?.intOrNull ?: 0
                     val clipUrl = obj["clip_url"]?.jsonPrimitive?.content ?: ""

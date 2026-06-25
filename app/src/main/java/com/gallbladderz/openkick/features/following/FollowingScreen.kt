@@ -46,7 +46,7 @@ fun FollowingScreen(
 
     Scaffold(
         topBar = {
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -64,7 +64,7 @@ fun FollowingScreen(
             }
         }
     ) { paddingValues ->
-        
+
         when (val uiState = state) {
             is FollowingUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -88,14 +88,14 @@ fun FollowingScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background),
-                    
+
                     contentPadding = PaddingValues(
                         top = paddingValues.calculateTopPadding() + 8.dp,
                         bottom = paddingValues.calculateBottomPadding() + 8.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    
+
                     val allStreamers = uiState.liveStreamers + uiState.offlineStreamers
                     if (allStreamers.isNotEmpty()) {
                         item {
@@ -109,12 +109,12 @@ fun FollowingScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Каналы",
+                                        text = stringResource(R.string.channels),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Все отслеживаемые ➔",
+                                        text = stringResource(R.string.all_followed_arrow),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.clickable { onManageClick() }
@@ -136,7 +136,7 @@ fun FollowingScreen(
                         }
                     }
 
-                    
+
                     if (uiState.categories.isNotEmpty()) {
                         item {
                             Column {
@@ -160,11 +160,11 @@ fun FollowingScreen(
                         }
                     }
 
-                    
+
                     if (uiState.liveStreamers.isNotEmpty()) {
                         item {
                             Text(
-                                text = "В эфире",
+                                text = stringResource(R.string.live),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
@@ -186,7 +186,7 @@ fun FollowingScreen(
                     if (allStreamers.isEmpty() && uiState.categories.isEmpty()) {
                         item {
                             Text(
-                                text = "Тут пусто. Иди подпишись на кого-нибудь!",
+                                text = stringResource(R.string.empty_follow_someone),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,

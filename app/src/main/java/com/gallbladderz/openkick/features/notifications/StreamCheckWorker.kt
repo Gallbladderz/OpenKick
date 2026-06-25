@@ -26,18 +26,18 @@ class StreamCheckWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
-        
+
         val followedStreamers = followsDao.getAllFollows().first().filter { it.type == FollowType.STREAMER }
 
         for (entity in followedStreamers) {
             val details = followingRepository.fetchChannelDetails(entity.slug) ?: continue
 
-            
+
             if (details.isLive && !entity.isLive) {
                 sendNotification(details.username, details.streamTitle, details.slug)
             }
 
-            
+
             if (details.isLive != entity.isLive) {
                 followsDao.updateLiveStatus(entity.slug, FollowType.STREAMER, details.isLive)
             }
@@ -46,7 +46,7 @@ class StreamCheckWorker(
     }
 
     private fun sendNotification(username: String, title: String, slug: String) {
-        
+
         if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             return
         }
@@ -54,21 +54,21 @@ class StreamCheckWorker(
         val channelId = "openkick_streams"
         val notificationManager = NotificationManagerCompat.from(context)
 
-        
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Стримы в эфире", NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel(channelId, "Live streams", NotificationManager.IMPORTANCE_DEFAULT)
             notificationManager.createNotificationChannel(channel)
         }
 
-        
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher) 
-            .setContentTitle("🔴 $username в эфире!")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("🔴 $username is live!")
             .setContentText(title)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)

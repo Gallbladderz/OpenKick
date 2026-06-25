@@ -65,82 +65,29 @@ fun OpenKickNavHost() {
         navController = navController,
         startDestination = MainTabsRoute
     ) {
-        
+
         composable<MainTabsRoute> {
             val pagerState = rememberPagerState(pageCount = { MainTab.entries.size })
             val coroutineScope = rememberCoroutineScope()
 
             Scaffold(
                 bottomBar = {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .windowInsetsPadding(WindowInsets.navigationBars)
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                                .height(48.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            MainTab.entries.forEach { tab ->
-                                val isSelected = pagerState.currentPage == tab.ordinal
-                                val title = stringResource(id = tab.titleResId)
-
-                                val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
-                                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-
-                                Row(
-                                    modifier = Modifier
-                                        .height(48.dp)
-                                        .animateContentSize() 
-                                        .then(if (isSelected) Modifier.weight(1f) else Modifier.width(64.dp)) 
-                                        .clip(CircleShape)
-                                        .background(backgroundColor)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null,
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    pagerState.animateScrollToPage(tab.ordinal)
-                                                }
-                                            }
-                                        ),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (isSelected) tab.selectedIcon else tab.icon,
-                                        contentDescription = title,
-                                        tint = contentColor,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-
-                                    AnimatedVisibility(visible = isSelected) {
-                                        Text(
-                                            text = title,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = contentColor,
-                                            modifier = Modifier.padding(start = 8.dp),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                }
+                    OpenKickBottomBar(
+                        currentPage = pagerState.currentPage,
+                        onTabSelected = { tabOrdinal ->
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(tabOrdinal)
                             }
                         }
-                    }
+                    )
                 }
             ) { innerPadding ->
-                
+
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding) 
+                        .padding(innerPadding)
                 ) { page ->
                     when (MainTab.entries[page]) {
                         MainTab.HOME -> {
@@ -169,7 +116,7 @@ fun OpenKickNavHost() {
             }
         }
 
-        
+
 
         composable<CategoryDetailsRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<CategoryDetailsRoute>()
@@ -214,6 +161,70 @@ fun OpenKickNavHost() {
                 onBackClick = { navController.popBackStack() },
                 onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
             )
+        }
+    }
+}
+
+@Composable
+private fun OpenKickBottomBar(
+    currentPage: Int,
+    onTabSelected: (Int) -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .height(48.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MainTab.entries.forEach { tab ->
+                val isSelected = currentPage == tab.ordinal
+                val title = stringResource(id = tab.titleResId)
+
+                val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
+                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                Row(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .animateContentSize()
+                        .then(if (isSelected) Modifier.weight(1f) else Modifier.width(64.dp))
+                        .clip(CircleShape)
+                        .background(backgroundColor)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { onTabSelected(tab.ordinal) }
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = if (isSelected) tab.selectedIcon else tab.icon,
+                        contentDescription = title,
+                        tint = contentColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    AnimatedVisibility(visible = isSelected) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = contentColor,
+                            modifier = Modifier.padding(start = 8.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
         }
     }
 }

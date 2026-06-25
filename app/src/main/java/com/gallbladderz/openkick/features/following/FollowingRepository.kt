@@ -31,7 +31,7 @@ class FollowingRepository(private val okHttpClient: OkHttpClient) {
 
             val livestreamObj = root["livestream"]?.jsonObject
             if (livestreamObj != null) {
-                val title = livestreamObj["session_title"]?.jsonPrimitive?.content ?: "Без названия"
+                val title = livestreamObj["session_title"]?.jsonPrimitive?.content ?: "Untitled"
                 val viewers = livestreamObj["viewer_count"]?.jsonPrimitive?.intOrNull ?: 0
                 val categoryName = livestreamObj["category"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
 
@@ -44,7 +44,7 @@ class FollowingRepository(private val okHttpClient: OkHttpClient) {
                 FollowedStreamerUi(slug, username, avatarUrl, false)
             }
         } catch (e: Exception) {
-            Log.e("FollowingRepo", "Ошибка загрузки канала $slug: ${e.message}")
+            Log.e("FollowingRepo", "Error loading channel $slug: ${e.message}")
             null
         }
     }
@@ -71,7 +71,7 @@ class FollowingRepository(private val okHttpClient: OkHttpClient) {
 
             FollowedCategoryUi(slug, name, bannerUrl, viewers)
         } catch (e: Exception) {
-            Log.e("FollowingRepo", "Ошибка загрузки категории $slug: ${e.message}")
+            Log.e("FollowingRepo", "Error loading category $slug: ${e.message}")
             null
         }
     }

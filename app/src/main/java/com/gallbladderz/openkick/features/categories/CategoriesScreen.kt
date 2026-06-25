@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed 
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,10 +55,10 @@ fun CategoriesScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    
+
                     itemsIndexed(uiState.categories, key = { _, it -> it.id }) { index, category ->
 
-                        
+
                         if (index == uiState.categories.lastIndex) {
                             LaunchedEffect(category.id) {
                                 viewModel.loadMoreCategories()
@@ -141,7 +143,7 @@ fun CategoryCard(
             ) {
                 Icon(
                     imageVector = if (isFollowed) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Отслеживать",
+                    contentDescription = stringResource(R.string.follow_action),
                     tint = if (isFollowed) MaterialTheme.colorScheme.primary else Color.White,
                     modifier = Modifier.size(20.dp)
                 )

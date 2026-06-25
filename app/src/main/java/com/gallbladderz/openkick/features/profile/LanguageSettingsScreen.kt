@@ -29,12 +29,12 @@ fun LanguageSettingsScreen(
 ) {
     val selectedLanguages by viewModel.selectedLanguages.collectAsStateWithLifecycle()
 
-    
-    var appLanguage by remember { mutableStateOf("ru") }
+
+    val appLanguage = viewModel.appLanguage
     var showAppLangMenu by remember { mutableStateOf(false) }
 
     val availableStreamLanguages = mapOf(
-        "ru" to "Русский",
+        "ru" to stringResource(R.string.russian_lang),
         "en" to "English",
         "es" to "Español",
         "pt" to "Português",
@@ -52,7 +52,7 @@ fun LanguageSettingsScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
+                            contentDescription = stringResource(R.string.back_button)
                         )
                     }
                 },
@@ -69,10 +69,10 @@ fun LanguageSettingsScreen(
                 .background(MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(16.dp)
         ) {
-            
+
             item {
                 Text(
-                    text = "Язык интерфейса",
+                    text = stringResource(R.string.interface_language),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -81,8 +81,8 @@ fun LanguageSettingsScreen(
 
                 Box(modifier = Modifier.fillMaxWidth()) {
                     ListItem(
-                        headlineContent = { Text("Язык приложения") },
-                        supportingContent = { Text(if (appLanguage == "ru") "Русский" else "English") },
+                        headlineContent = { Text(stringResource(R.string.application_language)) },
+                        supportingContent = { Text(if (appLanguage == "ru") stringResource(R.string.russian_lang) else "English") },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -94,16 +94,16 @@ fun LanguageSettingsScreen(
                         onDismissRequest = { showAppLangMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Русский") },
+                            text = { Text(stringResource(R.string.russian_lang)) },
                             onClick = {
-                                appLanguage = "ru"
+                                viewModel.changeAppLanguage("ru")
                                 showAppLangMenu = false
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("English (English)") },
                             onClick = {
-                                appLanguage = "en"
+                                viewModel.changeAppLanguage("en")
                                 showAppLangMenu = false
                             }
                         )
@@ -116,17 +116,17 @@ fun LanguageSettingsScreen(
                 )
             }
 
-            
+
             item {
                 Text(
-                    text = "Языки трансляций",
+                    text = stringResource(R.string.stream_languages),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "Показывать стримы на выбранных языках:",
+                    text = stringResource(R.string.show_streams_languages),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -141,9 +141,7 @@ fun LanguageSettingsScreen(
                         .toggleable(
                             value = isChecked,
                             onValueChange = { checked ->
-                                val newSelection = selectedLanguages.toMutableSet()
-                                if (checked) newSelection.add(code) else newSelection.remove(code)
-                                viewModel.updateSelectedLanguages(newSelection)
+                                viewModel.toggleLanguage(code, checked)
                             },
                             role = Role.Checkbox
                         )

@@ -12,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +39,7 @@ fun StreamerProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Описание", "Записи", "Клипы")
+    val tabs = listOf(stringResource(R.string.description), stringResource(R.string.vods), stringResource(R.string.filter_clips))
 
     LaunchedEffect(slug) {
         viewModel.loadProfile(slug)
@@ -46,10 +48,10 @@ fun StreamerProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state is ProfileUiState.Success) (state as ProfileUiState.Success).info.username else "Профиль", fontWeight = FontWeight.Bold) },
+                title = { Text(if (state is ProfileUiState.Success) (state as ProfileUiState.Success).info.username else stringResource(R.string.profile_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
                     }
                 }
             )
@@ -119,7 +121,7 @@ fun ProfileHeader(info: ProfileInfoUi) {
     }
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(text = info.username, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(text = "${info.followers} фолловеров", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+        Text(text = stringResource(R.string.followers_count, info.followers), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -127,7 +129,7 @@ fun ProfileHeader(info: ProfileInfoUi) {
 fun BioTab(bio: String) {
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (bio.isBlank()) {
-            Text("Стример ничего о себе не написал...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.streamer_wrote_nothing), color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             Text(text = bio, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
         }
@@ -139,7 +141,7 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
     val context = LocalContext.current
     if (videos.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Записей нет", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.no_vods), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -172,7 +174,7 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
 fun ClipsTab(clips: List<ClipUiModel>) {
     if (clips.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Клипов нет", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.no_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }

@@ -31,7 +31,7 @@ class PlayerRepository(
             val responseBody = response.body?.string()
 
             if (!response.isSuccessful || responseBody == null) {
-                emit(Result.failure(Exception("Kick отбил запрос: код ${response.code}")))
+                emit(Result.failure(Exception("Kick rejected request: code ${response.code}")))
                 return@flow
             }
 
@@ -54,12 +54,12 @@ class PlayerRepository(
 
             val body = response.body?.string()
                 ?: return@withContext Result.failure(
-                    Exception("Кик зажал инфу")
+                    Exception("Kick hid the info")
                 )
 
             if (!response.isSuccessful) {
                 return@withContext Result.failure(
-                    Exception("Код ошибки: ${response.code}")
+                    Exception("Error code: ${response.code}")
                 )
             }
 
@@ -121,7 +121,7 @@ class PlayerRepository(
 
                 val title =
                     livestreamObj?.get("session_title")?.jsonPrimitive?.content
-                        ?: "Трансляция"
+                        ?: "Stream"
 
                 if (!url.isNullOrEmpty()) {
                     Result.success(
@@ -134,13 +134,13 @@ class PlayerRepository(
                         )
                     )
                 } else {
-                    Result.failure(Exception("Стример сейчас оффлайн"))
+                    Result.failure(Exception("Streamer is currently offline"))
                 }
             } else {
-                Result.failure(Exception("Пришел не JSON объект"))
+                Result.failure(Exception("Received non-JSON object"))
             }
         } catch (e: Exception) {
-            Result.failure(Exception("Ошибка обработки ответа API"))
+            Result.failure(Exception("API response processing error"))
         }
     }
 }

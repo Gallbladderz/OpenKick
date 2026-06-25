@@ -80,7 +80,7 @@ fun PlayerScreen(
     val isFollowed by viewModel.isStreamerFollowed(streamerName).collectAsStateWithLifecycle(initialValue = false)
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    
+
     val tabs = listOf(
         stringResource(R.string.chat_tab),
         stringResource(R.string.info_tab)
@@ -161,7 +161,7 @@ fun PlayerScreen(
                 viewers = playingState.viewers,
                 isFollowed = isFollowed,
                 onToggleFollow = { viewModel.toggleFollow(streamerName, isFollowed) },
-                onAvatarClick = { onAvatarClick(streamerName) } 
+                onAvatarClick = { onAvatarClick(streamerName) }
             )
         }
 
@@ -220,13 +220,13 @@ fun StreamerInfoCard(
                 avatarUrl = avatarUrl,
                 streamerName = streamerName,
                 size = 44.dp,
-                modifier = Modifier.clickable { onAvatarClick() } 
+                modifier = Modifier.clickable { onAvatarClick() }
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clickable { onAvatarClick() } 
+                    .clickable { onAvatarClick() }
             ) {
                 Text(
                     text = streamerName,
@@ -352,7 +352,7 @@ fun InfoTabContent(links: List<ChannelLink>) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Информации пока нет",
+                text = stringResource(R.string.no_information_yet),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

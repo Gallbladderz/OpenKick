@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -23,22 +24,22 @@ class StreamerProfileViewModel(private val repository: StreamerProfileRepository
     val uiState = _uiState.asStateFlow()
 
     fun loadProfile(slug: String) {
-        _uiState.value = ProfileUiState.Loading
+        _uiState.update { ProfileUiState.Loading }
         viewModelScope.launch {
             val profileResult = repository.fetchProfileInfo(slug)
 
             if (profileResult.isSuccess) {
                 val profile = profileResult.getOrThrow()
-                
+
                 val videosDeferred = async { repository.fetchVideos(profile.channelId) }
                 val clipsDeferred = async { repository.fetchClips(profile.slug) }
 
                 val videos = videosDeferred.await().getOrDefault(emptyList())
                 val clips = clipsDeferred.await().getOrDefault(emptyList())
 
-                _uiState.value = ProfileUiState.Success(profile, videos, clips)
+                _uiState.update { ProfileUiState.Success(profile, videos, clips) }
             } else {
-                _uiState.value = ProfileUiState.Error(profileResult.exceptionOrNull()?.message ?: "Ошибка загрузки")
+                _uiState.update { ProfileUiState.Error(profileResult.exceptionOrNull()?.message ?: "Load error") }
             }
         }
     }

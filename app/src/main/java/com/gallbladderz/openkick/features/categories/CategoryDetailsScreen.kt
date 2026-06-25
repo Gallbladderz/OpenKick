@@ -61,7 +61,7 @@ fun CategoryDetailsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
                     }
                 }
             )
@@ -84,7 +84,7 @@ fun CategoryDetailsScreen(
                     }
                 }
                 is CategoryDetailsUiState.Success -> {
-                    
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -112,7 +112,7 @@ fun CategoryDetailsScreen(
                                 Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.Red))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "${currentState.viewers} зрителей",
+                                    text = stringResource(R.string.viewers_count, currentState.viewers),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -144,12 +144,12 @@ fun CategoryDetailsScreen(
                                     contentColor = if (isFollowed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                                 )
                             ) {
-                                Text(if (isFollowed) "Отписаться" else "Отслеживать")
+                                Text(if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(R.string.follow_action))
                             }
                         }
                     }
 
-                    
+
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface
@@ -163,7 +163,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-                    
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -171,15 +171,15 @@ fun CategoryDetailsScreen(
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
-                            
+
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("Здесь скоро появятся стримы", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.streams_will_appear_here), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         } else {
-                            
+
                             if (currentState.clips.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text("Нет популярных клипов", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.no_popular_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             } else {
                                 LazyColumn(
@@ -198,13 +198,13 @@ fun CategoryDetailsScreen(
                                             ClipCard(
                                                 clip = rowItems[0],
                                                 modifier = Modifier.weight(1f),
-                                                onClick = { /* TODO: Открыть плеер */ }
+                                                onClick = {  }
                                             )
                                             if (rowItems.size > 1) {
                                                 ClipCard(
                                                     clip = rowItems[1],
                                                     modifier = Modifier.weight(1f),
-                                                    onClick = { /* TODO: Открыть плеер */ }
+                                                    onClick = {  }
                                                 )
                                             } else {
                                                 Spacer(modifier = Modifier.weight(1f))

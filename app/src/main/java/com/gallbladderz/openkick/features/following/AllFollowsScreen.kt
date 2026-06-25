@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,10 +46,10 @@ fun AllFollowsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Все отслеживаемые", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.all_followed), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
                     }
                 }
             )
@@ -60,7 +62,7 @@ fun AllFollowsScreen(
         ) {
             when (val uiState = state) {
                 is FollowingUiState.Success -> {
-                    
+
                     val allStreamers = uiState.liveStreamers + uiState.offlineStreamers
 
                     LazyColumn(
@@ -75,7 +77,7 @@ fun AllFollowsScreen(
                                     .clickable { onStreamerClick(streamer.slug) },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                
+
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
                                         .data(streamer.avatarUrl)
@@ -97,7 +99,7 @@ fun AllFollowsScreen(
 
                                 Spacer(modifier = Modifier.width(16.dp))
 
-                                
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = streamer.username,
@@ -108,14 +110,14 @@ fun AllFollowsScreen(
                                     )
                                     if (streamer.isLive) {
                                         Text(
-                                            text = "В эфире",
+                                            text = stringResource(R.string.live),
                                             color = MaterialTheme.colorScheme.primary,
                                             style = MaterialTheme.typography.labelMedium
                                         )
                                     }
                                 }
 
-                                
+
                                 FilledTonalButton(
                                     onClick = { viewModel.unfollowStreamer(streamer.slug) },
                                     colors = ButtonDefaults.filledTonalButtonColors(
@@ -123,13 +125,13 @@ fun AllFollowsScreen(
                                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                                     )
                                 ) {
-                                    Text("Отписаться")
+                                    Text(stringResource(R.string.unfollow_action))
                                 }
                             }
                         }
                     }
                 }
-                else -> {} 
+                else -> {}
             }
         }
     }

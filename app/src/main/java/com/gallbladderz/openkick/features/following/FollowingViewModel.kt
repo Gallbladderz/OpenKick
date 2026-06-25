@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -37,15 +38,15 @@ sealed interface FollowingUiState {
 
 class FollowingViewModel(
     private val followsRepository: FollowsRepository,
-    private val followingRepository: FollowingRepository 
+    private val followingRepository: FollowingRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
     fun unfollowStreamer(slug: String) {
         viewModelScope.launch {
-            
-            
+
+
             followsRepository.toggleStreamerFollow(slug, true)
         }
     }
@@ -64,11 +65,11 @@ class FollowingViewModel(
             }.collect { (categorySlugs, streamerSlugs) ->
 
                 if (categorySlugs.isEmpty() && streamerSlugs.isEmpty()) {
-                    _uiState.value = FollowingUiState.Success(emptyList(), emptyList(), emptyList())
+                    _uiState.update { FollowingUiState.Success(emptyList(), emptyList(), emptyList()) }
                     return@collect
                 }
 
-                
+
                 val categoriesDeferred = categorySlugs.map { slug ->
                     async { followingRepository.fetchCategoryDetails(slug) }
                 }
@@ -83,11 +84,13 @@ class FollowingViewModel(
                 val liveStreamers = fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }
                 val offlineStreamers = fetchedStreamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
 
-                _uiState.value = FollowingUiState.Success(
-                    liveStreamers = liveStreamers,
-                    offlineStreamers = offlineStreamers,
-                    categories = fetchedCategories.sortedByDescending { it.viewers }
-                )
+                _uiState.update {
+                    FollowingUiState.Success(
+                        liveStreamers = liveStreamers,
+                        offlineStreamers = offlineStreamers,
+                        categories = fetchedCategories.sortedByDescending { it.viewers }
+                    )
+                }
             }
         }
     }

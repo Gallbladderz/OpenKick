@@ -30,9 +30,9 @@ fun SettingsScreen(
     val mainViewModel: MainViewModel = koinViewModel()
     val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
 
-    
+
     val availableLanguages = mapOf(
-        "ru" to "Русский",
+        "ru" to stringResource(R.string.russian_lang),
         "en" to "English",
         "es" to "Español",
         "pt" to "Português",
@@ -60,7 +60,7 @@ fun SettingsScreen(
                 leadingContent = {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Аватар",
+                        contentDescription = stringResource(R.string.avatar),
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -69,7 +69,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
-                    .clickable { /* TODO: Открыть экран авторизации */ }
+                    .clickable {  }
             )
         }
 
@@ -93,20 +93,20 @@ fun SettingsScreen(
                 modifier = Modifier.padding(vertical = 8.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
-            SettingsGroupHeader("Приложение")
+            SettingsGroupHeader(stringResource(R.string.application_title))
         }
         item {
             SettingsListItem(
                 headline = stringResource(R.string.notifications),
-                supporting = "UnifiedPush, подписки",
+                supporting = stringResource(R.string.unified_push_subs),
                 icon = Icons.Default.Notifications,
                 onClick = { /* TODO */ }
             )
 
-            
+
             SettingsListItem(
                 headline = stringResource(R.string.language_and_region),
-                supporting = if (selectedLanguages.isEmpty()) "Все языки" else selectedLanguages.mapNotNull { availableLanguages[it] ?: it }.joinToString(", "),
+                supporting = if (selectedLanguages.isEmpty()) stringResource(R.string.all_languages) else selectedLanguages.mapNotNull { availableLanguages[it] ?: it }.joinToString(", "),
                 icon = Icons.Default.LocationOn,
                 onClick = onLanguageSettingsClick
             )
@@ -117,12 +117,12 @@ fun SettingsScreen(
                 modifier = Modifier.padding(vertical = 8.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
-            SettingsGroupHeader("О проекте")
+            SettingsGroupHeader(stringResource(R.string.about_project))
         }
         item {
             SettingsListItem(
                 headline = stringResource(R.string.about_app),
-                supporting = "Версия 0.1-alpha",
+                supporting = stringResource(R.string.version_info_app),
                 icon = Icons.Default.Info,
                 onClick = { /* TODO */ }
             )

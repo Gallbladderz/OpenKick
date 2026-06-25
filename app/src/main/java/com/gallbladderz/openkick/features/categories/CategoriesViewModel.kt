@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -42,14 +43,14 @@ class CategoriesViewModel(
     fun fetchCategories() {
         currentPage = 1
         isLastPage = false
-        _uiState.value = CategoriesUiState.Loading
+        _uiState.update { CategoriesUiState.Loading }
 
         viewModelScope.launch(Dispatchers.IO) {
             repository.fetchCategories(currentPage).collect { result ->
                 result.onSuccess { responseBody ->
                     parseCategoriesJson(responseBody, isAppend = false)
                 }.onFailure { exception ->
-                    _uiState.value = CategoriesUiState.Error(exception.message ?: "Ошибка сети")
+                    _uiState.update { CategoriesUiState.Error(exception.message ?: "Network error") }
                 }
             }
         }
@@ -83,7 +84,7 @@ class CategoriesViewModel(
                     try {
                         val obj = element.jsonObject
                         val id = obj["id"]?.jsonPrimitive?.content ?: "0"
-                        val name = obj["name"]?.jsonPrimitive?.content ?: "Без названия"
+                        val name = obj["name"]?.jsonPrimitive?.content ?: "Untitled"
                         val slug = obj["slug"]?.jsonPrimitive?.content ?: ""
                         val viewers = obj["viewers"]?.jsonPrimitive?.intOrNull ?: 0
 
@@ -104,7 +105,7 @@ class CategoriesViewModel(
 
             if (categoriesList.isEmpty()) {
                 if (!isAppend) {
-                    _uiState.value = CategoriesUiState.Error("Не удалось найти игры")
+                    _uiState.update { CategoriesUiState.Error("Could not find games") }
                 }
                 isLastPage = true
             } else {
@@ -112,14 +113,14 @@ class CategoriesViewModel(
                     (_uiState.value as CategoriesUiState.Success).categories
                 } else emptyList()
 
-                
+
                 val newList = (currentList + categoriesList.sortedByDescending { it.viewers }).distinctBy { it.id }
-                _uiState.value = CategoriesUiState.Success(newList)
+                _uiState.update { CategoriesUiState.Success(newList) }
             }
             isLoadingMore = false
         } catch (e: Exception) {
-            Log.e("OpenKick_Categories", "Крэш парсинга игр: ${e.message}", e)
-            if (!isAppend) _uiState.value = CategoriesUiState.Error("Крэш парсинга: ${e.message}")
+            Log.e("OpenKick_Categories", "Game parsing crash: ${e.message}", e)
+            if (!isAppend) _uiState.update { CategoriesUiState.Error("Parsing crash: ${e.message}") }
             isLoadingMore = false
         }
     }
