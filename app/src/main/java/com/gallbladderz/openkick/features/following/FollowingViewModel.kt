@@ -6,12 +6,13 @@ import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-
 
 data class FollowedStreamerUi(
     val slug: String,
@@ -43,32 +44,45 @@ class FollowingViewModel(
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    // Флаг для круглешка
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    // Триггер для ручного пинка базы
+    private val refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    init {
+        observeFollows()
+    }
+
     fun unfollowStreamer(slug: String) {
         viewModelScope.launch {
-
-
             followsRepository.toggleStreamerFollow(slug, true)
         }
     }
 
-    init {
-        observeFollows()
+    // Тот самый метод рефреша для свайпа
+    fun refresh() {
+        if (_isRefreshing.value) return
+        _isRefreshing.value = true
+        refreshTrigger.tryEmit(Unit)
     }
 
     private fun observeFollows() {
         viewModelScope.launch(Dispatchers.IO) {
             combine(
                 followsRepository.getFollowedCategoriesSlugs(),
-                followsRepository.getFollowedStreamersSlugs()
-            ) { categorySlugs, streamerSlugs ->
+                followsRepository.getFollowedStreamersSlugs(),
+                refreshTrigger.onStart { emit(Unit) } // Пинаем флоу при старте и по свайпу
+            ) { categorySlugs, streamerSlugs, _ ->
                 Pair(categorySlugs, streamerSlugs)
             }.collect { (categorySlugs, streamerSlugs) ->
 
                 if (categorySlugs.isEmpty() && streamerSlugs.isEmpty()) {
                     _uiState.update { FollowingUiState.Success(emptyList(), emptyList(), emptyList()) }
+                    _isRefreshing.value = false // Выключаем лоадер, если подписок ноль
                     return@collect
                 }
-
 
                 val categoriesDeferred = categorySlugs.map { slug ->
                     async { followingRepository.fetchCategoryDetails(slug) }
@@ -91,6 +105,9 @@ class FollowingViewModel(
                         categories = fetchedCategories.sortedByDescending { it.viewers }
                     )
                 }
+
+                // Выключаем лоадер после успешной загрузки
+                _isRefreshing.value = false
             }
         }
     }

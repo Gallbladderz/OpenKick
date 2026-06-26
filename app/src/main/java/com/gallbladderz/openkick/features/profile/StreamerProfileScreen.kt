@@ -7,23 +7,29 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.res.stringResource
 import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +51,8 @@ fun StreamerProfileScreen(
     viewModel: StreamerProfileViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.description),
@@ -53,8 +61,24 @@ fun StreamerProfileScreen(
     )
     val context = LocalContext.current
 
+    val pullRefreshState = rememberPullToRefreshState()
+
     LaunchedEffect(slug) {
         viewModel.loadProfile(slug)
+    }
+
+    if (pullRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.refresh()
+        }
+    }
+
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            pullRefreshState.startRefresh()
+        } else {
+            pullRefreshState.endRefresh()
+        }
     }
 
     Scaffold(
@@ -77,7 +101,14 @@ fun StreamerProfileScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        // Добавили clipToBounds(), чтобы круглешок не вылезал за края Box на другие элементы
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .clipToBounds()
+                .nestedScroll(pullRefreshState.nestedScrollConnection)
+        ) {
             when (val uiState = state) {
                 is ProfileUiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.primary)
@@ -118,7 +149,6 @@ fun StreamerProfileScreen(
 
                         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                             when (selectedTabIndex) {
-                                // Вернули нормальный DescriptionTab и передали туда ссылки
                                 0 -> DescriptionTab(uiState.info.bio, uiState.links)
                                 1 -> VideosTab(uiState.videos, onVideoClick)
                                 2 -> ClipsTab(uiState.clips)
@@ -127,6 +157,13 @@ fun StreamerProfileScreen(
                     }
                 }
             }
+
+            PullToRefreshContainer(
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
@@ -140,7 +177,12 @@ fun ProfileHeader(
 ) {
     val context = LocalContext.current
 
-    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState()) // Заставили шапку ловить жесты скролла
+    ) {
         Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
             AsyncImage(
                 model = ImageRequest.Builder(context).data(info.bannerUrl).crossfade(true).build(),
@@ -236,7 +278,6 @@ fun ProfileHeader(
     }
 }
 
-// Вот он, наш герой с карточками
 @Composable
 fun DescriptionTab(bio: String, links: List<ChannelLink>) {
     LazyColumn(
@@ -263,7 +304,8 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
 
         if (links.isEmpty() && bio.isBlank()) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+                // fillParentMaxSize позволяет контенту растянуться внутри LazyColumn
+                Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.streamer_wrote_nothing), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -316,12 +358,21 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
 fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
     val context = LocalContext.current
     if (videos.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.no_vods), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Пустой стейт тоже стал LazyColumn, чтобы ловить свайп
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.no_vods), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
         return
     }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         items(videos) { video ->
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onVideoClick(video.id) },
@@ -361,12 +412,20 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
 @Composable
 fun ClipsTab(clips: List<ClipUiModel>) {
     if (clips.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.no_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.no_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
         return
     }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         val clipRows = clips.chunked(2)
         items(clipRows) { rowItems ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

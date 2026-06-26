@@ -10,7 +10,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -19,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,7 +38,9 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
+import androidx.compose.ui.draw.clipToBounds
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FollowingScreen(
     viewModel: FollowingViewModel = koinViewModel(),
@@ -43,10 +49,26 @@ fun FollowingScreen(
     onCategoryClick: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
+    val pullRefreshState = rememberPullToRefreshState()
+
+    if (pullRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.refresh()
+        }
+    }
+
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            pullRefreshState.startRefresh()
+        } else {
+            pullRefreshState.endRefresh()
+        }
+    }
 
     Scaffold(
         topBar = {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -65,137 +87,147 @@ fun FollowingScreen(
         }
     ) { paddingValues ->
 
-        when (val uiState = state) {
-            is FollowingUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        // Вешаем nestedScroll на основной Box экрана
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .clipToBounds()
+                .nestedScroll(pullRefreshState.nestedScrollConnection)
+        ) {
+            when (val uiState = state) {
+                is FollowingUiState.Loading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-            }
-            is FollowingUiState.Error -> {
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                is FollowingUiState.Error -> {
                     Text(
                         text = uiState.message,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-            }
-            is FollowingUiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                is FollowingUiState.Success -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
+                        contentPadding = PaddingValues(
+                            top = 8.dp,
+                            bottom = 8.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
 
-                    contentPadding = PaddingValues(
-                        top = paddingValues.calculateTopPadding() + 8.dp,
-                        bottom = paddingValues.calculateBottomPadding() + 8.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-
-                    val allStreamers = uiState.liveStreamers + uiState.offlineStreamers
-                    if (allStreamers.isNotEmpty()) {
-                        item {
-                            Column {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp)
-                                        .padding(bottom = 12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.channels),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.all_followed_arrow),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.clickable { onManageClick() }
-                                    )
-                                }
-
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 16.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    items(allStreamers, key = { it.slug }) { streamer ->
-                                        StoryAvatarItem(
-                                            streamer = streamer,
-                                            onClick = { onStreamerClick(streamer.slug) }
+                        val allStreamers = uiState.liveStreamers + uiState.offlineStreamers
+                        if (allStreamers.isNotEmpty()) {
+                            item {
+                                Column {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .padding(bottom = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.channels),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
                                         )
+                                        Text(
+                                            text = stringResource(R.string.all_followed_arrow),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.clickable { onManageClick() }
+                                        )
+                                    }
+
+                                    LazyRow(
+                                        contentPadding = PaddingValues(horizontal = 16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        items(allStreamers, key = { it.slug }) { streamer ->
+                                            StoryAvatarItem(
+                                                streamer = streamer,
+                                                onClick = { onStreamerClick(streamer.slug) }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
+                        if (uiState.categories.isNotEmpty()) {
+                            item {
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.categories),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .padding(bottom = 12.dp)
+                                    )
+                                    LazyRow(
+                                        contentPadding = PaddingValues(horizontal = 16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        items(uiState.categories, key = { it.slug }) { category ->
+                                            FollowedCategoryItem(category, onClick = { onCategoryClick(category.slug) })
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
-                    if (uiState.categories.isNotEmpty()) {
-                        item {
-                            Column {
+                        if (uiState.liveStreamers.isNotEmpty()) {
+                            item {
                                 Text(
-                                    text = stringResource(R.string.categories),
+                                    text = stringResource(R.string.live),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier
                                         .padding(horizontal = 16.dp)
                                         .padding(bottom = 12.dp)
                                 )
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 16.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    items(uiState.categories, key = { it.slug }) { category ->
-                                        FollowedCategoryItem(category, onClick = { onCategoryClick(category.slug) })
-                                    }
-                                }
+                            }
+
+                            items(uiState.liveStreamers, key = { "live_${it.slug}" }) { streamer ->
+                                LiveStreamCard(
+                                    streamer = streamer,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    onClick = { onStreamerClick(streamer.slug) }
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
-                    }
 
-
-                    if (uiState.liveStreamers.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = stringResource(R.string.live),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 12.dp)
-                            )
-                        }
-
-                        items(uiState.liveStreamers, key = { "live_${it.slug}" }) { streamer ->
-                            LiveStreamCard(
-                                streamer = streamer,
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                onClick = { onStreamerClick(streamer.slug) }
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                    }
-
-                    if (allStreamers.isEmpty() && uiState.categories.isEmpty()) {
-                        item {
-                            Text(
-                                text = stringResource(R.string.empty_follow_someone),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(32.dp)
-                            )
+                        if (allStreamers.isEmpty() && uiState.categories.isEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(R.string.empty_follow_someone),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
+
+            // Сам круглешок обновления поверх всего
+            PullToRefreshContainer(
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

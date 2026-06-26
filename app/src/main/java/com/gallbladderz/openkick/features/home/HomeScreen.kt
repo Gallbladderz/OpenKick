@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -38,10 +42,9 @@ import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 import com.gallbladderz.openkick.features.categories.CategoriesScreen
 import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.draw.clipToBounds
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
@@ -50,10 +53,30 @@ fun HomeScreen(
     onSearchClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     val defaultFilter = stringResource(R.string.filter_all)
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
     var isGridMode by remember { mutableStateOf(false) }
+
+    // Стейт для обработки свайпа
+    val pullRefreshState = rememberPullToRefreshState()
+
+    // Если юзер тянет экран вниз - дергаем рефреш
+    if (pullRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.refresh()
+        }
+    }
+
+    // Синхронизируем состояние анимации круглешка со стейтом из вьюмодели
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            pullRefreshState.startRefresh()
+        } else {
+            pullRefreshState.endRefresh()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -90,8 +113,14 @@ fun HomeScreen(
             onGridModeChange = { isGridMode = it }
         )
 
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-
+        // Блок контента, который скроллится и поддерживает pull-to-refresh
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .clipToBounds()
+                .nestedScroll(pullRefreshState.nestedScrollConnection)
+        ) {
             if (selectedFilter == stringResource(R.string.filter_categories)) {
                 CategoriesScreen(onCategoryClick = onCategoryClick)
             } else {
@@ -104,21 +133,14 @@ fun HomeScreen(
                     }
 
                     is HomeUiState.Success -> {
-
                         val listState = rememberLazyListState()
 
                         LaunchedEffect(listState) {
                             snapshotFlow {
                                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
                             }.collect { lastVisible ->
-
-                                val totalItems =
-                                    listState.layoutInfo.totalItemsCount
-
-                                if (
-                                    lastVisible != null &&
-                                    lastVisible >= totalItems - 5
-                                ) {
+                                val totalItems = listState.layoutInfo.totalItemsCount
+                                if (lastVisible != null && lastVisible >= totalItems - 5) {
                                     viewModel.loadMoreStreams()
                                 }
                             }
@@ -126,6 +148,7 @@ fun HomeScreen(
 
                         val clipsFilter = stringResource(R.string.filter_clips)
                         val liveFilter = stringResource(R.string.live)
+
                         LazyColumn(
                             state = listState,
                             contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
@@ -145,7 +168,6 @@ fun HomeScreen(
                                 val clipRows = uiState.clips.chunked(2)
 
                                 itemsIndexed(clipRows) { _, rowItems ->
-
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -171,7 +193,6 @@ fun HomeScreen(
                                 }
 
                             } else {
-
                                 val heroStreams = uiState.streams.take(5)
                                 val feedStreams = uiState.streams.drop(5)
 
@@ -196,11 +217,9 @@ fun HomeScreen(
                                 }
 
                                 if (isGridMode) {
-
                                     val streamRows = feedStreams.chunked(2)
 
                                     itemsIndexed(streamRows) { _, rowItems ->
-
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -230,12 +249,10 @@ fun HomeScreen(
                                     }
 
                                 } else {
-
                                     itemsIndexed(
                                         feedStreams,
                                         key = { _, it -> it.id }
                                     ) { _, stream ->
-
                                         StreamCard(
                                             stream = stream,
                                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -259,6 +276,14 @@ fun HomeScreen(
                     }
                 }
             }
+
+            // Сам модный круглешок загрузки, прибитый к верхушке контейнера
+            PullToRefreshContainer(
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
@@ -328,7 +353,6 @@ fun HomeFilterChipsRow(
         }
     }
 }
-
 
 @Composable
 fun rememberGridViewIcon(): ImageVector {

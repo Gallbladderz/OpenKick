@@ -3,12 +3,12 @@ package com.gallbladderz.openkick.features.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.gallbladderz.openkick.core.datastore.SettingsRepository
 
 sealed interface HomeUiState {
     data object Loading : HomeUiState
@@ -24,10 +24,12 @@ class HomeViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _uiState =
-        MutableStateFlow<HomeUiState>(HomeUiState.Loading)
-
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState = _uiState.asStateFlow()
+
+    // Тот самый флаг для модного круглешка
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
 
     private var streamsCursor: String? = null
     private var clipsCursor: String? = null
@@ -41,7 +43,6 @@ class HomeViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.selectedLanguagesFlow.collect { langs ->
-
                 if (currentLanguages != langs) {
                     currentLanguages = langs
                     fetchHomeData()
@@ -51,7 +52,6 @@ class HomeViewModel(
     }
 
     fun fetchHomeData() {
-
         val langs = currentLanguages ?: return
 
         _uiState.value = HomeUiState.Loading
@@ -62,24 +62,17 @@ class HomeViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-
                 val streamsDeferred = async {
-                    repository.fetchLivestreams(
-                        cursor = null,
-                        languages = langs
-                    )
+                    repository.fetchLivestreams(cursor = null, languages = langs)
                 }
-
                 val clipsDeferred = async { repository.fetchTopClips(null) }
 
                 val streamsResult = streamsDeferred.await()
                 val clipsResult = clipsDeferred.await()
 
-
                 val streamsPair = streamsResult.getOrNull()
                 val streamsList = streamsPair?.first ?: emptyList()
                 streamsCursor = streamsPair?.second
-
 
                 val clipsPair = clipsResult.getOrNull()
                 val clipsList = clipsPair?.first ?: emptyList()
@@ -100,11 +93,47 @@ class HomeViewModel(
         }
     }
 
-    fun loadMoreStreams() {
-
+    // Тихий рефреш по свайпу вниз
+    fun refresh() {
         val langs = currentLanguages ?: return
+        if (_isRefreshing.value) return // Защита от спама свайпами
 
-        Log.d("PAGINATION", "loadMoreStreams called")
+        _isRefreshing.value = true
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val streamsDeferred = async {
+                    repository.fetchLivestreams(cursor = null, languages = langs)
+                }
+                val clipsDeferred = async { repository.fetchTopClips(null) }
+
+                val streamsResult = streamsDeferred.await()
+                val clipsResult = clipsDeferred.await()
+
+                val streamsPair = streamsResult.getOrNull()
+                val clipsPair = clipsResult.getOrNull()
+
+                if (streamsPair != null || clipsPair != null) {
+                    streamsCursor = streamsPair?.second ?: streamsCursor
+                    clipsCursor = clipsPair?.second ?: clipsCursor
+
+                    isStreamsEnd = false
+                    isClipsEnd = false
+
+                    _uiState.value = HomeUiState.Success(
+                        streams = streamsPair?.first ?: emptyList(),
+                        clips = clipsPair?.first ?: emptyList()
+                    )
+                }
+            } finally {
+                // Всегда выключаем крутилку, даже если инет отвалился
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    fun loadMoreStreams() {
+        val langs = currentLanguages ?: return
 
         if (isStreamsLoading || isStreamsEnd || _uiState.value !is HomeUiState.Success) {
             return
@@ -112,46 +141,26 @@ class HomeViewModel(
 
         isStreamsLoading = true
 
-        Log.d("PAGINATION", "request cursor=$streamsCursor")
-
         viewModelScope.launch(Dispatchers.IO) {
-
-            val result = repository.fetchLivestreams(
-                cursor = streamsCursor,
-                languages = langs
-            )
+            val result = repository.fetchLivestreams(cursor = streamsCursor, languages = langs)
 
             if (result.isSuccess) {
-
                 val (newStreams, nextCursor) = result.getOrThrow()
-
-
                 streamsCursor = nextCursor
-
-                Log.d("PAGINATION", "nextCursor=$nextCursor count=${newStreams.size}")
 
                 if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {
-
                     if (nextCursor.isNullOrBlank()) {
                         isStreamsEnd = true
                     }
-
                     val currentState = _uiState.value as HomeUiState.Success
-
-
                     val merged = (currentState.streams + newStreams).distinctBy { it.id }
-                    Log.d("PAGINATION", "merged size=${merged.size}")
-
-                    _uiState.value = currentState.copy(
-                        streams = merged
-                    )
+                    _uiState.value = currentState.copy(streams = merged)
                 }
             } else {
                 isStreamsEnd = true
             }
-
             isStreamsLoading = false
         }
     }

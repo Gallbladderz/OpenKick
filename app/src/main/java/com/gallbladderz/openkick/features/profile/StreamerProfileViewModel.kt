@@ -32,37 +32,69 @@ class StreamerProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    // Тот самый круглешок
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    // Запоминаем слаг, чтобы потом обновить нужный профиль
+    private var currentSlug: String? = null
+
     fun loadProfile(slug: String) {
+        currentSlug = slug
         _uiState.update { ProfileUiState.Loading }
 
         viewModelScope.launch {
-            val profileResult = repository.fetchProfileInfo(slug)
+            fetchData(slug)
+        }
+    }
 
-            if (profileResult.isSuccess) {
-                val profile = profileResult.getOrThrow()
+    // Рефреш, который вызывается при свайпе
+    fun refresh() {
+        val slug = currentSlug ?: return
+        if (_isRefreshing.value) return // защита от двойного свайпа
 
-                val videosDeferred = async { repository.fetchVideos(profile.channelId) }
-                val clipsDeferred = async { repository.fetchClips(profile.slug) }
-                val linksDeferred = async { repository.fetchChannelLinks(profile.slug) }
+        _isRefreshing.value = true
 
-                // Твой репозиторий возвращает Flow, поэтому берем первое значение через first()
-                val isFollowingDeferred = async { followsRepository.isStreamerFollowed(profile.slug).first() }
+        viewModelScope.launch {
+            try {
+                fetchData(slug)
+            } finally {
+                // Выключаем крутилку в любом случае
+                _isRefreshing.value = false
+            }
+        }
+    }
 
-                val videos = videosDeferred.await().getOrDefault(emptyList())
-                val clips = clipsDeferred.await().getOrDefault(emptyList())
-                val links = linksDeferred.await().getOrDefault(emptyList())
-                val isFollowing = isFollowingDeferred.await()
+    // Вынес саму логику загрузки в отдельный метод, чтобы не дублировать код
+    private suspend fun fetchData(slug: String) {
+        val profileResult = repository.fetchProfileInfo(slug)
 
-                _uiState.update {
-                    ProfileUiState.Success(
-                        info = profile,
-                        videos = videos,
-                        clips = clips,
-                        links = links,
-                        isFollowing = isFollowing
-                    )
-                }
-            } else {
+        if (profileResult.isSuccess) {
+            val profile = profileResult.getOrThrow()
+
+            val videosDeferred = viewModelScope.async { repository.fetchVideos(profile.channelId) }
+            val clipsDeferred = viewModelScope.async { repository.fetchClips(profile.slug) }
+            val linksDeferred = viewModelScope.async { repository.fetchChannelLinks(profile.slug) }
+            val isFollowingDeferred = viewModelScope.async { followsRepository.isStreamerFollowed(profile.slug).first() }
+
+            val videos = videosDeferred.await().getOrDefault(emptyList())
+            val clips = clipsDeferred.await().getOrDefault(emptyList())
+            val links = linksDeferred.await().getOrDefault(emptyList())
+            val isFollowing = isFollowingDeferred.await()
+
+            _uiState.update {
+                ProfileUiState.Success(
+                    info = profile,
+                    videos = videos,
+                    clips = clips,
+                    links = links,
+                    isFollowing = isFollowing
+                )
+            }
+        } else {
+            // Если мы просто обновляли и упала ошибка, можно оставить старый стейт.
+            // Но если это была первая загрузка - кидаем ошибку.
+            if (_uiState.value is ProfileUiState.Loading) {
                 _uiState.update {
                     ProfileUiState.Error(
                         profileResult.exceptionOrNull()?.message ?: "Load error"
@@ -79,10 +111,9 @@ class StreamerProfileViewModel(
                 val currentlyFollowing = currentState.isFollowing
                 val slug = currentState.info.slug
 
-                // Дергаем твой правильный метод из репозитория
                 followsRepository.toggleStreamerFollow(slug, currentlyFollowing)
 
-                // Сразу меняем стейт на кнопке, чтобы юзер не ждал
+                // Мгновенный оптимистичный апдейт кнопки, чтобы юзер не ждал
                 _uiState.update {
                     currentState.copy(isFollowing = !currentlyFollowing)
                 }

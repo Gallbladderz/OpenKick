@@ -1,4 +1,4 @@
-@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class) 
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 
 package com.gallbladderz.openkick.di
 
@@ -7,6 +7,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.room.Room
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.core.network.KickApiConstants
+import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.core.network.MobileHeadersInterceptor
 import com.gallbladderz.openkick.data.local.AppDatabase
 import com.gallbladderz.openkick.data.local.FollowsRepository
@@ -27,29 +28,52 @@ import com.gallbladderz.openkick.features.profile.StreamerProfileRepository
 import com.gallbladderz.openkick.features.profile.StreamerProfileViewModel
 import com.gallbladderz.openkick.features.search.SearchRepository
 import com.gallbladderz.openkick.features.search.SearchViewModel
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.dsl.module
+import retrofit2.Retrofit
 
 val appModule = module {
     single { SettingsRepository(androidContext()) }
     workerOf(::StreamCheckWorker)
 
+    // Твой OkHttpClient
     single {
         okhttp3.OkHttpClient.Builder()
             .addInterceptor(MobileHeadersInterceptor())
             .build()
     }
 
+    // === МАГИЯ RETROFIT ===
+    single {
+        val json = Json { ignoreUnknownKeys = true }
+        val contentType = "application/json".toMediaType()
+        Retrofit.Builder()
+            // Ретрофиту ОБЯЗАТЕЛЬНО нужен слеш в конце базового урла!
+            .baseUrl(KickApiConstants.KICK_BASE_URL + "/")
+            .client(get())
+            .addConverterFactory(json.asConverterFactory(contentType))
+            .build()
+    }
+
+    // Провайдим сам сервис
+    single { get<Retrofit>().create(KickApiService::class.java) }
+
+    // Обновляем CategoriesRepository — теперь он жрет KickApiService
+    single { CategoriesRepository(get()) }
+    // =======================
+
+    // Остальные репозитории пока не трогаем, они по старинке просят OkHttpClient.
+    // Koin сам догадается подсунуть им нужный клиент.
     single { HomeRepository(get()) }
     single { SearchRepository(get()) }
-    single { CategoriesRepository(get()) }
     single { PlayerRepository(get()) }
     single { ChatRepository(get()) }
     single { FollowingRepository(get()) }
-
-    
     single { StreamerProfileRepository(get()) }
 
     single {
@@ -82,9 +106,10 @@ val appModule = module {
     viewModel { PlayerViewModel(get(), get(), get(), get()) }
     viewModel { CategoriesViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
+
+    // Вьюмодели вообще плевать, что внутри репозитория, она просто работает
     viewModel { CategoryDetailsViewModel(get()) }
+
     viewModel { FollowingViewModel(get(), get()) }
-
-
     viewModel { StreamerProfileViewModel(get(), get()) }
 }
