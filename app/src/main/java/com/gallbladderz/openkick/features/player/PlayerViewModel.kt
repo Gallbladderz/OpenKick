@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
@@ -32,16 +31,12 @@ class PlayerViewModel(
 
     val isPlaying = playerManager.isPlaying
     val playbackState = playerManager.playbackState
-    val currentPosition = playerManager.currentPosition
-    val duration = playerManager.duration
 
     private var currentPlaybackUrl: String? = null
 
     fun play() = playerManager.resume()
 
     fun pause() = playerManager.pause()
-
-    fun seekTo(position: Long) = playerManager.seekTo(position)
 
     fun isStreamerFollowed(streamerName: String) =
         followsRepository.isStreamerFollowed(streamerName)

@@ -1,6 +1,7 @@
 package com.gallbladderz.openkick.features.player.models
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class ChannelStreamInfoResponse(
@@ -13,10 +14,16 @@ data class ChannelStreamInfoResponse(
 
 @Serializable
 data class LivestreamDto(
+    val id: JsonElement? = null,
+    val slug: String? = null,
+    val uuid: String? = null, 
     val playback_url: String? = null,
     val viewer_count: Int = 0,
     val session_title: String = "Stream"
-)
+) {
+    val parsedId: String?
+        get() = (id as? kotlinx.serialization.json.JsonPrimitive)?.content
+}
 
 @Serializable
 data class UserDto(

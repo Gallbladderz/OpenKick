@@ -15,8 +15,8 @@ class PlayerRepository(
     fun fetchStreamInfo(streamerName: String): Flow<Result<StreamInfo>> = flow {
         try {
             val response = apiService.getChannelStreamInfo(streamerName)
+            val finalUrl = response.playback_url ?: response.livestream?.playback_url
 
-            val url = response.playback_url ?: response.livestream?.playback_url
             val chatroomId = (response.chatroom?.id ?: response.chatroom_id)?.toString()
             var avatar = response.user?.profile_pic ?: ""
             avatar = avatar.replace("\\/", "/")
@@ -24,11 +24,11 @@ class PlayerRepository(
             val viewers = response.livestream?.viewer_count ?: 0
             val title = response.livestream?.session_title ?: "Stream"
 
-            if (!url.isNullOrEmpty()) {
+            if (!finalUrl.isNullOrEmpty()) {
                 emit(
                     Result.success(
                         StreamInfo(
-                            playbackUrl = url,
+                            playbackUrl = finalUrl,
                             avatarUrl = avatar,
                             viewers = viewers,
                             title = title,
@@ -40,7 +40,7 @@ class PlayerRepository(
                 emit(Result.failure(Exception("Streamer is currently offline")))
             }
         } catch (e: Exception) {
-            emit(Result.failure(Exception("API response processing error: ${e.message}")))
+            emit(Result.failure(Exception("API processing error: ${e.message}")))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -48,13 +48,7 @@ class PlayerRepository(
         try {
             val dtos = apiService.getChannelLinks(streamerName)
             val links = dtos.map { dto ->
-                ChannelLink(
-                    id = dto.id,
-                    description = dto.description,
-                    link = dto.link,
-                    title = dto.title,
-                    imageUrl = dto.image?.url ?: ""
-                )
+                ChannelLink(dto.id, dto.description, dto.link, dto.title, dto.image?.url ?: "")
             }
             Result.success(links)
         } catch (e: Exception) {
