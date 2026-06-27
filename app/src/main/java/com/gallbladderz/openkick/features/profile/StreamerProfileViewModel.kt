@@ -32,11 +32,11 @@ class StreamerProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    // Тот самый круглешок
+    
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    // Запоминаем слаг, чтобы потом обновить нужный профиль
+    
     private var currentSlug: String? = null
 
     fun loadProfile(slug: String) {
@@ -48,10 +48,10 @@ class StreamerProfileViewModel(
         }
     }
 
-    // Рефреш, который вызывается при свайпе
+    
     fun refresh() {
         val slug = currentSlug ?: return
-        if (_isRefreshing.value) return // защита от двойного свайпа
+        if (_isRefreshing.value) return 
 
         _isRefreshing.value = true
 
@@ -59,13 +59,13 @@ class StreamerProfileViewModel(
             try {
                 fetchData(slug)
             } finally {
-                // Выключаем крутилку в любом случае
+                
                 _isRefreshing.value = false
             }
         }
     }
 
-    // Вынес саму логику загрузки в отдельный метод, чтобы не дублировать код
+    
     private suspend fun fetchData(slug: String) {
         val profileResult = repository.fetchProfileInfo(slug)
 
@@ -92,8 +92,8 @@ class StreamerProfileViewModel(
                 )
             }
         } else {
-            // Если мы просто обновляли и упала ошибка, можно оставить старый стейт.
-            // Но если это была первая загрузка - кидаем ошибку.
+            
+            
             if (_uiState.value is ProfileUiState.Loading) {
                 _uiState.update {
                     ProfileUiState.Error(
@@ -113,7 +113,7 @@ class StreamerProfileViewModel(
 
                 followsRepository.toggleStreamerFollow(slug, currentlyFollowing)
 
-                // Мгновенный оптимистичный апдейт кнопки, чтобы юзер не ждал
+                
                 _uiState.update {
                     currentState.copy(isFollowing = !currentlyFollowing)
                 }

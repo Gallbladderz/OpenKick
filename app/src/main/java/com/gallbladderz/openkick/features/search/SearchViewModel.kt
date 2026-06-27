@@ -1,14 +1,11 @@
 package com.gallbladderz.openkick.features.search
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
 
 sealed interface SearchUiState {
     data object Idle : SearchUiState
@@ -32,48 +29,14 @@ class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
         _uiState.value = SearchUiState.Loading
         searchJob?.cancel()
 
-        searchJob = viewModelScope.launch(Dispatchers.IO) {
+        searchJob = viewModelScope.launch {
             repository.searchStreamer(query).collect { result ->
-                result.onSuccess { responseBody ->
-                    parseSearchJson(responseBody)
+                result.onSuccess { channels ->
+                    _uiState.value = SearchUiState.Success(channels)
                 }.onFailure { exception ->
                     _uiState.value = SearchUiState.Error(exception.message ?: "Ошибка сети")
                 }
             }
-        }
-    }
-
-    private fun parseSearchJson(jsonString: String) {
-        try {
-            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
-            val channelsList = mutableListOf<SearchUiModel>()
-
-            val dataObj = jsonElement.jsonObject["data"]?.jsonObject
-            val channelsArray = dataObj?.get("channels")?.jsonArray
-
-            if (channelsArray != null) {
-                for (element in channelsArray) {
-                    val obj = element.jsonObject
-                    val slug = obj["slug"]?.jsonPrimitive?.content ?: continue
-
-                    val isLive = obj["is_live"]?.jsonPrimitive?.booleanOrNull == true ||
-                            (obj.containsKey("livestream") && obj["livestream"] !is JsonNull)
-
-                    var pic = obj["profile_pic"]?.jsonPrimitive?.content ?: ""
-                    pic = pic.replace("\\/", "/")
-
-                    channelsList.add(SearchUiModel(slug, pic, isLive))
-                }
-            }
-
-            if (channelsList.isEmpty()) {
-                _uiState.value = SearchUiState.Error("Ничего не найдено")
-            } else {
-                _uiState.value = SearchUiState.Success(channelsList)
-            }
-        } catch (e: Exception) {
-            Log.e("OpenKick_Search", "Ошибка парсинга: ${e.message}")
-            _uiState.value = SearchUiState.Error("Ошибка обработки данных")
         }
     }
 }

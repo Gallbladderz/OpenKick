@@ -41,34 +41,34 @@ val appModule = module {
     single { SettingsRepository(androidContext()) }
     workerOf(::StreamCheckWorker)
 
-    // Твой OkHttpClient
+    
     single {
         okhttp3.OkHttpClient.Builder()
             .addInterceptor(MobileHeadersInterceptor())
             .build()
     }
 
-    // === МАГИЯ RETROFIT ===
+    
     single {
         val json = Json { ignoreUnknownKeys = true }
         val contentType = "application/json".toMediaType()
         Retrofit.Builder()
-            // Ретрофиту ОБЯЗАТЕЛЬНО нужен слеш в конце базового урла!
+            
             .baseUrl(KickApiConstants.KICK_BASE_URL + "/")
             .client(get())
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
     }
 
-    // Провайдим сам сервис
+    
     single { get<Retrofit>().create(KickApiService::class.java) }
 
-    // Обновляем CategoriesRepository — теперь он жрет KickApiService
+    
     single { CategoriesRepository(get()) }
-    // =======================
+    
 
-    // Остальные репозитории пока не трогаем, они по старинке просят OkHttpClient.
-    // Koin сам догадается подсунуть им нужный клиент.
+    
+    
     single { HomeRepository(get()) }
     single { SearchRepository(get()) }
     single { PlayerRepository(get()) }
@@ -107,7 +107,7 @@ val appModule = module {
     viewModel { CategoriesViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
 
-    // Вьюмодели вообще плевать, что внутри репозитория, она просто работает
+    
     viewModel { CategoryDetailsViewModel(get()) }
 
     viewModel { FollowingViewModel(get(), get()) }

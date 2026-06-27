@@ -44,11 +44,11 @@ class FollowingViewModel(
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    // Флаг для круглешка
+    
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    // Триггер для ручного пинка базы
+    
     private val refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     init {
@@ -61,7 +61,7 @@ class FollowingViewModel(
         }
     }
 
-    // Тот самый метод рефреша для свайпа
+    
     fun refresh() {
         if (_isRefreshing.value) return
         _isRefreshing.value = true
@@ -73,14 +73,14 @@ class FollowingViewModel(
             combine(
                 followsRepository.getFollowedCategoriesSlugs(),
                 followsRepository.getFollowedStreamersSlugs(),
-                refreshTrigger.onStart { emit(Unit) } // Пинаем флоу при старте и по свайпу
+                refreshTrigger.onStart { emit(Unit) } 
             ) { categorySlugs, streamerSlugs, _ ->
                 Pair(categorySlugs, streamerSlugs)
             }.collect { (categorySlugs, streamerSlugs) ->
 
                 if (categorySlugs.isEmpty() && streamerSlugs.isEmpty()) {
                     _uiState.update { FollowingUiState.Success(emptyList(), emptyList(), emptyList()) }
-                    _isRefreshing.value = false // Выключаем лоадер, если подписок ноль
+                    _isRefreshing.value = false 
                     return@collect
                 }
 
@@ -106,7 +106,7 @@ class FollowingViewModel(
                     )
                 }
 
-                // Выключаем лоадер после успешной загрузки
+                
                 _isRefreshing.value = false
             }
         }

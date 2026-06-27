@@ -45,7 +45,7 @@ fun SearchScreen(
         viewModel.searchStreamer(query)
     }
 
-    // Задал фон, чтобы тема вообще начала работать на этом экране
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,7 +67,7 @@ fun SearchScreen(
                 )
             },
             singleLine = true,
-            shape = CircleShape, // Твой многострадальный круглый инпут
+            shape = CircleShape, 
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -94,7 +94,7 @@ fun SearchScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(uiState.channels, key = { it.username }) { channel ->
-                            // Вот тут передаем статус лайва, чтобы твой навигатор понял, куда слать юзера
+                            
                             SearchChannelCard(
                                 channel = channel,
                                 onClick = { onChannelClick(channel.username, channel.isLive) }

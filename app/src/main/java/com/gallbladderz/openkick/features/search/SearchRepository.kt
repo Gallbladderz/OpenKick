@@ -1,29 +1,30 @@
 package com.gallbladderz.openkick.features.search
 
-import com.gallbladderz.openkick.core.network.KickApiConstants
+import com.gallbladderz.openkick.core.network.KickApiService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
+import kotlinx.coroutines.flow.flowOn
 
-class SearchRepository(private val client: OkHttpClient) {
-    fun searchStreamer(query: String): Flow<Result<String>> = flow {
-        val request = Request.Builder()
-            .url("${KickApiConstants.KICK_SEARCH_API_BASE_URL}/search/enriched?query=${android.net.Uri.encode(query)}")
-            .build()
+class SearchRepository(private val apiService: KickApiService) {
+    fun searchStreamer(query: String): Flow<Result<List<SearchUiModel>>> = flow {
         try {
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string()
+            val response = apiService.searchChannels(query)
+            val channels = response.data?.channels?.map { dto ->
+                SearchUiModel(
+                    username = dto.slug,
+                    profilePic = dto.profilePic?.replace("\\/", "/") ?: "",
+                    isLive = dto.isActuallyLive
+                )
+            } ?: emptyList()
 
-            if (!response.isSuccessful || responseBody == null) {
-                emit(Result.failure(Exception("Поиск упал: ${response.code}")))
-                return@flow
+            if (channels.isEmpty()) {
+                emit(Result.failure(Exception("Ничего не найдено")))
+            } else {
+                emit(Result.success(channels))
             }
-
-            emit(Result.success(responseBody))
-        } catch (e: IOException) {
-            emit(Result.failure(Exception("Ошибка сети", e)))
+        } catch (e: Exception) {
+            emit(Result.failure(Exception("Ошибка сети: ${e.message}", e)))
         }
-    }
+    }.flowOn(Dispatchers.IO)
 }

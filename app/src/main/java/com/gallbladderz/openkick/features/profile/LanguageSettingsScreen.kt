@@ -33,11 +33,11 @@ fun LanguageSettingsScreen(
 ) {
     val selectedLanguages by viewModel.selectedLanguages.collectAsStateWithLifecycle()
 
-    // Динамически получаем текущий язык системы/приложения
+    
     val configuration = LocalConfiguration.current
     val appLanguage = configuration.locales[0].language
 
-    // Стейты для премиальной шторки (BottomSheet)
+    
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showLanguageSheet by remember { mutableStateOf(false) }
 
@@ -77,7 +77,7 @@ fun LanguageSettingsScreen(
                 .background(MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(16.dp)
         ) {
-            // === 1. ЯЗЫК ПРИЛОЖЕНИЯ ===
+            
             item {
                 Text(
                     text = stringResource(R.string.interface_language),
@@ -95,7 +95,7 @@ fun LanguageSettingsScreen(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showLanguageSheet = true } // Вызываем BottomSheet
+                        .clickable { showLanguageSheet = true } 
                 )
 
                 HorizontalDivider(
@@ -104,7 +104,7 @@ fun LanguageSettingsScreen(
                 )
             }
 
-            // === 2. НАСТРОЙКА ЯЗЫКОВ СТРИМА ===
+            
             item {
                 Text(
                     text = stringResource(R.string.stream_languages),
@@ -147,7 +147,7 @@ fun LanguageSettingsScreen(
         }
     }
 
-    // === ПРЕМИАЛЬНАЯ ШТОРКА ВЫБОРА ЯЗЫКА ===
+    
     if (showLanguageSheet) {
         ModalBottomSheet(
             onDismissRequest = { showLanguageSheet = false },
@@ -157,7 +157,7 @@ fun LanguageSettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp) // Отступ для красивого вида
+                    .padding(bottom = 32.dp) 
             ) {
                 Text(
                     text = stringResource(R.string.interface_language),
@@ -187,7 +187,7 @@ fun LanguageSettingsScreen(
     }
 }
 
-// Вспомогательный компонент для строк выбора языка в шторке
+
 @Composable
 fun LanguageOptionItem(
     title: String,

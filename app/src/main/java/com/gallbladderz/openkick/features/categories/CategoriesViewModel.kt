@@ -1,6 +1,5 @@
 package com.gallbladderz.openkick.features.categories
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.data.local.FollowsRepository
@@ -9,7 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
 
 sealed interface CategoriesUiState {
     data object Loading : CategoriesUiState
@@ -21,6 +19,7 @@ class CategoriesViewModel(
     private val repository: CategoriesRepository,
     private val followsRepository: FollowsRepository
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow<CategoriesUiState>(CategoriesUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
@@ -45,10 +44,17 @@ class CategoriesViewModel(
         isLastPage = false
         _uiState.update { CategoriesUiState.Loading }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             repository.fetchCategories(currentPage).collect { result ->
-                result.onSuccess { responseBody ->
-                    parseCategoriesJson(responseBody, isAppend = false)
+                result.onSuccess { categories ->
+                    if (categories.isEmpty()) {
+                        _uiState.update { CategoriesUiState.Error("Could not find games") }
+                        isLastPage = true
+                    } else {
+                        
+                        val sorted = categories.sortedByDescending { it.viewers }
+                        _uiState.update { CategoriesUiState.Success(sorted) }
+                    }
                 }.onFailure { exception ->
                     _uiState.update { CategoriesUiState.Error(exception.message ?: "Network error") }
                 }
@@ -61,67 +67,23 @@ class CategoriesViewModel(
         isLoadingMore = true
         currentPage++
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             repository.fetchCategories(currentPage).collect { result ->
-                result.onSuccess { responseBody ->
-                    parseCategoriesJson(responseBody, isAppend = true)
+                result.onSuccess { newCategories ->
+                    if (newCategories.isEmpty()) {
+                        isLastPage = true
+                    } else {
+                        val currentState = _uiState.value as CategoriesUiState.Success
+                        
+                        val merged = (currentState.categories + newCategories.sortedByDescending { it.viewers })
+                            .distinctBy { it.id }
+                        _uiState.update { CategoriesUiState.Success(merged) }
+                    }
+                    isLoadingMore = false
                 }.onFailure {
                     isLoadingMore = false
                 }
             }
-        }
-    }
-
-    private fun parseCategoriesJson(jsonString: String, isAppend: Boolean) {
-        try {
-            val jsonElement = Json { ignoreUnknownKeys = true }.parseToJsonElement(jsonString)
-            val categoriesList = mutableListOf<CategoryUiModel>()
-
-            val dataArray = jsonElement.jsonObject["data"]?.jsonArray
-
-            if (dataArray != null) {
-                for (element in dataArray) {
-                    try {
-                        val obj = element.jsonObject
-                        val id = obj["id"]?.jsonPrimitive?.content ?: "0"
-                        val name = obj["name"]?.jsonPrimitive?.content ?: "Untitled"
-                        val slug = obj["slug"]?.jsonPrimitive?.content ?: ""
-                        val viewers = obj["viewers"]?.jsonPrimitive?.intOrNull ?: 0
-
-                        val tagsArray = obj["tags"]?.jsonArray
-                        val tags = tagsArray?.mapNotNull { it.jsonPrimitive.content } ?: emptyList()
-
-                        var bannerUrl = obj["banner"]?.jsonObject?.get("responsive")?.jsonPrimitive?.content ?: ""
-                        bannerUrl = bannerUrl.replace("\\/", "/")
-                        if (bannerUrl.contains(" ")) {
-                            bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
-                        }
-                        if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
-
-                        categoriesList.add(CategoryUiModel(id, name, slug, viewers, bannerUrl, tags))
-                    } catch (e: Exception) {}
-                }
-            }
-
-            if (categoriesList.isEmpty()) {
-                if (!isAppend) {
-                    _uiState.update { CategoriesUiState.Error("Could not find games") }
-                }
-                isLastPage = true
-            } else {
-                val currentList = if (isAppend && _uiState.value is CategoriesUiState.Success) {
-                    (_uiState.value as CategoriesUiState.Success).categories
-                } else emptyList()
-
-
-                val newList = (currentList + categoriesList.sortedByDescending { it.viewers }).distinctBy { it.id }
-                _uiState.update { CategoriesUiState.Success(newList) }
-            }
-            isLoadingMore = false
-        } catch (e: Exception) {
-            Log.e("OpenKick_Categories", "Game parsing crash: ${e.message}", e)
-            if (!isAppend) _uiState.update { CategoriesUiState.Error("Parsing crash: ${e.message}") }
-            isLoadingMore = false
         }
     }
 }

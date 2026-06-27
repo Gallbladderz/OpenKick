@@ -59,17 +59,17 @@ fun HomeScreen(
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
     var isGridMode by remember { mutableStateOf(false) }
 
-    // Стейт для обработки свайпа
+    
     val pullRefreshState = rememberPullToRefreshState()
 
-    // Если юзер тянет экран вниз - дергаем рефреш
+    
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
             viewModel.refresh()
         }
     }
 
-    // Синхронизируем состояние анимации круглешка со стейтом из вьюмодели
+    
     LaunchedEffect(isRefreshing) {
         if (isRefreshing) {
             pullRefreshState.startRefresh()
@@ -113,7 +113,7 @@ fun HomeScreen(
             onGridModeChange = { isGridMode = it }
         )
 
-        // Блок контента, который скроллится и поддерживает pull-to-refresh
+        
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -277,7 +277,7 @@ fun HomeScreen(
                 }
             }
 
-            // Сам модный круглешок загрузки, прибитый к верхушке контейнера
+            
             PullToRefreshContainer(
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),

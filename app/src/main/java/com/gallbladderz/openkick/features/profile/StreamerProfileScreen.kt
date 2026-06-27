@@ -101,7 +101,7 @@ fun StreamerProfileScreen(
             )
         }
     ) { paddingValues ->
-        // Добавили clipToBounds(), чтобы круглешок не вылезал за края Box на другие элементы
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -181,7 +181,7 @@ fun ProfileHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState()) // Заставили шапку ловить жесты скролла
+            .verticalScroll(rememberScrollState()) 
     ) {
         Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
             AsyncImage(
@@ -304,7 +304,7 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
 
         if (links.isEmpty() && bio.isBlank()) {
             item {
-                // fillParentMaxSize позволяет контенту растянуться внутри LazyColumn
+                
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.streamer_wrote_nothing), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -358,7 +358,7 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
 fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
     val context = LocalContext.current
     if (videos.isEmpty()) {
-        // Пустой стейт тоже стал LazyColumn, чтобы ловить свайп
+        
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {

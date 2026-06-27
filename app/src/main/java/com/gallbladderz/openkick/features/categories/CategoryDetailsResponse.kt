@@ -1,7 +1,6 @@
 package com.gallbladderz.openkick.features.categories
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
 
 @Serializable
 data class CategoryDetailsResponse(
@@ -13,5 +12,10 @@ data class CategoryDetailsResponse(
 
 @Serializable
 data class CategoryBannerDto(
-    val srcset: String = ""
-)
+    val srcset: String? = null,
+    val responsive: String? = null
+) {
+    
+    val finalUrl: String
+        get() = responsive ?: srcset ?: ""
+}

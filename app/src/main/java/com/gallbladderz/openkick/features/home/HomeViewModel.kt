@@ -27,7 +27,7 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    // Тот самый флаг для модного круглешка
+    
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
@@ -93,10 +93,10 @@ class HomeViewModel(
         }
     }
 
-    // Тихий рефреш по свайпу вниз
+    
     fun refresh() {
         val langs = currentLanguages ?: return
-        if (_isRefreshing.value) return // Защита от спама свайпами
+        if (_isRefreshing.value) return 
 
         _isRefreshing.value = true
 
@@ -126,7 +126,7 @@ class HomeViewModel(
                     )
                 }
             } finally {
-                // Всегда выключаем крутилку, даже если инет отвалился
+                
                 _isRefreshing.value = false
             }
         }

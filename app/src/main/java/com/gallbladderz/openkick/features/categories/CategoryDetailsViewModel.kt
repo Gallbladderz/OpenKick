@@ -38,14 +38,14 @@ class CategoryDetailsViewModel(
             }
 
             try {
-                // Запускаем оба запроса параллельно, как у тебя и было
+                
                 val detailsDeferred = async { repository.fetchCategoryDetails(cleanSlug) }
                 val clipsDeferred = async { repository.fetchCategoryClips(cleanSlug) }
 
                 val details = detailsDeferred.await()
                 val parsedClips = clipsDeferred.await()
 
-                // Твоя же логика очистки ссылки на баннер
+                
                 var bannerUrl = details.banner?.srcset ?: ""
                 if (bannerUrl.contains(" ")) {
                     bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl

@@ -87,7 +87,7 @@ fun FollowingScreen(
         }
     ) { paddingValues ->
 
-        // Вешаем nestedScroll на основной Box экрана
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -221,7 +221,7 @@ fun FollowingScreen(
                 }
             }
 
-            // Сам круглешок обновления поверх всего
+            
             PullToRefreshContainer(
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),

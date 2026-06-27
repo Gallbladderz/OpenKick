@@ -6,22 +6,38 @@ import com.gallbladderz.openkick.features.home.toUiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class CategoriesRepository(private val apiService: KickApiService) {
 
-    // Старый метод списка категорий, переведенный на Retrofit
-    fun fetchCategories(page: Int = 1): Flow<Result<String>> = flow {
+    fun fetchCategories(page: Int = 1): Flow<Result<List<CategoryUiModel>>> = flow {
         try {
-            val response = apiService.getCategoriesRaw(limit = 50, page = page)
-            // Достаем строку из сырого ответа, чтобы CategoriesViewModel не подавилась
-            emit(Result.success(response.string()))
+            val response = apiService.getCategories(limit = 50, page = page)
+
+            val uiModels = response.data.map { dto ->
+                var bannerUrl = dto.banner?.finalUrl ?: ""
+                bannerUrl = bannerUrl.replace("\\/", "/")
+                if (bannerUrl.contains(" ")) {
+                    bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
+                }
+                if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
+
+                CategoryUiModel(
+                    id = dto.id?.toString() ?: "0",
+                    name = dto.name,
+                    slug = dto.slug,
+                    viewers = dto.viewers,
+                    bannerUrl = bannerUrl,
+                    tags = dto.tags
+                )
+            }
+            emit(Result.success(uiModels))
         } catch (e: Exception) {
             emit(Result.failure(Exception("Network died: ${e.message}", e)))
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
-    // Новые модные методы через саспенды
     suspend fun fetchCategoryDetails(slug: String): CategoryDetailsResponse = withContext(Dispatchers.IO) {
         apiService.getCategoryDetails(slug)
     }
