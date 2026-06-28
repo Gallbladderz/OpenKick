@@ -31,12 +31,18 @@ class PlayerViewModel(
 
     val isPlaying = playerManager.isPlaying
     val playbackState = playerManager.playbackState
+    val availableQualities = playerManager.availableQualities
+    val selectedQuality = playerManager.selectedQuality
 
     private var currentPlaybackUrl: String? = null
 
     fun play() = playerManager.resume()
 
     fun pause() = playerManager.pause()
+
+    fun setVideoQuality(quality: VideoQuality) {
+        playerManager.setQuality(quality)
+    }
 
     fun isStreamerFollowed(streamerName: String) =
         followsRepository.isStreamerFollowed(streamerName)

@@ -27,12 +27,22 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = koinViewModel(),
     onChannelClick: (String, Boolean) -> Unit = { _, _ -> }
 ) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        
+        
+        
+        focusRequester.requestFocus()
+    }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
 
@@ -57,6 +67,7 @@ fun SearchScreen(
             onValueChange = { query = it },
             modifier = Modifier
                 .fillMaxWidth()
+                .focusRequester(focusRequester)
                 .padding(16.dp),
             placeholder = { Text(stringResource(R.string.search_placeholder)) },
             leadingIcon = {
