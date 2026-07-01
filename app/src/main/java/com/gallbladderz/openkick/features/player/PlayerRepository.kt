@@ -3,6 +3,7 @@ package com.gallbladderz.openkick.features.player
 import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.StreamInfo
+import com.gallbladderz.openkick.core.domain.DomainError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -37,10 +38,10 @@ class PlayerRepository(
                     )
                 )
             } else {
-                emit(Result.failure(Exception("Streamer is currently offline")))
+                emit(Result.failure(DomainError.OfflineError()))
             }
         } catch (e: Exception) {
-            emit(Result.failure(Exception("API processing error: ${e.message}")))
+            emit(Result.failure(DomainError.NetworkError("API processing error: ${e.message}")))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -52,7 +53,7 @@ class PlayerRepository(
             }
             Result.success(links)
         } catch (e: Exception) {
-            Result.failure(Exception("Kick hid the info: ${e.message}"))
+            Result.failure(DomainError.ApiError("Kick hid the info: ${e.message}"))
         }
     }
 }

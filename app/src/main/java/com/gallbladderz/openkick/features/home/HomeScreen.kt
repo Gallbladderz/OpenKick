@@ -44,6 +44,10 @@ import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.ui.draw.clipToBounds
 
+import com.gallbladderz.openkick.features.home.components.HomeFilterChipsRow
+import com.gallbladderz.openkick.features.home.components.HeroStreamPager
+import com.gallbladderz.openkick.features.home.components.StreamCard
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -59,17 +63,17 @@ fun HomeScreen(
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
     var isGridMode by remember { mutableStateOf(false) }
 
-    
+
     val pullRefreshState = rememberPullToRefreshState()
 
-    
+
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
             viewModel.refresh()
         }
     }
 
-    
+
     LaunchedEffect(isRefreshing) {
         if (isRefreshing) {
             pullRefreshState.startRefresh()
@@ -113,7 +117,7 @@ fun HomeScreen(
             onGridModeChange = { isGridMode = it }
         )
 
-        
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -277,204 +281,13 @@ fun HomeScreen(
                 }
             }
 
-            
+
             PullToRefreshContainer(
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.primary
             )
-        }
-    }
-}
-
-@Composable
-fun HomeFilterChipsRow(
-    selectedFilter: String,
-    onFilterSelected: (String) -> Unit,
-    isGridMode: Boolean,
-    onGridModeChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.weight(1f)) {
-            val filters = listOf(stringResource(R.string.filter_all), stringResource(R.string.filter_categories), stringResource(R.string.filter_clips))
-
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filters) { filter ->
-                    FilterChip(
-                        selected = selectedFilter == filter,
-                        onClick = { onFilterSelected(filter) },
-                        label = { Text(filter, fontWeight = if (selectedFilter == filter) FontWeight.Bold else FontWeight.Normal) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                            selectedLabelColor = MaterialTheme.colorScheme.primary
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = selectedFilter == filter,
-                            borderColor = Color.Transparent
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-            }
-        }
-
-        if (selectedFilter == stringResource(R.string.filter_all)) {
-            Box(
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(48.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                IconButton(
-                    onClick = { onGridModeChange(!isGridMode) },
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isGridMode) Icons.AutoMirrored.Filled.List else rememberGridViewIcon(),
-                        contentDescription = stringResource(R.string.toggle_view),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun rememberGridViewIcon(): ImageVector {
-    return remember {
-        ImageVector.Builder(
-            name = "GridView",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(fill = SolidColor(Color.Black)) {
-                moveTo(3f, 3f)
-                lineTo(11f, 3f)
-                lineTo(11f, 11f)
-                lineTo(3f, 11f)
-                close()
-                moveTo(13f, 3f)
-                lineTo(21f, 3f)
-                lineTo(21f, 11f)
-                lineTo(13f, 11f)
-                close()
-                moveTo(3f, 13f)
-                lineTo(11f, 13f)
-                lineTo(11f, 21f)
-                lineTo(3f, 21f)
-                close()
-                moveTo(13f, 13f)
-                lineTo(21f, 13f)
-                lineTo(21f, 21f)
-                lineTo(13f, 21f)
-                close()
-            }
-        }.build()
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun HeroStreamPager(
-    streams: List<StreamUiModel>,
-    onStreamClick: (String) -> Unit
-) {
-    val pagerState = rememberPagerState(pageCount = { streams.size })
-
-    HorizontalPager(
-        state = pagerState,
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 24.dp),
-        pageSpacing = 12.dp
-    ) { page ->
-        val stream = streams[page]
-        StreamCard(
-            stream = stream,
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { onStreamClick(stream.streamerName) }
-        )
-    }
-}
-
-@Composable
-fun StreamCard(
-    stream: StreamUiModel,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val context = LocalContext.current
-
-    ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = Color.Transparent
-        )
-    ) {
-        Column {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(stream.thumbnailUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Thumbnail",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(12.dp))
-                )
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(8.dp)
-                        .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                ) {
-                    ViewerCountBadge(viewers = stream.viewers)
-                }
-            }
-
-            Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
-                Text(
-                    text = stream.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = "${stream.streamerName} • ${stream.category}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
         }
     }
 }

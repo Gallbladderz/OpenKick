@@ -121,4 +121,6 @@
     <string name="application_language">Application language</string>
     <string name="stream_languages">Stream languages</string>
     <string name="username_is_live">🔴 %1$s is live!</string>
+    <string name="video_quality">Video quality</string>
+    <string name="audio_only">Audio only</string>
 </resources>

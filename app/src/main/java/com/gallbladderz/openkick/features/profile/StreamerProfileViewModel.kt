@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.player.models.ChannelLink
+import com.gallbladderz.openkick.core.domain.DomainError
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -32,11 +33,11 @@ class StreamerProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    
+
     private var currentSlug: String? = null
 
     fun loadProfile(slug: String) {
@@ -48,10 +49,10 @@ class StreamerProfileViewModel(
         }
     }
 
-    
+
     fun refresh() {
         val slug = currentSlug ?: return
-        if (_isRefreshing.value) return 
+        if (_isRefreshing.value) return
 
         _isRefreshing.value = true
 
@@ -59,13 +60,13 @@ class StreamerProfileViewModel(
             try {
                 fetchData(slug)
             } finally {
-                
+
                 _isRefreshing.value = false
             }
         }
     }
 
-    
+
     private suspend fun fetchData(slug: String) {
         val profileResult = repository.fetchProfileInfo(slug)
 
@@ -92,12 +93,12 @@ class StreamerProfileViewModel(
                 )
             }
         } else {
-            
-            
+
+
             if (_uiState.value is ProfileUiState.Loading) {
                 _uiState.update {
                     ProfileUiState.Error(
-                        profileResult.exceptionOrNull()?.message ?: "Load error"
+                        profileResult.exceptionOrNull()?.let { if (it is DomainError) it.message else "Load error" } ?: "Load error"
                     )
                 }
             }
@@ -113,7 +114,7 @@ class StreamerProfileViewModel(
 
                 followsRepository.toggleStreamerFollow(slug, currentlyFollowing)
 
-                
+
                 _uiState.update {
                     currentState.copy(isFollowing = !currentlyFollowing)
                 }

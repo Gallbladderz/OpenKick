@@ -121,4 +121,6 @@
     <string name="application_language">Язык приложения</string>
     <string name="stream_languages">Языки трансляций</string>
     <string name="username_is_live">🔴 %1$s в эфире!</string>
+    <string name="video_quality">Качество</string>
+    <string name="audio_only">Только аудио</string>
 </resources>

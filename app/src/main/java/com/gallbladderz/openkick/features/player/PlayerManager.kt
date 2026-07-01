@@ -12,6 +12,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import com.gallbladderz.openkick.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -28,10 +29,10 @@ class PlayerManager(
     private val context: Context,
     private val dataSourceFactory: DataSource.Factory
 ) {
-    
+
     val player: ExoPlayer = ExoPlayer.Builder(context).build()
 
-    
+
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
@@ -48,7 +49,7 @@ class PlayerManager(
     val selectedQuality = _selectedQuality.asStateFlow()
 
     init {
-        
+
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
@@ -84,42 +85,42 @@ class PlayerManager(
 
                 _availableQualities.value = listOf(
                     VideoQuality("Auto", null, null),
-                    VideoQuality("Только аудио", null, null, isAudioOnly = true) 
+                    VideoQuality(context.getString(R.string.audio_only), null, null, isAudioOnly = true)
                 ) + sortedQualities
             }
         })
     }
 
-    
+
     fun setQuality(quality: VideoQuality) {
         _selectedQuality.value = quality
 
         val builder = player.trackSelectionParameters.buildUpon()
 
         if (quality.isAudioOnly) {
-            
+
             builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
             builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
         } else {
-            
+
             builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
 
             if (quality.trackGroup == null || quality.trackIndex == null) {
-                
+
                 builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
             } else {
-                
+
                 builder.setOverrideForType(TrackSelectionOverride(quality.trackGroup, listOf(quality.trackIndex)))
             }
         }
 
         player.trackSelectionParameters = builder.build()
 
-        
+
         player.play()
     }
 
-    
+
     fun play(videoUrl: String) {
         val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
             .createMediaSource(MediaItem.fromUri(videoUrl))
@@ -128,7 +129,7 @@ class PlayerManager(
         player.playWhenReady = true
     }
 
-    
+
     fun pause() = player.pause()
 
     fun resume() = player.play()

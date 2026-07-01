@@ -9,6 +9,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
+import com.gallbladderz.openkick.core.domain.DomainError
+import java.io.IOException
 
 data class ProfileInfoUi(
     val channelId: Int,
@@ -35,13 +37,13 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
         try {
             val response = apiService.getChannelV1(slug)
 
-            val channelId = response.id ?: return@withContext Result.failure(Exception("No channel ID"))
+            val channelId = response.id ?: return@withContext Result.failure(DomainError.ApiError("No channel ID"))
             val username = response.user?.username ?: slug
             val bio = response.user?.bio ?: ""
             val avatarUrl = response.user?.profilePic ?: ""
             val followers = response.followersCount
 
-            
+
             val bannerUrl = when (val banner = response.bannerImage) {
                 is JsonObject -> banner["url"]?.jsonPrimitive?.content ?: ""
                 is JsonPrimitive -> banner.content
@@ -50,13 +52,13 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
 
             Result.success(ProfileInfoUi(channelId, slug, username, bio, avatarUrl, bannerUrl, followers))
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
     suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> = withContext(Dispatchers.IO) {
         try {
-            
+
             val dtos = apiService.getChannelLinks(streamerName)
             val links = dtos.map { dto ->
                 ChannelLink(
@@ -69,7 +71,7 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             }
             Result.success(links)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
@@ -102,18 +104,18 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             }
             Result.success(uiModels)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
     suspend fun fetchClips(slug: String): Result<List<ClipUiModel>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getChannelClips(slug)
-            
+
             val uiModels = response.actualClips.map { it.toUiModel() }
             Result.success(uiModels)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
     }
 }

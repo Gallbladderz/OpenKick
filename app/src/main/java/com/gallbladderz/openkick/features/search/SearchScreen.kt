@@ -38,9 +38,9 @@ fun SearchScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
-        
-        
-        
+
+
+
         focusRequester.requestFocus()
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -55,7 +55,7 @@ fun SearchScreen(
         viewModel.searchStreamer(query)
     }
 
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -78,7 +78,7 @@ fun SearchScreen(
                 )
             },
             singleLine = true,
-            shape = CircleShape, 
+            shape = CircleShape,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -105,7 +105,7 @@ fun SearchScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(uiState.channels, key = { it.username }) { channel ->
-                            
+
                             SearchChannelCard(
                                 channel = channel,
                                 onClick = { onChannelClick(channel.username, channel.isLive) }
@@ -160,7 +160,7 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
                     .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
-                Text(text = "LIVE", color = MaterialTheme.colorScheme.onError, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text(text = stringResource(R.string.live), color = MaterialTheme.colorScheme.onError, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
             }
         }
     }
