@@ -6,7 +6,9 @@ data class ClipUiModel(
     val thumbnailUrl: String,
     val videoUrl: String,
     val views: Int,
-    val durationFormatted: String
+    val durationFormatted: String,
+    val streamerName: String,
+    val streamerAvatarUrl: String
 )
 
 
@@ -21,6 +23,15 @@ fun ClipDto.toUiModel(): ClipUiModel {
         thumbnailUrl = thumbnailUrl,
         videoUrl = clipUrl,
         views = views,
-        durationFormatted = durationStr
+        durationFormatted = durationStr,
+        streamerName = channel?.displayName
+            ?.ifBlank { creator?.displayName ?: "" }
+            ?.ifBlank { user?.displayName ?: "" }
+            ?.ifBlank { "Anonymous" } ?: "Anonymous",
+        streamerAvatarUrl = channel?.avatar
+            ?.ifBlank { creator?.avatar ?: "" }
+            ?.ifBlank { user?.avatar ?: "" }
+            ?.replace("\\/", "/")
+            ?: ""
     )
 }

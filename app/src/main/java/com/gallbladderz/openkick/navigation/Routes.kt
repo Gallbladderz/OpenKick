@@ -40,3 +40,13 @@ data class BottomNavItem(
     val icon: ImageVector,
     val selectedIcon: ImageVector
 )
+
+@Serializable
+data class ClipPlayerRoute(
+    val videoUrl: String,
+    val title: String,
+    val streamerName: String,
+    val streamerAvatarUrl: String,
+    val views: Int,
+    val durationFormatted: String
+)

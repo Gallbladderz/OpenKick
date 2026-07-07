@@ -52,7 +52,7 @@ import com.gallbladderz.openkick.features.profile.components.ClipsTab
 fun StreamerProfileScreen(
     slug: String,
     onBackClick: () -> Unit,
-    onVideoClick: (String) -> Unit,
+    onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
     viewModel: StreamerProfileViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -155,7 +155,10 @@ fun StreamerProfileScreen(
                         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                             when (selectedTabIndex) {
                                 0 -> DescriptionTab(uiState.info.bio, uiState.links)
-                                1 -> VideosTab(uiState.videos, onVideoClick)
+                                1 -> VideosTab(
+                                    videos = uiState.videos,
+                                    onVideoClick = { video -> onVideoClick(video, uiState.info) }
+                                )
                                 2 -> ClipsTab(uiState.clips)
                             }
                         }

@@ -2,6 +2,8 @@ package com.gallbladderz.openkick.features.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.features.home.ClipUiModel
+import com.gallbladderz.openkick.features.home.StreamUiModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,8 @@ sealed interface CategoryDetailsUiState {
         val bannerUrl: String,
         val viewers: Int,
         val tags: List<String>,
-        val clips: List<com.gallbladderz.openkick.features.home.ClipUiModel>
+        val clips: List<ClipUiModel>,
+        val streams: List<StreamUiModel>
     ) : CategoryDetailsUiState
     data class Error(val message: String) : CategoryDetailsUiState
 }
@@ -38,14 +41,14 @@ class CategoryDetailsViewModel(
             }
 
             try {
-                
                 val detailsDeferred = async { repository.fetchCategoryDetails(cleanSlug) }
                 val clipsDeferred = async { repository.fetchCategoryClips(cleanSlug) }
+                val streamsDeferred = async { repository.fetchCategoryStreams(cleanSlug) }
 
                 val details = detailsDeferred.await()
                 val parsedClips = clipsDeferred.await()
+                val parsedStreams = streamsDeferred.await()
 
-                
                 var bannerUrl = details.banner?.srcset ?: ""
                 if (bannerUrl.contains(" ")) {
                     bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
@@ -57,7 +60,8 @@ class CategoryDetailsViewModel(
                         bannerUrl = bannerUrl,
                         viewers = details.viewers,
                         tags = details.tags,
-                        clips = parsedClips
+                        clips = parsedClips,
+                        streams = parsedStreams
                     )
                 }
             } catch (e: Exception) {

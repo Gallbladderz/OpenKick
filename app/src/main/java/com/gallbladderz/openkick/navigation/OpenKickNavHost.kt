@@ -94,6 +94,18 @@ fun OpenKickNavHost() {
                             HomeScreen(
                                 onStreamClick = { streamerName -> navController.navigate(PlayerRoute(streamerName)) },
                                 onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) },
+                                onClipClick = { clip ->
+                                    navController.navigate(
+                                        ClipPlayerRoute(
+                                            videoUrl = clip.videoUrl,
+                                            title = clip.title,
+                                            streamerName = clip.streamerName,
+                                            streamerAvatarUrl = clip.streamerAvatarUrl,
+                                            views = clip.views,
+                                            durationFormatted = clip.durationFormatted
+                                        )
+                                    )
+                                },
                                 onSearchClick = { navController.navigate(SearchRoute) }
                             )
                         }
@@ -122,7 +134,37 @@ fun OpenKickNavHost() {
             val route = backStackEntry.toRoute<CategoryDetailsRoute>()
             CategoryDetailsScreen(
                 slug = route.slug,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onStreamClick = { streamerName ->
+                    navController.navigate(PlayerRoute(streamerName))
+                },
+                onClipClick = { clip ->
+                    navController.navigate(
+                        ClipPlayerRoute(
+                            videoUrl = clip.videoUrl,
+                            title = clip.title,
+                            streamerName = clip.streamerName,
+                            streamerAvatarUrl = clip.streamerAvatarUrl,
+                            views = clip.views,
+                            durationFormatted = clip.durationFormatted
+                        )
+                    )
+                }
+            )
+        }
+
+        composable<ClipPlayerRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<ClipPlayerRoute>()
+
+            com.gallbladderz.openkick.features.player.ClipPlayerScreen(
+                videoUrl = route.videoUrl,
+                title = route.title,
+                streamerName = route.streamerName,
+                streamerAvatarUrl = route.streamerAvatarUrl,
+                views = route.views,
+                durationFormatted = route.durationFormatted,
+                onBackClick = { navController.popBackStack() },
+                onStreamerClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
             )
         }
 
@@ -158,7 +200,18 @@ fun OpenKickNavHost() {
             StreamerProfileScreen(
                 slug = route.slug,
                 onBackClick = { navController.popBackStack() },
-                onVideoClick = { /* Сюда потом прикрутим плеер для VOD-ов */ }
+                onVideoClick = { video, profile ->
+                    navController.navigate(
+                        ClipPlayerRoute(
+                            videoUrl = video.videoUrl,
+                            title = video.title,
+                            streamerName = profile.slug,
+                            streamerAvatarUrl = profile.avatarUrl,
+                            views = video.views,
+                            durationFormatted = video.durationFormatted
+                        )
+                    )
+                }
             )
         }
 

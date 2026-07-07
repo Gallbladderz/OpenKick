@@ -54,6 +54,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onStreamClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
+    onClipClick: (ClipUiModel) -> Unit = {},
     onSearchClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -181,14 +182,14 @@ fun HomeScreen(
                                         ClipCard(
                                             clip = rowItems[0],
                                             modifier = Modifier.weight(1f),
-                                            onClick = { /* TODO: Плеер клипа */ }
+                                            onClick = { onClipClick(rowItems[0]) }
                                         )
 
                                         if (rowItems.size > 1) {
                                             ClipCard(
                                                 clip = rowItems[1],
                                                 modifier = Modifier.weight(1f),
-                                                onClick = { /* TODO: Плеер клипа */ }
+                                                onClick = { onClipClick(rowItems[1]) }
                                             )
                                         } else {
                                             Spacer(modifier = Modifier.weight(1f))

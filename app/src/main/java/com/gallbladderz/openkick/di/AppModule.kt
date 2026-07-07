@@ -20,6 +20,7 @@ import com.gallbladderz.openkick.features.home.HomeRepository
 import com.gallbladderz.openkick.features.home.HomeViewModel
 import com.gallbladderz.openkick.features.notifications.StreamCheckWorker
 import com.gallbladderz.openkick.features.player.ChatRepository
+import com.gallbladderz.openkick.features.player.ClipPlayerViewModel
 import com.gallbladderz.openkick.features.player.PlayerManager
 import com.gallbladderz.openkick.features.player.PlayerRepository
 import com.gallbladderz.openkick.features.player.PlayerViewModel
@@ -104,6 +105,7 @@ val appModule = module {
     factory { PlayerManager(androidContext(), get()) }
 
     viewModel { PlayerViewModel(get(), get(), get(), get()) }
+    viewModel { ClipPlayerViewModel(get()) }
     viewModel { CategoriesViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
 

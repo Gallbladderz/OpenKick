@@ -5,6 +5,7 @@ import com.gallbladderz.openkick.features.home.ClipResponse
 import com.gallbladderz.openkick.features.home.HomeLivestreamsResponse
 import com.gallbladderz.openkick.features.home.TopClipsResponse
 import com.gallbladderz.openkick.features.search.SearchResponse
+import kotlinx.serialization.json.JsonElement
 import okhttp3.ResponseBody
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -74,10 +75,17 @@ interface KickApiService {
     @GET("https://mobile.kick.com/api/v1/channels/{channelId}/videos")
     suspend fun getChannelVideos(
         @Path("channelId") channelId: Int
-    ): List<com.gallbladderz.openkick.features.profile.VideoDto>
+    ): JsonElement
 
     @GET("api/v2/channels/{slug}/clips")
     suspend fun getChannelClips(
         @Path("slug") slug: String
     ): com.gallbladderz.openkick.features.home.TopClipsResponse
+
+    @GET("https://mobile.kick.com/api/v1/livestreams")
+    suspend fun getCategoryLivestreams(
+        @Query("subcategory") subcategorySlug: String,
+        @Query("limit") limit: Int = 20,
+        @Query("sort") sort: String = "viewer_count_desc"
+    ): HomeLivestreamsResponse
 }

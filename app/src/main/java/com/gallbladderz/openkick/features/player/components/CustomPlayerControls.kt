@@ -20,24 +20,30 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import com.gallbladderz.openkick.R
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
+import com.gallbladderz.openkick.R
 
 @Composable
 fun CustomPlayerControls(
     playWhenReady: Boolean,
     playbackState: Int,
     isFullscreen: Boolean,
+    isLive: Boolean = true, // <-- Флаг для переключения режимов
+    currentPosition: Long = 0L, // <-- Текущее время для клипов
+    duration: Long = 0L, // <-- Длительность клипа
+    onSeek: (Long) -> Unit = {}, // <-- Коллбэк перемотки
     onPlayPause: () -> Unit,
     onFullscreen: () -> Unit,
     onSettings: () -> Unit,
@@ -54,7 +60,7 @@ fun CustomPlayerControls(
 
         if (playbackState == Player.STATE_BUFFERING) {
             CircularProgressIndicator(
-                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.align(Alignment.Center)
             )
         } else {
@@ -79,19 +85,41 @@ fun CustomPlayerControls(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.live),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
-                )
+            if (isLive) {
+                // Режим стрима
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.live),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                // Режим клипа (слайдер и таймеры)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                ) {
+                    Text(text = formatTime(currentPosition), color = Color.White, fontSize = 12.sp)
+                    Slider(
+                        value = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f,
+                        onValueChange = { value -> onSeek((value * duration).toLong()) },
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        colors = SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                        )
+                    )
+                    Text(text = formatTime(duration), color = Color.White, fontSize = 12.sp)
+                }
             }
 
             IconButton(onClick = onFullscreen, modifier = Modifier.size(32.dp)) {
@@ -103,4 +131,11 @@ fun CustomPlayerControls(
             }
         }
     }
+}
+
+private fun formatTime(timeMs: Long): String {
+    val totalSeconds = timeMs / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%02d:%02d", minutes, seconds)
 }

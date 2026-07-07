@@ -2,6 +2,7 @@ package com.gallbladderz.openkick.features.categories
 
 import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.features.home.ClipUiModel
+import com.gallbladderz.openkick.features.home.StreamUiModel
 import com.gallbladderz.openkick.features.home.toUiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -44,5 +45,28 @@ class CategoriesRepository(private val apiService: KickApiService) {
 
     suspend fun fetchCategoryClips(slug: String): List<ClipUiModel> = withContext(Dispatchers.IO) {
         apiService.getCategoryClips(slug).clips.map { it.toUiModel() }
+    }
+
+    suspend fun fetchCategoryStreams(slug: String): List<StreamUiModel> = withContext(Dispatchers.IO) {
+        try {
+            // Дергаем мобильное API, передавая slug категории
+            val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
+
+            // Структура ответа идентична стримам на главной, так что маппер работает как часы
+            response.data?.livestreams?.mapNotNull { item ->
+                val stream = item.actualStream
+                StreamUiModel(
+                    id = stream.id ?: "0",
+                    streamerName = stream.channel?.slug ?: stream.channel?.username ?: "Unknown",
+                    title = stream.sessionTitle,
+                    viewers = stream.viewerCount,
+                    category = stream.category?.name ?: "No Category",
+                    thumbnailUrl = stream.thumbnail?.finalUrl ?: ""
+                )
+            } ?: emptyList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
     }
 }

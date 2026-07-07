@@ -1,16 +1,48 @@
 package com.gallbladderz.openkick.features.categories
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +57,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.features.home.ClipUiModel
+import com.gallbladderz.openkick.features.home.components.StreamCard
 import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
 
@@ -33,7 +67,9 @@ import org.koin.androidx.compose.koinViewModel
 fun CategoryDetailsScreen(
     slug: String,
     viewModel: CategoryDetailsViewModel = koinViewModel(),
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onStreamClick: (String) -> Unit = {},
+    onClipClick: (ClipUiModel) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -85,6 +121,7 @@ fun CategoryDetailsScreen(
                 }
                 is CategoryDetailsUiState.Success -> {
 
+                    // Шапка категории
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -149,7 +186,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-
+                    // Табы Стримы / Клипы
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface
@@ -163,7 +200,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-
+                    // Контент табов
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -171,12 +208,32 @@ fun CategoryDetailsScreen(
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
-
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(stringResource(R.string.streams_will_appear_here), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            // Вкладка СТРИМЫ
+                            if (currentState.streams.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(stringResource(R.string.streams_will_appear_here), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            } else {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Adaptive(minSize = 150.dp),
+                                    contentPadding = PaddingValues(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    items(
+                                        items = currentState.streams,
+                                        key = { it.id }
+                                    ) { stream ->
+                                        StreamCard(
+                                            stream = stream,
+                                            onClick = { onStreamClick(stream.streamerName) }
+                                        )
+                                    }
+                                }
                             }
                         } else {
-
+                            // Вкладка КЛИПЫ
                             if (currentState.clips.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text(stringResource(R.string.no_popular_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -198,13 +255,13 @@ fun CategoryDetailsScreen(
                                             ClipCard(
                                                 clip = rowItems[0],
                                                 modifier = Modifier.weight(1f),
-                                                onClick = {  }
+                                                onClick = { onClipClick(rowItems[0]) }
                                             )
                                             if (rowItems.size > 1) {
                                                 ClipCard(
                                                     clip = rowItems[1],
                                                     modifier = Modifier.weight(1f),
-                                                    onClick = {  }
+                                                    onClick = { onClipClick(rowItems[1]) }
                                                 )
                                             } else {
                                                 Spacer(modifier = Modifier.weight(1f))

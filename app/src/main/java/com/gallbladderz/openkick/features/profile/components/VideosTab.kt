@@ -37,7 +37,7 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.features.profile.VideoUiModel
 
 @Composable
-fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
+fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (VideoUiModel) -> Unit) {
     val context = LocalContext.current
     if (videos.isEmpty()) {
 
@@ -56,8 +56,11 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(videos) { video ->
+            val hasPlayableSource = video.videoUrl.isNotBlank()
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { onVideoClick(video.id) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = hasPlayableSource) { onVideoClick(video) },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
