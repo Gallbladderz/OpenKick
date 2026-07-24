@@ -62,7 +62,8 @@ data class KickChannelDto(
 
 @Serializable
 data class KickCategoryDto(
-    val name: String = "Just Chatting"
+    val name: String = "Just Chatting",
+    val slug: String? = null
 )
 
 @Serializable

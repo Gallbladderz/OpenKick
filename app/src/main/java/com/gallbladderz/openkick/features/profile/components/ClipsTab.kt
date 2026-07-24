@@ -21,7 +21,10 @@ import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.ui.components.ClipCard
 
 @Composable
-fun ClipsTab(clips: List<ClipUiModel>) {
+fun ClipsTab(
+    clips: List<ClipUiModel>,
+    onClipClick: (ClipUiModel) -> Unit
+) {
     if (clips.isEmpty()) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
@@ -32,6 +35,7 @@ fun ClipsTab(clips: List<ClipUiModel>) {
         }
         return
     }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -40,9 +44,10 @@ fun ClipsTab(clips: List<ClipUiModel>) {
         val clipRows = clips.chunked(2)
         items(clipRows) { rowItems ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ClipCard(clip = rowItems[0], modifier = Modifier.weight(1f), onClick = { })
+                ClipCard(clip = rowItems[0], modifier = Modifier.weight(1f), onClick = { onClipClick(rowItems[0]) })
+
                 if (rowItems.size > 1) {
-                    ClipCard(clip = rowItems[1], modifier = Modifier.weight(1f), onClick = { })
+                    ClipCard(clip = rowItems[1], modifier = Modifier.weight(1f), onClick = { onClipClick(rowItems[1]) })
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }

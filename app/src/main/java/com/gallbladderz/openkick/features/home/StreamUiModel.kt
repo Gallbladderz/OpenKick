@@ -6,5 +6,6 @@ data class StreamUiModel(
     val title: String,
     val viewers: Int,
     val category: String,
+    val categorySlug: String,
     val thumbnailUrl: String
 )

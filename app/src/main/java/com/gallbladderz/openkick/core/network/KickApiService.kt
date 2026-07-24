@@ -10,7 +10,8 @@ import okhttp3.ResponseBody
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
-
+import com.gallbladderz.openkick.features.profile.VideosListResponse
+import com.gallbladderz.openkick.features.profile.VideoItemDto
 interface KickApiService {
 
     
@@ -72,11 +73,10 @@ interface KickApiService {
         @Path("slug") slug: String
     ): com.gallbladderz.openkick.features.profile.ChannelV1Response
 
-    @GET("https://mobile.kick.com/api/v1/channels/{channelId}/videos")
+    @GET("api/v2/channels/{slug}/videos")
     suspend fun getChannelVideos(
-        @Path("channelId") channelId: Int
-    ): JsonElement
-
+        @Path("slug") slug: String
+    ): List<VideoItemDto>
     @GET("api/v2/channels/{slug}/clips")
     suspend fun getChannelClips(
         @Path("slug") slug: String
@@ -88,4 +88,10 @@ interface KickApiService {
         @Query("limit") limit: Int = 20,
         @Query("sort") sort: String = "viewer_count_desc"
     ): HomeLivestreamsResponse
+
+    @GET("api/v1/video/{videoId}")
+    suspend fun getVideoPlayback(
+        @Path("videoId") videoId: String
+    ): JsonElement
 }
+

@@ -120,6 +120,12 @@ fun OpenKickNavHost() {
                             SettingsScreen(
                                 onLanguageSettingsClick = {
                                     navController.navigate(LanguageSettingsRoute)
+                                },
+                                onNotificationSettingsClick = {
+                                    navController.navigate(NotificationSettingsRoute)
+                                },
+                                onContentSettingsClick = { 
+                                    navController.navigate(ContentSettingsRoute)
                                 }
                             )
                         }
@@ -188,6 +194,12 @@ fun OpenKickNavHost() {
             )
         }
 
+        composable<NotificationSettingsRoute> {
+            com.gallbladderz.openkick.features.profile.NotificationSettingsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
         composable<AllFollowsRoute> {
             AllFollowsScreen(
                 onBackClick = { navController.popBackStack() },
@@ -211,8 +223,20 @@ fun OpenKickNavHost() {
                             durationFormatted = video.durationFormatted
                         )
                     )
+                }, 
+                onClipClick = { clip -> 
+                    navController.navigate(
+                        ClipPlayerRoute(
+                            videoUrl = clip.videoUrl,
+                            title = clip.title,
+                            streamerName = clip.streamerName,
+                            streamerAvatarUrl = clip.streamerAvatarUrl,
+                            views = clip.views,
+                            durationFormatted = clip.durationFormatted
+                        )
+                    )
                 }
-            )
+            ) 
         }
 
         composable<PlayerRoute> { backStackEntry ->
@@ -221,6 +245,12 @@ fun OpenKickNavHost() {
                 streamerName = playerRoute.streamerName,
                 onBackClick = { navController.popBackStack() },
                 onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
+            )
+        }
+
+        composable<ContentSettingsRoute> {
+            com.gallbladderz.openkick.features.profile.ContentSettingsScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
@@ -232,39 +262,36 @@ private fun OpenKickBottomBar(
     onTabSelected: (Int) -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        color = Color(0xFF141416), 
+        tonalElevation = 0.dp, 
+        shadowElevation = 8.dp 
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .height(48.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .windowInsetsPadding(WindowInsets.navigationBars) 
+                .height(70.dp), 
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             MainTab.entries.forEach { tab ->
                 val isSelected = currentPage == tab.ordinal
                 val title = stringResource(id = tab.titleResId)
 
-                val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
-                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                
+                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF757575)
 
-                Row(
+                Column(
                     modifier = Modifier
-                        .height(48.dp)
-                        .animateContentSize()
-                        .then(if (isSelected) Modifier.weight(1f) else Modifier.width(64.dp))
-                        .clip(CircleShape)
-                        .background(backgroundColor)
+                        .weight(1f)
+                        .fillMaxHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
+                            indication = null, 
                             onClick = { onTabSelected(tab.ordinal) }
                         ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         imageVector = if (isSelected) tab.selectedIcon else tab.icon,
@@ -272,18 +299,15 @@ private fun OpenKickBottomBar(
                         tint = contentColor,
                         modifier = Modifier.size(24.dp)
                     )
-
-                    AnimatedVisibility(visible = isSelected) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = contentColor,
-                            modifier = Modifier.padding(start = 8.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }

@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,10 +39,13 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.features.profile.VideoUiModel
 
 @Composable
-fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (VideoUiModel) -> Unit) {
+fun VideosTab(
+    videos: List<VideoUiModel>,
+    loadingVideoId: String? = null,
+    onVideoClick: (VideoUiModel) -> Unit
+) {
     val context = LocalContext.current
     if (videos.isEmpty()) {
-
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
@@ -55,12 +60,12 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (VideoUiModel) -> Unit) 
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(videos) { video ->
-            val hasPlayableSource = video.videoUrl.isNotBlank()
+        items(videos, key = { it.id }) { video ->
+            val isLoading = loadingVideoId == video.id
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(enabled = hasPlayableSource) { onVideoClick(video) },
+                    .clickable(enabled = !isLoading) { onVideoClick(video) },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
@@ -81,6 +86,22 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (VideoUiModel) -> Unit) 
                         ) {
                             Text(text = video.durationFormatted, style = MaterialTheme.typography.labelSmall, color = Color.White)
                         }
+
+                        
+                        if (isLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp),
+                                    strokeWidth = 3.dp
+                                )
+                            }
+                        }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f).align(Alignment.CenterVertically)) {
@@ -93,4 +114,3 @@ fun VideosTab(videos: List<VideoUiModel>, onVideoClick: (VideoUiModel) -> Unit) 
         }
     }
 }
-

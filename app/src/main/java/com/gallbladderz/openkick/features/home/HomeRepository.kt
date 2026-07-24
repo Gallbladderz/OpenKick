@@ -24,6 +24,7 @@ class HomeRepository(private val apiService: KickApiService) {
                     title = stream.sessionTitle,
                     viewers = stream.viewerCount,
                     category = stream.category?.name ?: "No Category",
+                    categorySlug = stream.category?.slug ?: "",
                     thumbnailUrl = stream.thumbnail?.finalUrl ?: ""
                 )
             } ?: emptyList()

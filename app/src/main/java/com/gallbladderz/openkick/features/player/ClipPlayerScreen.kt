@@ -94,16 +94,16 @@ fun ClipPlayerScreen(
     var duration by remember { mutableLongStateOf(0L) }
     var showControls by remember { mutableStateOf(true) }
 
-    // Обновляем ползунок, пока видео играет
+    
     LaunchedEffect(isPlaying, playbackState) {
         while (isPlaying && playbackState == Player.STATE_READY) {
             currentPosition = exoPlayer.currentPosition
             duration = exoPlayer.duration.coerceAtLeast(0L)
-            delay(500) // Полсекунды вполне норм, чтобы слайдер не дергался как эпилептик
+            delay(500) 
         }
     }
 
-    // Прячем контролы через 3 секунды
+    
     LaunchedEffect(showControls, isPlaying) {
         if (showControls && isPlaying) {
             delay(3000)
@@ -117,7 +117,7 @@ fun ClipPlayerScreen(
         }
     }
 
-    // Слушаем стейты плеера
+    
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(play: Boolean) { isPlaying = play }

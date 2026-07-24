@@ -49,10 +49,10 @@ class CategoriesRepository(private val apiService: KickApiService) {
 
     suspend fun fetchCategoryStreams(slug: String): List<StreamUiModel> = withContext(Dispatchers.IO) {
         try {
-            // Дергаем мобильное API, передавая slug категории
+            
             val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
 
-            // Структура ответа идентична стримам на главной, так что маппер работает как часы
+            
             response.data?.livestreams?.mapNotNull { item ->
                 val stream = item.actualStream
                 StreamUiModel(
@@ -61,6 +61,7 @@ class CategoriesRepository(private val apiService: KickApiService) {
                     title = stream.sessionTitle,
                     viewers = stream.viewerCount,
                     category = stream.category?.name ?: "No Category",
+                    categorySlug = stream.category?.slug ?: "",
                     thumbnailUrl = stream.thumbnail?.finalUrl ?: ""
                 )
             } ?: emptyList()

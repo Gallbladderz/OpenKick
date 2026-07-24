@@ -121,7 +121,7 @@ fun CategoryDetailsScreen(
                 }
                 is CategoryDetailsUiState.Success -> {
 
-                    // Шапка категории
+                    
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -186,7 +186,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-                    // Табы Стримы / Клипы
+                    
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface
@@ -200,7 +200,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-                    // Контент табов
+                    
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -208,7 +208,7 @@ fun CategoryDetailsScreen(
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
-                            // Вкладка СТРИМЫ
+                            
                             if (currentState.streams.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text(stringResource(R.string.streams_will_appear_here), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -233,7 +233,7 @@ fun CategoryDetailsScreen(
                                 }
                             }
                         } else {
-                            // Вкладка КЛИПЫ
+                            
                             if (currentState.clips.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text(stringResource(R.string.no_popular_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)

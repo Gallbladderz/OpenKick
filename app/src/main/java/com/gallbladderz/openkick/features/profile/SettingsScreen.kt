@@ -22,14 +22,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.material.icons.filled.Visibility
 
 @Composable
 fun SettingsScreen(
-    onLanguageSettingsClick: () -> Unit
+    onLanguageSettingsClick: () -> Unit,
+    onNotificationSettingsClick: () -> Unit,
+    onContentSettingsClick: () -> Unit
 ) {
     val mainViewModel: MainViewModel = koinViewModel()
     val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
-
 
     val availableLanguages = mapOf(
         "ru" to stringResource(R.string.russian_lang),
@@ -69,7 +71,24 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
-                    .clickable {  }
+                    .clickable { }
+            )
+        }
+
+        item {
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+            SettingsGroupHeader("Контент")
+        }
+
+        item {
+            SettingsListItem(
+                headline = "Настройки контента",
+                supporting = "Фильтр категорий, черный список стримеров",
+                icon = Icons.Default.Visibility,
+                onClick = onContentSettingsClick
             )
         }
 
@@ -80,6 +99,7 @@ fun SettingsScreen(
             )
             SettingsGroupHeader(stringResource(R.string.appearance))
         }
+
         item {
             SettingsListItem(
                 headline = stringResource(R.string.theme_settings),
@@ -88,6 +108,7 @@ fun SettingsScreen(
                 onClick = { /* TODO */ }
             )
         }
+
         item {
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -95,18 +116,24 @@ fun SettingsScreen(
             )
             SettingsGroupHeader(stringResource(R.string.application_title))
         }
+
         item {
             SettingsListItem(
                 headline = stringResource(R.string.notifications),
-                supporting = stringResource(R.string.unified_push_subs),
+                supporting = "Настройки оповещений и фона",
                 icon = Icons.Default.Notifications,
-                onClick = { /* TODO */ }
+                onClick = onNotificationSettingsClick
             )
-
 
             SettingsListItem(
                 headline = stringResource(R.string.language_and_region),
-                supporting = if (selectedLanguages.isEmpty()) stringResource(R.string.all_languages) else selectedLanguages.mapNotNull { availableLanguages[it] ?: it }.joinToString(", "),
+                supporting = if (selectedLanguages.isEmpty()) {
+                    stringResource(R.string.all_languages)
+                } else {
+                    selectedLanguages
+                        .mapNotNull { availableLanguages[it] ?: it }
+                        .joinToString(", ")
+                },
                 icon = Icons.Default.LocationOn,
                 onClick = onLanguageSettingsClick
             )
@@ -119,6 +146,7 @@ fun SettingsScreen(
             )
             SettingsGroupHeader(stringResource(R.string.about_project))
         }
+
         item {
             SettingsListItem(
                 headline = stringResource(R.string.about_app),
@@ -137,7 +165,11 @@ fun SettingsGroupHeader(title: String) {
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+        modifier = Modifier.padding(
+            start = 16.dp,
+            top = 16.dp,
+            bottom = 8.dp
+        )
     )
 }
 
@@ -158,7 +190,9 @@ fun SettingsListItem(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent
+        ),
         modifier = Modifier.clickable { onClick() }
     )
 }

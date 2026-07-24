@@ -8,13 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 import com.gallbladderz.openkick.core.domain.DomainError
 import java.io.IOException
 
@@ -49,7 +44,6 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             val avatarUrl = response.user?.profilePic ?: ""
             val followers = response.followersCount
 
-
             val bannerUrl = when (val banner = response.bannerImage) {
                 is JsonObject -> banner["url"]?.jsonPrimitive?.content ?: ""
                 is JsonPrimitive -> banner.content
@@ -64,7 +58,6 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
 
     suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> = withContext(Dispatchers.IO) {
         try {
-
             val dtos = apiService.getChannelLinks(streamerName)
             val links = dtos.map { dto ->
                 ChannelLink(
@@ -81,13 +74,38 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
         }
     }
 
-    suspend fun fetchVideos(channelId: Int): Result<List<VideoUiModel>> = withContext(Dispatchers.IO) {
+    suspend fun fetchVideos(slug: String): Result<List<VideoUiModel>> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.getChannelVideos(channelId)
-            val videos = extractVideoItems(response)
-            val uiModels = videos.mapNotNull { it.toVideoUiModel() }
-            Result.success(uiModels)
+            val response = apiService.getChannelVideos(slug)
+
+            val videos = response.mapNotNull { dto ->
+                if (dto.is_live) return@mapNotNull null
+
+                
+                val videoId = dto.video?.uuid ?: dto.id?.toString() ?: return@mapNotNull null
+
+                
+                val videoTitle = dto.sessionTitle ?: dto.title ?: "Без названия"
+
+                val thumbnailUrl = dto.thumbnail?.src
+                    ?: dto.thumbnail?.srcSet?.substringBefore(" ")
+                    ?: ""
+
+                VideoUiModel(
+                    id = videoId, 
+                    title = videoTitle, 
+                    thumbnailUrl = thumbnailUrl.replace("\\/", "/"),
+                    videoUrl = "",
+                    views = dto.viewer_count,
+                    durationFormatted = formatVideoDuration(dto.duration)
+                )
+            }
+            Result.success(videos)
         } catch (e: Exception) {
+            
+            
+            android.util.Log.e("KICK_VODS", "АПИШКА ОПЯТЬ ЧУДИТ В fetchVideos:", e)
+
             Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
     }
@@ -95,81 +113,34 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
     suspend fun fetchClips(slug: String): Result<List<ClipUiModel>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getChannelClips(slug)
-
-            val uiModels = response.actualClips.map { it.toUiModel() }
-            Result.success(uiModels)
+            val clips = response.actualClips.map { it.toUiModel() }
+            Result.success(clips)
         } catch (e: Exception) {
             Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
     }
-}
 
-private fun extractVideoItems(element: kotlinx.serialization.json.JsonElement): List<JsonObject> {
-    return when (element) {
-        is kotlinx.serialization.json.JsonArray -> element.mapNotNull { it as? JsonObject }
-        is JsonObject -> {
-            val directArrays = listOf("data", "videos", "items", "results")
-                .mapNotNull { key -> element[key] as? kotlinx.serialization.json.JsonArray }
+    suspend fun fetchVideoPlaybackUrl(videoId: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getVideoPlayback(videoId)
+            val jsonObject = response as? JsonObject
+                ?: return@withContext Result.failure(DomainError.ApiError("Empty response"))
 
-            if (directArrays.isNotEmpty()) {
-                directArrays.first().mapNotNull { it as? JsonObject }
+            val playbackUrl = jsonObject["source"]?.jsonPrimitive?.contentOrNull
+                ?: jsonObject["playback_url"]?.jsonPrimitive?.contentOrNull
+                ?: jsonObject["video_url"]?.jsonPrimitive?.contentOrNull
+                ?: jsonObject["url"]?.jsonPrimitive?.contentOrNull
+                ?: ""
+
+            if (playbackUrl.isBlank()) {
+                Result.failure(DomainError.ApiError("No playback URL in response"))
             } else {
-                val nested = listOf("data", "body", "result")
-                    .mapNotNull { key -> element[key] as? JsonObject }
-                    .firstNotNullOfOrNull { nestedObject ->
-                        listOf("videos", "items", "results")
-                            .mapNotNull { key -> nestedObject[key] as? kotlinx.serialization.json.JsonArray }
-                            .firstOrNull()
-                    }
-
-                nested?.mapNotNull { it as? JsonObject } ?: emptyList()
+                Result.success(playbackUrl.replace("\\/", "/"))
             }
+        } catch (e: Exception) {
+            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
         }
-        else -> emptyList()
     }
-}
-
-private fun JsonObject.toVideoUiModel(): VideoUiModel? {
-    if (boolean("is_live") == true) return null
-
-    val nestedVideo = obj("video")
-    val id = nestedVideo?.string("uuid")
-        ?: string("uuid")
-        ?: string("id")
-        ?: numberString("id")
-        ?: return null
-
-    val title = string("session_title")
-        ?: string("title")
-        ?: nestedVideo?.string("session_title")
-        ?: nestedVideo?.string("title")
-        ?: "Untitled"
-
-    val source = string("source")
-        ?: string("playback_url")
-        ?: string("video_url")
-        ?: nestedVideo?.string("source")
-        ?: nestedVideo?.string("playback_url")
-        ?: nestedVideo?.string("video_url")
-        ?: ""
-
-    val thumbnailObject = obj("thumbnail") ?: nestedVideo?.obj("thumbnail")
-    val thumbnailUrl = thumbnailObject?.string("src")
-        ?: thumbnailObject?.string("url")
-        ?: string("thumbnail_url")
-        ?: nestedVideo?.string("thumbnail_url")
-        ?: ""
-
-    val durationValue = long("duration") ?: nestedVideo?.long("duration") ?: 0L
-
-    return VideoUiModel(
-        id = id,
-        title = title,
-        thumbnailUrl = thumbnailUrl.replace("\\/", "/"),
-        videoUrl = source.replace("\\/", "/"),
-        views = int("views") ?: int("view_count") ?: nestedVideo?.int("views") ?: 0,
-        durationFormatted = formatVideoDuration(durationValue)
-    )
 }
 
 private fun formatVideoDuration(rawDuration: Long): String {
@@ -184,19 +155,3 @@ private fun formatVideoDuration(rawDuration: Long): String {
         String.format("%02d:%02d", minutes, seconds)
     }
 }
-
-private fun JsonObject.obj(key: String): JsonObject? = this[key] as? JsonObject
-
-private fun JsonObject.string(key: String): String? =
-    this[key]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
-
-private fun JsonObject.numberString(key: String): String? =
-    this[key]?.jsonPrimitive?.let { primitive ->
-        primitive.longOrNull?.toString() ?: primitive.intOrNull?.toString()
-    }
-
-private fun JsonObject.int(key: String): Int? = this[key]?.jsonPrimitive?.intOrNull
-
-private fun JsonObject.long(key: String): Long? = this[key]?.jsonPrimitive?.longOrNull
-
-private fun JsonObject.boolean(key: String): Boolean? = this[key]?.jsonPrimitive?.booleanOrNull

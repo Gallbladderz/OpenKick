@@ -33,12 +33,40 @@ class StreamerProfileViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
+    
+    private val _loadingVideoId = MutableStateFlow<String?>(null)
+    val loadingVideoId = _loadingVideoId.asStateFlow()
 
     private var currentSlug: String? = null
+
+    /**
+     * Ленивая загрузка playback URL для VOD.
+     * Вызывается при клике на видео в VideosTab.
+     */
+    fun loadVideoPlaybackUrl(videoId: String, onResult: (Result<String>) -> Unit) {
+        if (videoId.isBlank()) {
+            onResult(Result.failure(IllegalArgumentException("Empty video ID")))
+            return
+        }
+
+        if (_loadingVideoId.value == videoId) return
+
+        _loadingVideoId.value = videoId
+
+        viewModelScope.launch {
+            try {
+                val result = repository.fetchVideoPlaybackUrl(videoId)
+                onResult(result)
+            } catch (e: Exception) {
+                onResult(Result.failure(e))
+            } finally {
+                _loadingVideoId.value = null
+            }
+        }
+    }
 
     fun loadProfile(slug: String) {
         currentSlug = slug
@@ -48,7 +76,6 @@ class StreamerProfileViewModel(
             fetchData(slug)
         }
     }
-
 
     fun refresh() {
         val slug = currentSlug ?: return
@@ -60,12 +87,10 @@ class StreamerProfileViewModel(
             try {
                 fetchData(slug)
             } finally {
-
                 _isRefreshing.value = false
             }
         }
     }
-
 
     private suspend fun fetchData(slug: String) {
         val profileResult = repository.fetchProfileInfo(slug)
@@ -73,7 +98,7 @@ class StreamerProfileViewModel(
         if (profileResult.isSuccess) {
             val profile = profileResult.getOrThrow()
 
-            val videosDeferred = viewModelScope.async { repository.fetchVideos(profile.channelId) }
+            val videosDeferred = viewModelScope.async { repository.fetchVideos(profile.slug) }
             val clipsDeferred = viewModelScope.async { repository.fetchClips(profile.slug) }
             val linksDeferred = viewModelScope.async { repository.fetchChannelLinks(profile.slug) }
             val isFollowingDeferred = viewModelScope.async { followsRepository.isStreamerFollowed(profile.slug).first() }
@@ -93,8 +118,6 @@ class StreamerProfileViewModel(
                 )
             }
         } else {
-
-
             if (_uiState.value is ProfileUiState.Loading) {
                 _uiState.update {
                     ProfileUiState.Error(
@@ -113,7 +136,6 @@ class StreamerProfileViewModel(
                 val slug = currentState.info.slug
 
                 followsRepository.toggleStreamerFollow(slug, currentlyFollowing)
-
 
                 _uiState.update {
                     currentState.copy(isFollowing = !currentlyFollowing)

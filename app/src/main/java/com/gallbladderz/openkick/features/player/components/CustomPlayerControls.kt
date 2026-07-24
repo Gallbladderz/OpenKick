@@ -40,10 +40,10 @@ fun CustomPlayerControls(
     playWhenReady: Boolean,
     playbackState: Int,
     isFullscreen: Boolean,
-    isLive: Boolean = true, // <-- Флаг для переключения режимов
-    currentPosition: Long = 0L, // <-- Текущее время для клипов
-    duration: Long = 0L, // <-- Длительность клипа
-    onSeek: (Long) -> Unit = {}, // <-- Коллбэк перемотки
+    isLive: Boolean = true, 
+    currentPosition: Long = 0L, 
+    duration: Long = 0L, 
+    onSeek: (Long) -> Unit = {}, 
     onPlayPause: () -> Unit,
     onFullscreen: () -> Unit,
     onSettings: () -> Unit,
@@ -86,7 +86,7 @@ fun CustomPlayerControls(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isLive) {
-                // Режим стрима
+                
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -102,7 +102,7 @@ fun CustomPlayerControls(
                     )
                 }
             } else {
-                // Режим клипа (слайдер и таймеры)
+                
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f).padding(end = 8.dp)

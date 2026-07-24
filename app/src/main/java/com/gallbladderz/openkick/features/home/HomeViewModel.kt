@@ -27,7 +27,7 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
@@ -39,12 +39,41 @@ class HomeViewModel(
     private var isClipsEnd = false
 
     private var currentLanguages: Set<String>? = null
+    private var currentHideCategories: Boolean = false
+
+    
+    private fun filterBanned(streams: List<StreamUiModel>): List<StreamUiModel> {
+        if (!currentHideCategories) return streams
+
+        
+        val bannedSlugs = setOf(
+            "slots",
+            "pools-hot-tubs-bikinis",
+            "crypto-and-trading"
+        )
+
+        return streams.filter { stream ->
+            stream.categorySlug.lowercase() !in bannedSlugs
+        }
+    }
+
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedLanguagesFlow.collect { langs ->
-                if (currentLanguages != langs) {
+            
+            kotlinx.coroutines.flow.combine(
+                settingsRepository.selectedLanguagesFlow,
+                settingsRepository.hideCategoriesFlow
+            ) { langs, hide ->
+                Pair(langs, hide)
+            }.collect { (langs, hide) ->
+                val langsChanged = currentLanguages != langs
+                val hideChanged = currentHideCategories != hide
+
+                
+                if (langsChanged || hideChanged || currentLanguages == null) {
                     currentLanguages = langs
+                    currentHideCategories = hide
                     fetchHomeData()
                 }
             }
@@ -80,10 +109,13 @@ class HomeViewModel(
 
                 if (streamsResult.isFailure && clipsResult.isFailure) {
                     val ex = streamsResult.exceptionOrNull() ?: clipsResult.exceptionOrNull()
-                    _uiState.value = HomeUiState.Error(ex?.message ?: "Total failure, nothing loaded")
+                    _uiState.value =
+                        HomeUiState.Error(ex?.message ?: "Total failure, nothing loaded")
                 } else {
+                    
+                    val filteredStreams = filterBanned(streamsList)
                     _uiState.value = HomeUiState.Success(
-                        streams = streamsList,
+                        streams = filteredStreams,
                         clips = clipsList
                     )
                 }
@@ -93,10 +125,9 @@ class HomeViewModel(
         }
     }
 
-    
     fun refresh() {
         val langs = currentLanguages ?: return
-        if (_isRefreshing.value) return 
+        if (_isRefreshing.value) return
 
         _isRefreshing.value = true
 
@@ -121,12 +152,12 @@ class HomeViewModel(
                     isClipsEnd = false
 
                     _uiState.value = HomeUiState.Success(
-                        streams = streamsPair?.first ?: emptyList(),
+                        
+                        streams = filterBanned(streamsPair?.first ?: emptyList()),
                         clips = clipsPair?.first ?: emptyList()
                     )
                 }
             } finally {
-                
                 _isRefreshing.value = false
             }
         }
@@ -148,46 +179,26 @@ class HomeViewModel(
                 val (newStreams, nextCursor) = result.getOrThrow()
                 streamsCursor = nextCursor
 
-                if (newStreams.isEmpty()) {
+                
+                val filteredNewStreams = filterBanned(newStreams)
+
+                if (filteredNewStreams.isEmpty() && newStreams.isNotEmpty()) {
+                    
+                } else if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {
                     if (nextCursor.isNullOrBlank()) {
                         isStreamsEnd = true
                     }
                     val currentState = _uiState.value as HomeUiState.Success
-                    val merged = (currentState.streams + newStreams).distinctBy { it.id }
+                    
+                    val merged = (currentState.streams + filteredNewStreams).distinctBy { it.id }
                     _uiState.value = currentState.copy(streams = merged)
                 }
             } else {
                 isStreamsEnd = true
             }
             isStreamsLoading = false
-        }
-    }
-
-    fun loadMoreClips() {
-        if (isClipsLoading || isClipsEnd || _uiState.value !is HomeUiState.Success) return
-        isClipsLoading = true
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = repository.fetchTopClips(clipsCursor)
-            if (result.isSuccess) {
-                val (newClips, nextCursor) = result.getOrThrow()
-                if (newClips.isEmpty()) {
-                    isClipsEnd = true
-                } else {
-                    clipsCursor = nextCursor
-                    if (nextCursor.isNullOrBlank()) {
-                        isClipsEnd = true
-                    }
-                    val currentState = _uiState.value as HomeUiState.Success
-                    val merged = (currentState.clips + newClips).distinctBy { it.id }
-                    _uiState.value = currentState.copy(clips = merged)
-                }
-            } else {
-                isClipsEnd = true
-            }
-            isClipsLoading = false
         }
     }
 }

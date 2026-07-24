@@ -1,6 +1,7 @@
 package com.gallbladderz.openkick.features.profile
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,7 +43,6 @@ import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
-
 import com.gallbladderz.openkick.features.profile.components.ProfileHeader
 import com.gallbladderz.openkick.features.profile.components.DescriptionTab
 import com.gallbladderz.openkick.features.profile.components.VideosTab
@@ -53,10 +54,12 @@ fun StreamerProfileScreen(
     slug: String,
     onBackClick: () -> Unit,
     onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
+    onClipClick: (ClipUiModel) -> Unit,
     viewModel: StreamerProfileViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val loadingVideoId by viewModel.loadingVideoId.collectAsStateWithLifecycle()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
@@ -64,8 +67,8 @@ fun StreamerProfileScreen(
         stringResource(R.string.vods),
         stringResource(R.string.filter_clips)
     )
-    val context = LocalContext.current
 
+    val context = LocalContext.current
     val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(slug) {
@@ -106,7 +109,6 @@ fun StreamerProfileScreen(
             )
         }
     ) { paddingValues ->
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -130,14 +132,13 @@ fun StreamerProfileScreen(
                             onShareClick = {
                                 val sendIntent: Intent = Intent().apply {
                                     action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, "Смотри стримера ${uiState.info.username} на Kick!\nhttps://kick.com/${uiState.info.slug}")
+                                    putExtra(Intent.EXTRA_TEXT, "Смотри ${uiState.info.username} на Kick!\\nhttps://kick.com/${uiState.info.slug}")
                                     type = "text/plain"
                                 }
                                 val shareIntent = Intent.createChooser(sendIntent, null)
                                 context.startActivity(shareIntent)
                             }
                         )
-
                         PrimaryTabRow(
                             selectedTabIndex = selectedTabIndex,
                             containerColor = MaterialTheme.colorScheme.background,
@@ -151,21 +152,36 @@ fun StreamerProfileScreen(
                                 )
                             }
                         }
-
                         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                             when (selectedTabIndex) {
                                 0 -> DescriptionTab(uiState.info.bio, uiState.links)
                                 1 -> VideosTab(
                                     videos = uiState.videos,
-                                    onVideoClick = { video -> onVideoClick(video, uiState.info) }
+                                    loadingVideoId = loadingVideoId,
+                                    onVideoClick = { video ->
+                                        viewModel.loadVideoPlaybackUrl(video.id) { result ->
+                                            result.onSuccess { url ->
+                                                val videoWithUrl = video.copy(videoUrl = url)
+                                                onVideoClick(videoWithUrl, uiState.info)
+                                            }.onFailure { error ->
+                                                Toast.makeText(
+                                                    context,
+                                                    "Ошибка: ${error.message}",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    }
                                 )
-                                2 -> ClipsTab(uiState.clips)
+                                2 -> ClipsTab(
+                                    clips = uiState.clips,
+                                    onClipClick = onClipClick
+                                )
                             }
                         }
                     }
                 }
             }
-
             PullToRefreshContainer(
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),
@@ -175,4 +191,3 @@ fun StreamerProfileScreen(
         }
     }
 }
-

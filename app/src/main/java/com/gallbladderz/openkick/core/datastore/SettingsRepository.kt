@@ -17,6 +17,29 @@ class SettingsRepository(private val context: Context) {
         private val HIDE_CATEGORIES_KEY = booleanPreferencesKey("hide_categories")
         private val FOLLOWED_CHANNELS = stringSetPreferencesKey("followed_channels")
         private val SELECTED_LANGUAGES = stringSetPreferencesKey("selected_languages")
+        private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        private val BACKGROUND_KEEPALIVE = booleanPreferencesKey("background_keepalive")
+    }
+
+    val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[NOTIFICATIONS_ENABLED] ?: true 
+    }
+
+    val backgroundKeepaliveFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[BACKGROUND_KEEPALIVE] ?: false 
+    }
+
+    
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setBackgroundKeepalive(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[BACKGROUND_KEEPALIVE] = enabled
+        }
     }
 
     val hideCategoriesFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
