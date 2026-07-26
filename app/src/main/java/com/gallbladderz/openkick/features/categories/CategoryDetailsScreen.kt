@@ -121,7 +121,7 @@ fun CategoryDetailsScreen(
                 }
                 is CategoryDetailsUiState.Success -> {
 
-                    
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -146,7 +146,7 @@ fun CategoryDetailsScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.Red))
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = stringResource(R.string.viewers_count, currentState.viewers),
@@ -186,7 +186,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-                    
+
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface
@@ -200,7 +200,7 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-                    
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -208,7 +208,7 @@ fun CategoryDetailsScreen(
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
-                            
+
                             if (currentState.streams.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text(stringResource(R.string.streams_will_appear_here), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -233,7 +233,7 @@ fun CategoryDetailsScreen(
                                 }
                             }
                         } else {
-                            
+
                             if (currentState.clips.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text(stringResource(R.string.no_popular_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)

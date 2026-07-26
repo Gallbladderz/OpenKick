@@ -17,6 +17,35 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.gallbladderz.openkick.core.datastore.AppTheme
 
+private val KickDarkColorScheme = darkColorScheme(
+    primary = KickGreen,
+    onPrimary = Color.Black,
+    secondary = KickGreenDark,
+    onSecondary = Color.White,
+    background = KickBackground,
+    onBackground = KickTextPrimary,
+    surface = KickSurface,
+    onSurface = KickTextPrimary,
+    surfaceVariant = KickSurfaceVariant,
+    onSurfaceVariant = KickTextSecondary,
+    error = KickError,
+    onError = Color.White
+)
+
+private val KickLightColorScheme = lightColorScheme(
+    primary = KickGreenDark,
+    onPrimary = Color.White,
+    secondary = KickGreen,
+    onSecondary = Color.Black,
+    background = Color(0xFFF0F0F0),
+    onBackground = Color(0xFF141416),
+    surface = Color.White,
+    onSurface = Color(0xFF141416),
+    surfaceVariant = Color(0xFFE0E0E0),
+    onSurfaceVariant = Color(0xFF424242),
+    error = KickError,
+    onError = Color.White
+)
 private val CatppuccinMochaColorScheme = darkColorScheme(
     primary = CatppuccinMochaPrimary,
     onPrimary = CatppuccinMochaOnPrimary,

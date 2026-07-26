@@ -118,15 +118,15 @@ fun CategoryCard(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
-                    .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color.Red))
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = formatViewers(category.viewers),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -139,12 +139,12 @@ fun CategoryCard(
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
                     .size(32.dp)
-                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), CircleShape)
             ) {
                 Icon(
                     imageVector = if (isFollowed) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = stringResource(R.string.follow_action),
-                    tint = if (isFollowed) MaterialTheme.colorScheme.primary else Color.White,
+                    tint = if (isFollowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp)
                 )
             }
