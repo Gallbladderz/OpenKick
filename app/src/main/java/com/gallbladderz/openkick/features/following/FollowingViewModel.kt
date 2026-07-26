@@ -92,8 +92,8 @@ class FollowingViewModel(
                     async { followingRepository.fetchChannelDetails(slug) }
                 }
 
-                val fetchedCategories = categoriesDeferred.awaitAll().filterNotNull()
-                val fetchedStreamers = streamersDeferred.awaitAll().filterNotNull()
+                val fetchedCategories = categoriesDeferred.awaitAll().mapNotNull { it.getOrNull() }
+                val fetchedStreamers = streamersDeferred.awaitAll().mapNotNull { it.getOrNull() }
 
                 val liveStreamers = fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }
                 val offlineStreamers = fetchedStreamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
