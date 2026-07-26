@@ -125,27 +125,26 @@
     <string name="audio_only">Audio only</string>
 
     <string name="banner_desc">Banner</string>
-    <string name="share_profile_desc">Поделиться профилем</string>
+    <string name="share_profile_desc">Share profile</string>
     <string name="vod_desc">VOD</string>
     <string name="views_count_icon">👁 %1$s</string>
-    <string name="receive_stream_alerts">Получать оповещения о начале стримов</string>
-    <string name="battery_saving">Экономия заряда</string>
-    <string name="done_desc">Готово</string>
-    <string name="disable">Отключить</string>
-    <string name="content_settings_title">Контент</string>
-    <string name="hide_nsfw_categories">Скрыть NSFW категории</string>
-    <string name="hide_nsfw_description">Убирает из ленты слоты, казино и бассейны (Hot Tubs).</string>
-    <string name="blacklist_title">Черный список</string>
-    <string name="blacklist_description">Заблокированные стримеры (в разработке)</string>
+    <string name="receive_stream_alerts">Receive stream alerts</string>
+    <string name="battery_saving">Battery optimization</string>
+    <string name="done_desc">Done</string>
+    <string name="disable">Disable</string>
+    <string name="content_settings_title">Content</string>
+    <string name="hide_nsfw_categories">Hide NSFW categories</string>
+    <string name="hide_nsfw_description">Hides slots, casino, and Hot Tubs from the feed.</string>
+    <string name="blacklist_title">Blacklist</string>
+    <string name="blacklist_description">Blocked streamers (WIP)</string>
     <string name="share_desc">Share</string>
     <string name="settings_desc">Settings</string>
     <string name="play_pause_desc">Play/Pause</string>
     <string name="fullscreen_desc">Fullscreen</string>
-    <string name="selected_desc">Выбрано</string>
+    <string name="selected_desc">Selected</string>
     <string name="thumbnail_desc">Thumbnail</string>
     <string name="category_banner_desc">Category Banner</string>
     <string name="english_lang">English</string>
-
-    <string name="battery_opt_disabled">Оптимизация отключена. Фон работает стабильно.</string>
-    <string name="battery_opt_enable">Нажмите «Отключить», чтобы система не убивала уведомления.</string>
+    <string name="battery_opt_disabled">Optimization disabled. Background works stably.</string>
+    <string name="battery_opt_enable">Tap "Disable" to prevent the system from killing notifications.</string>
 </resources>

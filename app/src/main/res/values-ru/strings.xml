@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="banner_desc">Баннер</string>
+    <string name="share_profile_desc">Поделиться профилем</string>
+    <string name="vod_desc">Запись (VOD)</string>
+    <string name="views_count_icon">👁 %1$s</string>
+    <string name="receive_stream_alerts">Получать оповещения о начале стримов</string>
+    <string name="battery_saving">Экономия заряда</string>
+    <string name="done_desc">Готово</string>
+    <string name="disable">Отключить</string>
+    <string name="content_settings_title">Контент</string>
+    <string name="hide_nsfw_categories">Скрыть NSFW категории</string>
+    <string name="hide_nsfw_description">Убирает из ленты слоты, казино и бассейны (Hot Tubs).</string>
+    <string name="blacklist_title">Черный список</string>
+    <string name="blacklist_description">Заблокированные стримеры (в разработке)</string>
+    <string name="share_desc">Поделиться</string>
+    <string name="settings_desc">Настройки</string>
+    <string name="play_pause_desc">Плей/Пауза</string>
+    <string name="fullscreen_desc">На весь экран</string>
+    <string name="selected_desc">Выбрано</string>
+    <string name="thumbnail_desc">Превью</string>
+    <string name="category_banner_desc">Баннер категории</string>
+    <string name="english_lang">English</string>
+    <string name="battery_opt_disabled">Оптимизация отключена. Фон работает стабильно.</string>
+    <string name="battery_opt_enable">Нажмите «Отключить», чтобы система не убивала уведомления.</string>
     <string name="app_name">OpenKick</string>
     <string name="back">Назад</string>
     <string name="chat_tab">Чат</string>
