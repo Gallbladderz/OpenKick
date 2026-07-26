@@ -15,6 +15,8 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,7 +55,7 @@ fun StreamCard(
                         .data(stream.thumbnailUrl)
                         .crossfade(true)
                         .build(),
-                    contentDescription = "Thumbnail",
+                    contentDescription = stringResource(R.string.thumbnail_desc),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()

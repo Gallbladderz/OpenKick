@@ -60,7 +60,7 @@ fun ProfileHeader(
         Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
             AsyncImage(
                 model = ImageRequest.Builder(context).data(info.bannerUrl).crossfade(true).build(),
-                contentDescription = "Banner",
+                contentDescription = stringResource(R.string.banner_desc),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth().height(120.dp)
             )
@@ -79,7 +79,7 @@ fun ProfileHeader(
 
             AsyncImage(
                 model = ImageRequest.Builder(context).data(info.avatarUrl).crossfade(true).build(),
-                contentDescription = "Avatar",
+                contentDescription = stringResource(R.string.avatar_desc),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .padding(start = 16.dp)
@@ -142,7 +142,7 @@ fun ProfileHeader(
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Поделиться профилем",
+                    contentDescription = stringResource(R.string.share_profile_desc),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

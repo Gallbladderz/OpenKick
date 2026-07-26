@@ -322,7 +322,7 @@ private fun ClipInfoPanel(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
-                        contentDescription = "Share"
+                        contentDescription = stringResource(R.string.share_desc)
                     )
                 }
 

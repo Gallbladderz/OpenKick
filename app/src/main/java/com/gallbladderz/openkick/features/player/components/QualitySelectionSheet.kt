@@ -85,7 +85,7 @@ fun QualitySelectionSheet(
                         if (isSelected) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Выбрано",
+                                contentDescription = stringResource(R.string.selected_desc),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }

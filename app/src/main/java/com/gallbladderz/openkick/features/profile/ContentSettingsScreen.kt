@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,12 +30,12 @@ fun ContentSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Контент", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.content_settings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -52,8 +54,8 @@ fun ContentSettingsScreen(
         ) {
             item {
                 ListItem(
-                    headlineContent = { Text("Скрыть NSFW категории", fontWeight = FontWeight.Bold) },
-                    supportingContent = { Text("Убирает из ленты слоты, казино и бассейны (Hot Tubs).") },
+                    headlineContent = { Text(stringResource(R.string.hide_nsfw_categories), fontWeight = FontWeight.Bold) },
+                    supportingContent = { Text(stringResource(R.string.hide_nsfw_description)) },
                     trailingContent = {
                         Switch(
                             checked = hideCategories,
@@ -73,8 +75,8 @@ fun ContentSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Черный список", fontWeight = FontWeight.Bold) },
-                    supportingContent = { Text("Заблокированные стримеры (в разработке)") },
+                    headlineContent = { Text(stringResource(R.string.blacklist_title), fontWeight = FontWeight.Bold) },
+                    supportingContent = { Text(stringResource(R.string.blacklist_description)) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.clickable {
                         

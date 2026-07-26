@@ -55,7 +55,7 @@ fun CustomPlayerControls(
             onClick = onSettings,
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
         ) {
-            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_desc), tint = Color.White)
         }
 
         if (playbackState == Player.STATE_BUFFERING) {
@@ -70,7 +70,7 @@ fun CustomPlayerControls(
             ) {
                 Icon(
                     imageVector = if (playWhenReady) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = "Play/Pause",
+                    contentDescription = stringResource(R.string.play_pause_desc),
                     tint = Color.White,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -125,7 +125,7 @@ fun CustomPlayerControls(
             IconButton(onClick = onFullscreen, modifier = Modifier.size(32.dp)) {
                 Icon(
                     imageVector = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                    contentDescription = "Fullscreen",
+                    contentDescription = stringResource(R.string.fullscreen_desc),
                     tint = Color.White
                 )
             }

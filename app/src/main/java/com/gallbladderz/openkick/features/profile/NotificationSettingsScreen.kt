@@ -7,6 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -71,12 +73,12 @@ fun NotificationSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Уведомления") },
+                title = { Text(stringResource(R.string.notifications)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -102,7 +104,7 @@ fun NotificationSettingsScreen(
                         )
                     },
                     supportingContent = {
-                        Text("Получать оповещения о начале стримов")
+                        Text(stringResource(R.string.receive_stream_alerts))
                     },
                     trailingContent = {
                         Switch(
@@ -176,18 +178,18 @@ fun NotificationSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Экономия заряда", fontWeight = FontWeight.Bold) },
+                    headlineContent = { Text(stringResource(R.string.battery_saving), fontWeight = FontWeight.Bold) },
                     supportingContent = {
                         Text(
-                            if (isIgnoringBattery) "Оптимизация отключена. Фон работает стабильно."
-                            else "Нажмите «Отключить», чтобы система не убивала уведомления."
+                            if (isIgnoringBattery) stringResource(R.string.battery_opt_disabled)
+                            else stringResource(R.string.battery_opt_enable)
                         )
                     },
                     trailingContent = {
                         if (isIgnoringBattery) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Готово",
+                                contentDescription = stringResource(R.string.done_desc),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         } else {
@@ -199,7 +201,7 @@ fun NotificationSettingsScreen(
                                     context.startActivity(intent)
                                 }
                             ) {
-                                Text("Отключить")
+                                Text(stringResource(R.string.disable))
                             }
                         }
                     },

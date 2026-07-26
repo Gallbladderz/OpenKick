@@ -133,7 +133,7 @@ fun CategoryDetailsScreen(
                                 .data(currentState.bannerUrl)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = "Category Banner",
+                            contentDescription = stringResource(R.string.category_banner_desc),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .width(80.dp)
