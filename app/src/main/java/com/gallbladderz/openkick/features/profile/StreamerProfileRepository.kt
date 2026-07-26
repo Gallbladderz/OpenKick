@@ -11,7 +11,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import com.gallbladderz.openkick.core.domain.DomainError
-import java.io.IOException
+import com.gallbladderz.openkick.core.domain.toDomainError
+import com.gallbladderz.openkick.features.player.models.ChannelLinkDto
 
 data class ProfileInfoUi(
     val channelId: Int,
@@ -37,76 +38,35 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
     suspend fun fetchProfileInfo(slug: String): Result<ProfileInfoUi> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getChannelV1(slug)
-
-            val channelId = response.id ?: return@withContext Result.failure(DomainError.ApiError("No channel ID"))
-            val username = response.user?.username ?: slug
-            val bio = response.user?.bio ?: ""
-            val avatarUrl = response.user?.profilePic ?: ""
-            val followers = response.followersCount
-
-            val bannerUrl = when (val banner = response.bannerImage) {
-                is JsonObject -> banner["url"]?.jsonPrimitive?.content ?: ""
-                is JsonPrimitive -> banner.content
-                else -> ""
+            val profileInfo = response.toDomain(slug)
+            if (profileInfo != null) {
+                Result.success(profileInfo)
+            } else {
+                Result.failure(DomainError.ApiError("No channel ID"))
             }
-
-            Result.success(ProfileInfoUi(channelId, slug, username, bio, avatarUrl, bannerUrl, followers))
         } catch (e: Exception) {
-            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
+            Result.failure(e.toDomainError())
         }
     }
 
     suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> = withContext(Dispatchers.IO) {
         try {
             val dtos = apiService.getChannelLinks(streamerName)
-            val links = dtos.map { dto ->
-                ChannelLink(
-                    id = dto.id,
-                    description = dto.description,
-                    link = dto.link,
-                    title = dto.title,
-                    imageUrl = dto.image?.url ?: ""
-                )
-            }
+            val links = dtos.map { it.toDomain() }
             Result.success(links)
         } catch (e: Exception) {
-            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
+            Result.failure(e.toDomainError())
         }
     }
 
     suspend fun fetchVideos(slug: String): Result<List<VideoUiModel>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getChannelVideos(slug)
-
-            val videos = response.mapNotNull { dto ->
-                if (dto.is_live) return@mapNotNull null
-
-                
-                val videoId = dto.video?.uuid ?: dto.id?.toString() ?: return@mapNotNull null
-
-                
-                val videoTitle = dto.sessionTitle ?: dto.title ?: "Без названия"
-
-                val thumbnailUrl = dto.thumbnail?.src
-                    ?: dto.thumbnail?.srcSet?.substringBefore(" ")
-                    ?: ""
-
-                VideoUiModel(
-                    id = videoId, 
-                    title = videoTitle, 
-                    thumbnailUrl = thumbnailUrl.replace("\\/", "/"),
-                    videoUrl = "",
-                    views = dto.viewer_count,
-                    durationFormatted = formatVideoDuration(dto.duration)
-                )
-            }
+            val videos = response.mapNotNull { it.toDomain() }
             Result.success(videos)
         } catch (e: Exception) {
-            
-            
             android.util.Log.e("KICK_VODS", "АПИШКА ОПЯТЬ ЧУДИТ В fetchVideos:", e)
-
-            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
+            Result.failure(e.toDomainError())
         }
     }
 
@@ -116,7 +76,7 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             val clips = response.actualClips.map { it.toUiModel() }
             Result.success(clips)
         } catch (e: Exception) {
-            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
+            Result.failure(e.toDomainError())
         }
     }
 
@@ -138,9 +98,52 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
                 Result.success(playbackUrl.replace("\\/", "/"))
             }
         } catch (e: Exception) {
-            Result.failure(if (e is IOException) DomainError.NetworkError() else DomainError.UnknownError(e.message ?: "Unknown error"))
+            Result.failure(e.toDomainError())
         }
     }
+}
+
+fun ChannelV1Response.toDomain(slugFallback: String): ProfileInfoUi? {
+    val channelId = this.id ?: return null
+    val username = this.user?.username ?: slugFallback
+    val bio = this.user?.bio ?: ""
+    val avatarUrl = this.user?.profilePic ?: ""
+    val followers = this.followersCount
+
+    val bannerUrl = when (val banner = this.bannerImage) {
+        is JsonObject -> banner["url"]?.jsonPrimitive?.content ?: ""
+        is JsonPrimitive -> banner.content
+        else -> ""
+    }
+
+    return ProfileInfoUi(channelId, slugFallback, username, bio, avatarUrl, bannerUrl, followers)
+}
+
+fun ChannelLinkDto.toDomain(): ChannelLink {
+    return ChannelLink(
+        id = this.id,
+        description = this.description,
+        link = this.link,
+        title = this.title,
+        imageUrl = this.image?.url ?: ""
+    )
+}
+
+fun VideoItemDto.toDomain(): VideoUiModel? {
+    if (this.is_live) return null
+
+    val videoId = this.video?.uuid ?: this.id?.toString() ?: return null
+    val videoTitle = this.sessionTitle ?: this.title ?: "Без названия"
+    val thumbnailUrl = this.thumbnail?.src ?: this.thumbnail?.srcSet?.substringBefore(" ") ?: ""
+
+    return VideoUiModel(
+        id = videoId,
+        title = videoTitle,
+        thumbnailUrl = thumbnailUrl.replace("\\/", "/"),
+        videoUrl = "",
+        views = this.viewer_count,
+        durationFormatted = formatVideoDuration(this.duration)
+    )
 }
 
 private fun formatVideoDuration(rawDuration: Long): String {

@@ -4,6 +4,9 @@ import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.StreamInfo
 import com.gallbladderz.openkick.core.domain.DomainError
+import com.gallbladderz.openkick.core.domain.toDomainError
+import com.gallbladderz.openkick.features.player.models.ChannelLinkDto
+import com.gallbladderz.openkick.features.player.models.ChannelStreamInfoResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -16,44 +19,52 @@ class PlayerRepository(
     fun fetchStreamInfo(streamerName: String): Flow<Result<StreamInfo>> = flow {
         try {
             val response = apiService.getChannelStreamInfo(streamerName)
-            val finalUrl = response.playback_url ?: response.livestream?.playback_url
-
-            val chatroomId = (response.chatroom?.id ?: response.chatroom_id)?.toString()
-            var avatar = response.user?.profile_pic ?: ""
-            avatar = avatar.replace("\\/", "/")
-
-            val viewers = response.livestream?.viewer_count ?: 0
-            val title = response.livestream?.session_title ?: "Stream"
-
-            if (!finalUrl.isNullOrEmpty()) {
-                emit(
-                    Result.success(
-                        StreamInfo(
-                            playbackUrl = finalUrl,
-                            avatarUrl = avatar,
-                            viewers = viewers,
-                            title = title,
-                            chatroomId = chatroomId
-                        )
-                    )
-                )
+            val streamInfo = response.toDomain()
+            if (streamInfo != null) {
+                emit(Result.success(streamInfo))
             } else {
                 emit(Result.failure(DomainError.OfflineError()))
             }
         } catch (e: Exception) {
-            emit(Result.failure(DomainError.NetworkError("API processing error: ${e.message}")))
+            emit(Result.failure(e.toDomainError()))
         }
     }.flowOn(Dispatchers.IO)
 
     suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> = withContext(Dispatchers.IO) {
         try {
             val dtos = apiService.getChannelLinks(streamerName)
-            val links = dtos.map { dto ->
-                ChannelLink(dto.id, dto.description, dto.link, dto.title, dto.image?.url ?: "")
-            }
+            val links = dtos.map { it.toDomain() }
             Result.success(links)
         } catch (e: Exception) {
-            Result.failure(DomainError.ApiError("Kick hid the info: ${e.message}"))
+            Result.failure(e.toDomainError())
         }
     }
+}
+
+fun ChannelStreamInfoResponse.toDomain(): StreamInfo? {
+    val finalUrl = this.playback_url ?: this.livestream?.playback_url
+    if (finalUrl.isNullOrEmpty()) return null
+
+    val chatroomId = (this.chatroom?.id ?: this.chatroom_id)?.toString()
+    val avatar = this.user?.profile_pic?.replace("\\/", "/") ?: ""
+    val viewers = this.livestream?.viewer_count ?: 0
+    val title = this.livestream?.session_title ?: "Stream"
+
+    return StreamInfo(
+        playbackUrl = finalUrl,
+        avatarUrl = avatar,
+        viewers = viewers,
+        title = title,
+        chatroomId = chatroomId
+    )
+}
+
+fun ChannelLinkDto.toDomain(): ChannelLink {
+    return ChannelLink(
+        id = this.id,
+        description = this.description,
+        link = this.link,
+        title = this.title,
+        imageUrl = this.image?.url ?: ""
+    )
 }

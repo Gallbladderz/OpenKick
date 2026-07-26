@@ -1,8 +1,10 @@
 package com.gallbladderz.openkick.features.categories
 
+import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.StreamUiModel
+import com.gallbladderz.openkick.features.home.toDomain
 import com.gallbladderz.openkick.features.home.toUiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -10,64 +12,82 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
+data class CategoryDetailsUiModel(
+    val name: String,
+    val viewers: Int,
+    val tags: List<String>,
+    val bannerUrl: String
+)
+
 class CategoriesRepository(private val apiService: KickApiService) {
 
     fun fetchCategories(page: Int = 1): Flow<Result<List<CategoryUiModel>>> = flow {
         try {
             val response = apiService.getCategories(limit = 50, page = page)
-
-            val uiModels = response.data.map { dto ->
-                var bannerUrl = dto.banner?.finalUrl ?: ""
-                bannerUrl = bannerUrl.replace("\\/", "/")
-                if (bannerUrl.contains(" ")) {
-                    bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
-                }
-                if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
-
-                CategoryUiModel(
-                    id = dto.id?.toString() ?: "0",
-                    name = dto.name,
-                    slug = dto.slug,
-                    viewers = dto.viewers,
-                    bannerUrl = bannerUrl,
-                    tags = dto.tags
-                )
-            }
+            val uiModels = response.data.map { it.toDomain() }
             emit(Result.success(uiModels))
         } catch (e: Exception) {
-            emit(Result.failure(Exception("Network died: ${e.message}", e)))
+            emit(Result.failure(e.toDomainError()))
         }
     }.flowOn(Dispatchers.IO)
 
-    suspend fun fetchCategoryDetails(slug: String): CategoryDetailsResponse = withContext(Dispatchers.IO) {
-        apiService.getCategoryDetails(slug)
-    }
-
-    suspend fun fetchCategoryClips(slug: String): List<ClipUiModel> = withContext(Dispatchers.IO) {
-        apiService.getCategoryClips(slug).clips.map { it.toUiModel() }
-    }
-
-    suspend fun fetchCategoryStreams(slug: String): List<StreamUiModel> = withContext(Dispatchers.IO) {
+    suspend fun fetchCategoryDetails(slug: String): Result<CategoryDetailsUiModel> = withContext(Dispatchers.IO) {
         try {
-            
-            val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
-
-            
-            response.data?.livestreams?.mapNotNull { item ->
-                val stream = item.actualStream
-                StreamUiModel(
-                    id = stream.id ?: "0",
-                    streamerName = stream.channel?.slug ?: stream.channel?.username ?: "Unknown",
-                    title = stream.sessionTitle,
-                    viewers = stream.viewerCount,
-                    category = stream.category?.name ?: "No Category",
-                    categorySlug = stream.category?.slug ?: "",
-                    thumbnailUrl = stream.thumbnail?.finalUrl ?: ""
-                )
-            } ?: emptyList()
+            val response = apiService.getCategoryDetails(slug)
+            Result.success(response.toDomain())
         } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+            Result.failure(e.toDomainError())
         }
     }
+
+    suspend fun fetchCategoryClips(slug: String): Result<List<ClipUiModel>> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getCategoryClips(slug)
+            Result.success(response.clips.map { it.toUiModel() })
+        } catch (e: Exception) {
+            Result.failure(e.toDomainError())
+        }
+    }
+
+    suspend fun fetchCategoryStreams(slug: String): Result<List<StreamUiModel>> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
+            val streams = response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
+            Result.success(streams)
+        } catch (e: Exception) {
+            Result.failure(e.toDomainError())
+        }
+    }
+}
+
+fun CategoryDto.toDomain(): CategoryUiModel {
+    var bannerUrl = this.banner?.finalUrl ?: ""
+    bannerUrl = bannerUrl.replace("\\/", "/")
+    if (bannerUrl.contains(" ")) {
+        bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
+    }
+    if (bannerUrl.startsWith("/")) bannerUrl = "https://kick.com$bannerUrl"
+
+    return CategoryUiModel(
+        id = this.id?.toString() ?: "0",
+        name = this.name,
+        slug = this.slug,
+        viewers = this.viewers,
+        bannerUrl = bannerUrl,
+        tags = this.tags
+    )
+}
+
+fun CategoryDetailsResponse.toDomain(): CategoryDetailsUiModel {
+    var bannerUrl = this.banner?.srcset ?: ""
+    if (bannerUrl.contains(" ")) {
+        bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
+    }
+
+    return CategoryDetailsUiModel(
+        name = this.name,
+        viewers = this.viewers,
+        tags = this.tags,
+        bannerUrl = bannerUrl
+    )
 }

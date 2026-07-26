@@ -1,5 +1,6 @@
 package com.gallbladderz.openkick.features.home
 
+import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.KickApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,24 +17,13 @@ class HomeRepository(private val apiService: KickApiService) {
                 languages = if (languages.isEmpty()) null else languages.toList()
             )
 
-            val uiModels = response.data?.livestreams?.mapNotNull { item ->
-                val stream = item.actualStream
-                StreamUiModel(
-                    id = stream.id ?: "0",
-                    streamerName = stream.channel?.slug ?: stream.channel?.username ?: "Unknown",
-                    title = stream.sessionTitle,
-                    viewers = stream.viewerCount,
-                    category = stream.category?.name ?: "No Category",
-                    categorySlug = stream.category?.slug ?: "",
-                    thumbnailUrl = stream.thumbnail?.finalUrl ?: ""
-                )
-            } ?: emptyList()
+            val uiModels = response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
 
             val nextCursor = response.data?.pagination?.nextCursor
 
             Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
         } catch (e: Exception) {
-            Result.failure(Exception("Network dropped (Streams): ${e.message}", e))
+            Result.failure(e.toDomainError())
         }
     }
 
@@ -45,7 +35,20 @@ class HomeRepository(private val apiService: KickApiService) {
 
             Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
         } catch (e: Exception) {
-            Result.failure(Exception("Network error (Clips): ${e.message}", e))
+            Result.failure(e.toDomainError())
         }
     }
+}
+
+fun HomeLivestreamItem.toDomain(): StreamUiModel? {
+    val stream = this.actualStream
+    return StreamUiModel(
+        id = stream.id ?: "0",
+        streamerName = stream.channel?.slug ?: stream.channel?.username ?: "Unknown",
+        title = stream.sessionTitle,
+        viewers = stream.viewerCount,
+        category = stream.category?.name ?: "No Category",
+        categorySlug = stream.category?.slug ?: "",
+        thumbnailUrl = stream.thumbnail?.finalUrl ?: ""
+    )
 }

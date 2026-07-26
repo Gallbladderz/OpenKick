@@ -30,8 +30,9 @@ class StreamCheckWorker(
         val followedStreamers = followsDao.getAllFollows().first().filter { it.type == FollowType.STREAMER }
 
         for (entity in followedStreamers) {
-            val details = followingRepository.fetchChannelDetails(entity.slug) ?: continue
-
+            val result = followingRepository.fetchChannelDetails(entity.slug)
+            if (result.isFailure) continue
+            val details = result.getOrNull() ?: continue
 
             if (details.isLive && !entity.isLive) {
                 sendNotification(details.username, details.streamTitle, details.slug)

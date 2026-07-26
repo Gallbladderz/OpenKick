@@ -45,19 +45,23 @@ class CategoryDetailsViewModel(
                 val clipsDeferred = async { repository.fetchCategoryClips(cleanSlug) }
                 val streamsDeferred = async { repository.fetchCategoryStreams(cleanSlug) }
 
-                val details = detailsDeferred.await()
-                val parsedClips = clipsDeferred.await()
-                val parsedStreams = streamsDeferred.await()
+                val detailsResult = detailsDeferred.await()
+                val clipsResult = clipsDeferred.await()
+                val streamsResult = streamsDeferred.await()
 
-                var bannerUrl = details.banner?.srcset ?: ""
-                if (bannerUrl.contains(" ")) {
-                    bannerUrl = bannerUrl.split(",").firstOrNull()?.trim()?.substringBefore(" ") ?: bannerUrl
+                if (detailsResult.isFailure) {
+                    _uiState.update { CategoryDetailsUiState.Error(detailsResult.exceptionOrNull()?.message ?: "Unknown error") }
+                    return@launch
                 }
+
+                val details = detailsResult.getOrNull()!!
+                val parsedClips = clipsResult.getOrNull() ?: emptyList()
+                val parsedStreams = streamsResult.getOrNull() ?: emptyList()
 
                 _uiState.update {
                     CategoryDetailsUiState.Success(
                         name = details.name,
-                        bannerUrl = bannerUrl,
+                        bannerUrl = details.bannerUrl,
                         viewers = details.viewers,
                         tags = details.tags,
                         clips = parsedClips,
