@@ -32,13 +32,32 @@ import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 @Composable
-fun CategoriesScreen(
+fun CategoriesRoute(
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = koinViewModel(),
     onCategoryClick: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    CategoriesScreen(
+        modifier = modifier,
+        state = state,
+        onLoadMoreCategories = { viewModel.loadMoreCategories() },
+        isCategoryFollowed = { viewModel.isCategoryFollowed(it).collectAsStateWithLifecycle(initialValue = false) },
+        onToggleCategoryFollow = { slug, followed -> viewModel.toggleCategoryFollow(slug, followed) },
+        onCategoryClick = onCategoryClick
+    )
+}
+
+@Composable
+fun CategoriesScreen(
+    modifier: Modifier = Modifier,
+    state: CategoriesUiState,
+    onLoadMoreCategories: () -> Unit,
+    isCategoryFollowed: @Composable (String) -> State<Boolean>,
+    onToggleCategoryFollow: (String, Boolean) -> Unit,
+    onCategoryClick: (String) -> Unit = {}
+) {
     Box(modifier = modifier.fillMaxSize()) {
         when (val uiState = state) {
             is CategoriesUiState.Loading -> {
@@ -61,13 +80,16 @@ fun CategoriesScreen(
 
                         if (index == uiState.categories.lastIndex) {
                             LaunchedEffect(category.id) {
-                                viewModel.loadMoreCategories()
+                                onLoadMoreCategories()
                             }
                         }
 
+                        val isFollowed by isCategoryFollowed(category.slug)
+
                         CategoryCard(
                             category = category,
-                            viewModel = viewModel,
+                            isFollowed = isFollowed,
+                            onToggleFollow = { onToggleCategoryFollow(category.slug, isFollowed) },
                             onClick = { onCategoryClick(category.slug) }
                         )
                     }
@@ -86,11 +108,11 @@ fun CategoriesScreen(
 @Composable
 fun CategoryCard(
     category: CategoryUiModel,
-    viewModel: CategoriesViewModel,
+    isFollowed: Boolean,
+    onToggleFollow: () -> Unit,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val isFollowed by viewModel.isCategoryFollowed(category.slug).collectAsStateWithLifecycle(initialValue = false)
 
     Column(
         modifier = Modifier
@@ -134,7 +156,7 @@ fun CategoryCard(
             }
 
             IconButton(
-                onClick = { viewModel.toggleCategoryFollow(category.slug, isFollowed) },
+                onClick = onToggleFollow,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(4.dp)

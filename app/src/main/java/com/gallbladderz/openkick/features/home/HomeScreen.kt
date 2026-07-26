@@ -48,9 +48,8 @@ import com.gallbladderz.openkick.features.home.components.HomeFilterChipsRow
 import com.gallbladderz.openkick.features.home.components.HeroStreamPager
 import com.gallbladderz.openkick.features.home.components.StreamCard
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+fun HomeRoute(
     viewModel: HomeViewModel = koinViewModel(),
     onStreamClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
@@ -60,17 +59,41 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
+    HomeScreen(
+        state = state,
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.refresh() },
+        onLoadMoreStreams = { viewModel.loadMoreStreams() },
+        onFetchHomeData = { viewModel.fetchHomeData() },
+        onStreamClick = onStreamClick,
+        onCategoryClick = onCategoryClick,
+        onClipClick = onClipClick,
+        onSearchClick = onSearchClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    state: HomeUiState,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    onLoadMoreStreams: () -> Unit,
+    onFetchHomeData: () -> Unit,
+    onStreamClick: (String) -> Unit = {},
+    onCategoryClick: (String) -> Unit = {},
+    onClipClick: (ClipUiModel) -> Unit = {},
+    onSearchClick: () -> Unit = {}
+) {
     val defaultFilter = stringResource(R.string.filter_all)
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
     var isGridMode by remember { mutableStateOf(false) }
 
-
     val pullRefreshState = rememberPullToRefreshState()
-
 
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
-            viewModel.refresh()
+            onRefresh()
         }
     }
 
@@ -127,7 +150,7 @@ fun HomeScreen(
                 .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
             if (selectedFilter == stringResource(R.string.filter_categories)) {
-                CategoriesScreen(onCategoryClick = onCategoryClick)
+                com.gallbladderz.openkick.features.categories.CategoriesRoute(onCategoryClick = onCategoryClick)
             } else {
                 when (val uiState = state) {
                     is HomeUiState.Loading -> {
@@ -146,7 +169,7 @@ fun HomeScreen(
                             }.collect { lastVisible ->
                                 val totalItems = listState.layoutInfo.totalItemsCount
                                 if (lastVisible != null && lastVisible >= totalItems - 5) {
-                                    viewModel.loadMoreStreams()
+                                    onLoadMoreStreams()
                                 }
                             }
                         }
@@ -273,7 +296,7 @@ fun HomeScreen(
 
                     is HomeUiState.Error -> {
                         Button(
-                            onClick = { viewModel.fetchHomeData() },
+                            onClick = { onFetchHomeData() },
                             modifier = Modifier.align(Alignment.Center)
                         ) {
                             Text(stringResource(R.string.retry))

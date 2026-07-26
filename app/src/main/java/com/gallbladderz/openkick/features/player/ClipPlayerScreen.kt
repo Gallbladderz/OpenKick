@@ -62,7 +62,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
-fun ClipPlayerScreen(
+fun ClipPlayerRoute(
     videoUrl: String,
     title: String,
     streamerName: String,
@@ -74,11 +74,43 @@ fun ClipPlayerScreen(
     viewModel: PlayerViewModel = koinViewModel(),
     clipPlayerViewModel: ClipPlayerViewModel = koinViewModel()
 ) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val isFollowed by viewModel.isStreamerFollowed(streamerName).collectAsStateWithLifecycle(initialValue = false)
     val fetchedAvatarUrl by clipPlayerViewModel.avatarUrl.collectAsStateWithLifecycle()
-    val resolvedAvatarUrl = streamerAvatarUrl.replace("\\/", "/").ifBlank { fetchedAvatarUrl }
+
+    ClipPlayerScreen(
+        videoUrl = videoUrl,
+        title = title,
+        streamerName = streamerName,
+        streamerAvatarUrl = streamerAvatarUrl,
+        views = views,
+        durationFormatted = durationFormatted,
+        isFollowed = isFollowed,
+        fetchedAvatarUrl = fetchedAvatarUrl,
+        onToggleFollow = { viewModel.toggleFollow(streamerName, isFollowed) },
+        onLoadAvatar = { clipPlayerViewModel.loadAvatar(streamerName) },
+        onBackClick = onBackClick,
+        onStreamerClick = onStreamerClick
+    )
+}
+
+@Composable
+fun ClipPlayerScreen(
+    videoUrl: String,
+    title: String,
+    streamerName: String,
+    streamerAvatarUrl: String,
+    views: Int,
+    durationFormatted: String,
+    isFollowed: Boolean,
+    fetchedAvatarUrl: String?,
+    onToggleFollow: () -> Unit,
+    onLoadAvatar: () -> Unit,
+    onBackClick: () -> Unit,
+    onStreamerClick: (String) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val resolvedAvatarUrl = streamerAvatarUrl.replace("\\/", "/").ifBlank { fetchedAvatarUrl ?: "" }
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -113,7 +145,7 @@ fun ClipPlayerScreen(
 
     LaunchedEffect(streamerName, streamerAvatarUrl) {
         if (resolvedAvatarUrl.isBlank() && streamerName.isNotBlank() && streamerName != context.getString(R.string.anonymous)) {
-            clipPlayerViewModel.loadAvatar(streamerName)
+            onLoadAvatar()
         }
     }
 
@@ -219,7 +251,7 @@ fun ClipPlayerScreen(
             views = views,
             durationFormatted = durationFormatted,
             isFollowed = isFollowed,
-            onToggleFollow = { viewModel.toggleFollow(streamerName, isFollowed) },
+            onToggleFollow = { onToggleFollow() },
             onShareClick = {
                 val shareText = buildString {
                     append(title.ifBlank { context.getString(R.string.untitled) })

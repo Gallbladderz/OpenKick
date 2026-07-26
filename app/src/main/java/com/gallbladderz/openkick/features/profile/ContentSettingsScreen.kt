@@ -18,14 +18,27 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContentSettingsScreen(
+fun ContentSettingsRoute(
     onBackClick: () -> Unit,
     viewModel: MainViewModel = koinViewModel()
 ) {
-    
     val hideCategories by viewModel.hideCategories.collectAsStateWithLifecycle()
+
+    ContentSettingsScreen(
+        hideCategories = hideCategories,
+        onToggleCategories = { viewModel.toggleCategories(it) },
+        onBackClick = onBackClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ContentSettingsScreen(
+    hideCategories: Boolean,
+    onToggleCategories: (Boolean) -> Unit,
+    onBackClick: () -> Unit
+) {
 
     Scaffold(
         topBar = {
@@ -59,7 +72,7 @@ fun ContentSettingsScreen(
                     trailingContent = {
                         Switch(
                             checked = hideCategories,
-                            onCheckedChange = { viewModel.toggleCategories(it) }
+                            onCheckedChange = { onToggleCategories(it) }
                         )
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)

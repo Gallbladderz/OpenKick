@@ -19,14 +19,32 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.datastore.AppTheme
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ThemeSettingsScreen(
+fun ThemeSettingsRoute(
     onBackClick: () -> Unit,
     mainViewModel: MainViewModel = koinViewModel()
 ) {
     val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
     val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
+
+    ThemeSettingsScreen(
+        appTheme = appTheme,
+        useDynamicColors = useDynamicColors,
+        onUpdateTheme = { mainViewModel.updateAppTheme(it) },
+        onUpdateDynamicColors = { mainViewModel.updateUseDynamicColors(it) },
+        onBackClick = onBackClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ThemeSettingsScreen(
+    appTheme: AppTheme,
+    useDynamicColors: Boolean,
+    onUpdateTheme: (AppTheme) -> Unit,
+    onUpdateDynamicColors: (Boolean) -> Unit,
+    onBackClick: () -> Unit
+) {
 
     Scaffold(
         topBar = {
@@ -72,13 +90,13 @@ fun ThemeSettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { mainViewModel.updateAppTheme(theme) }
+                                .clickable { onUpdateTheme(theme) }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
                             selected = appTheme == theme,
-                            onClick = { mainViewModel.updateAppTheme(theme) }
+                                onClick = { onUpdateTheme(theme) }
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
@@ -106,7 +124,7 @@ fun ThemeSettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { mainViewModel.updateUseDynamicColors(!useDynamicColors) }
+                                .clickable { onUpdateDynamicColors(!useDynamicColors) }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -124,7 +142,7 @@ fun ThemeSettingsScreen(
                         }
                         Switch(
                             checked = useDynamicColors,
-                            onCheckedChange = { mainViewModel.updateUseDynamicColors(it) }
+                            onCheckedChange = { onUpdateDynamicColors(it) }
                         )
                     }
                 }
