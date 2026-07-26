@@ -7,6 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface CategoriesUiState {
@@ -27,11 +31,17 @@ class CategoriesViewModel(
     private var isLoadingMore = false
     private var isLastPage = false
 
+    val followedSlugs: StateFlow<Set<String>> = followsRepository.getFollowedCategoriesSlugs()
+        .map { it.toSet() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptySet()
+        )
+
     init {
         fetchCategories()
     }
-
-    fun isCategoryFollowed(slug: String) = followsRepository.isCategoryFollowed(slug)
 
     fun toggleCategoryFollow(slug: String, isCurrentlyFollowed: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {

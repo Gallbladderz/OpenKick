@@ -38,12 +38,13 @@ fun CategoriesRoute(
     onCategoryClick: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val followedSlugs by viewModel.followedSlugs.collectAsStateWithLifecycle()
 
     CategoriesScreen(
         modifier = modifier,
         state = state,
         onLoadMoreCategories = { viewModel.loadMoreCategories() },
-        isCategoryFollowed = { viewModel.isCategoryFollowed(it).collectAsStateWithLifecycle(initialValue = false) },
+        followedSlugs = followedSlugs,
         onToggleCategoryFollow = { slug, followed -> viewModel.toggleCategoryFollow(slug, followed) },
         onCategoryClick = onCategoryClick
     )
@@ -54,7 +55,7 @@ fun CategoriesScreen(
     modifier: Modifier = Modifier,
     state: CategoriesUiState,
     onLoadMoreCategories: () -> Unit,
-    isCategoryFollowed: @Composable (String) -> State<Boolean>,
+    followedSlugs: Set<String>,
     onToggleCategoryFollow: (String, Boolean) -> Unit,
     onCategoryClick: (String) -> Unit = {}
 ) {
@@ -84,7 +85,7 @@ fun CategoriesScreen(
                             }
                         }
 
-                        val isFollowed by isCategoryFollowed(category.slug)
+                        val isFollowed = followedSlugs.contains(category.slug)
 
                         CategoryCard(
                             category = category,
