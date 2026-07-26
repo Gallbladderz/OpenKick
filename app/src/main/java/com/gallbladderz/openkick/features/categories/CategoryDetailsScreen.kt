@@ -62,9 +62,8 @@ import com.gallbladderz.openkick.features.home.components.StreamCard
 import com.gallbladderz.openkick.ui.components.ClipCard
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryDetailsScreen(
+fun CategoryDetailsRoute(
     slug: String,
     viewModel: CategoryDetailsViewModel = koinViewModel(),
     onBackClick: () -> Unit,
@@ -72,6 +71,27 @@ fun CategoryDetailsScreen(
     onClipClick: (ClipUiModel) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    CategoryDetailsScreen(
+        slug = slug,
+        state = state,
+        onLoadCategory = { viewModel.loadCategory(it) },
+        onBackClick = onBackClick,
+        onStreamClick = onStreamClick,
+        onClipClick = onClipClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategoryDetailsScreen(
+    slug: String,
+    state: CategoryDetailsUiState,
+    onLoadCategory: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onStreamClick: (String) -> Unit = {},
+    onClipClick: (ClipUiModel) -> Unit = {}
+) {
     val context = LocalContext.current
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -80,7 +100,7 @@ fun CategoryDetailsScreen(
     var isFollowed by remember { mutableStateOf(false) }
 
     LaunchedEffect(slug) {
-        viewModel.loadCategory(slug)
+        onLoadCategory(slug)
     }
 
     Scaffold(

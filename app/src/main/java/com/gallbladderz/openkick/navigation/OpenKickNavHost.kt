@@ -91,7 +91,7 @@ fun OpenKickNavHost() {
                 ) { page ->
                     when (MainTab.entries[page]) {
                         MainTab.HOME -> {
-                            HomeScreen(
+                            com.gallbladderz.openkick.features.home.HomeRoute(
                                 onStreamClick = { streamerName -> navController.navigate(PlayerRoute(streamerName)) },
                                 onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) },
                                 onClipClick = { clip ->
@@ -110,14 +110,14 @@ fun OpenKickNavHost() {
                             )
                         }
                         MainTab.FOLLOWERS -> {
-                            FollowingScreen(
+                            com.gallbladderz.openkick.features.following.FollowingRoute(
                                 onManageClick = { navController.navigate(AllFollowsRoute) },
                                 onStreamerClick = { slug -> navController.navigate(PlayerRoute(slug)) },
                                 onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) }
                             )
                         }
                         MainTab.PROFILE -> {
-                            SettingsScreen(
+                            com.gallbladderz.openkick.features.profile.SettingsRoute(
                                 onLanguageSettingsClick = {
                                     navController.navigate(LanguageSettingsRoute)
                                 },
@@ -141,7 +141,7 @@ fun OpenKickNavHost() {
 
         composable<CategoryDetailsRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<CategoryDetailsRoute>()
-            CategoryDetailsScreen(
+            com.gallbladderz.openkick.features.categories.CategoryDetailsRoute(
                 slug = route.slug,
                 onBackClick = { navController.popBackStack() },
                 onStreamClick = { streamerName ->
@@ -165,7 +165,7 @@ fun OpenKickNavHost() {
         composable<ClipPlayerRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<ClipPlayerRoute>()
 
-            com.gallbladderz.openkick.features.player.ClipPlayerScreen(
+            com.gallbladderz.openkick.features.player.ClipPlayerRoute(
                 videoUrl = route.videoUrl,
                 title = route.title,
                 streamerName = route.streamerName,
@@ -192,7 +192,7 @@ fun OpenKickNavHost() {
         }
 
         composable<LanguageSettingsRoute> {
-            LanguageSettingsScreen(
+            com.gallbladderz.openkick.features.profile.LanguageSettingsRoute(
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -204,7 +204,7 @@ fun OpenKickNavHost() {
         }
 
         composable<AllFollowsRoute> {
-            AllFollowsScreen(
+            com.gallbladderz.openkick.features.following.AllFollowsRoute(
                 onBackClick = { navController.popBackStack() },
                 onStreamerClick = { slug -> navController.navigate(PlayerRoute(slug)) }
             )
@@ -212,7 +212,7 @@ fun OpenKickNavHost() {
 
         composable<StreamerProfileRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<StreamerProfileRoute>()
-            StreamerProfileScreen(
+            com.gallbladderz.openkick.features.profile.StreamerProfileRoute(
                 slug = route.slug,
                 onBackClick = { navController.popBackStack() },
                 onVideoClick = { video, profile ->
@@ -244,7 +244,7 @@ fun OpenKickNavHost() {
 
         composable<PlayerRoute> { backStackEntry ->
             val playerRoute = backStackEntry.toRoute<PlayerRoute>()
-            PlayerScreen(
+            com.gallbladderz.openkick.features.player.PlayerRoute(
                 streamerName = playerRoute.streamerName,
                 onBackClick = { navController.popBackStack() },
                 onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
@@ -252,13 +252,13 @@ fun OpenKickNavHost() {
         }
 
         composable<ContentSettingsRoute> {
-            com.gallbladderz.openkick.features.profile.ContentSettingsScreen(
+            com.gallbladderz.openkick.features.profile.ContentSettingsRoute(
                 onBackClick = { navController.popBackStack() }
             )
         }
 
         composable<ThemeSettingsRoute> {
-            com.gallbladderz.openkick.features.profile.ThemeSettingsScreen(
+            com.gallbladderz.openkick.features.profile.ThemeSettingsRoute(
                 onBackClick = { navController.popBackStack() }
             )
         }

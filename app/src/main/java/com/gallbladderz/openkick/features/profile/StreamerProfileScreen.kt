@@ -48,9 +48,8 @@ import com.gallbladderz.openkick.features.profile.components.DescriptionTab
 import com.gallbladderz.openkick.features.profile.components.VideosTab
 import com.gallbladderz.openkick.features.profile.components.ClipsTab
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StreamerProfileScreen(
+fun StreamerProfileRoute(
     slug: String,
     onBackClick: () -> Unit,
     onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
@@ -61,6 +60,36 @@ fun StreamerProfileScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val loadingVideoId by viewModel.loadingVideoId.collectAsStateWithLifecycle()
 
+    StreamerProfileScreen(
+        slug = slug,
+        state = state,
+        isRefreshing = isRefreshing,
+        loadingVideoId = loadingVideoId,
+        onLoadProfile = { viewModel.loadProfile(it) },
+        onRefresh = { viewModel.refresh() },
+        onToggleFollow = { viewModel.toggleFollow() },
+        onLoadVideoPlaybackUrl = { videoId, onResult -> viewModel.loadVideoPlaybackUrl(videoId, onResult) },
+        onBackClick = onBackClick,
+        onVideoClick = onVideoClick,
+        onClipClick = onClipClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StreamerProfileScreen(
+    slug: String,
+    state: ProfileUiState,
+    isRefreshing: Boolean,
+    loadingVideoId: String?,
+    onLoadProfile: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onToggleFollow: () -> Unit,
+    onLoadVideoPlaybackUrl: (String, (Result<String>) -> Unit) -> Unit,
+    onBackClick: () -> Unit,
+    onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
+    onClipClick: (ClipUiModel) -> Unit
+) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.description),
@@ -72,12 +101,12 @@ fun StreamerProfileScreen(
     val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(slug) {
-        viewModel.loadProfile(slug)
+        onLoadProfile(slug)
     }
 
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
-            viewModel.refresh()
+            onRefresh()
         }
     }
 
@@ -128,7 +157,7 @@ fun StreamerProfileScreen(
                         ProfileHeader(
                             info = uiState.info,
                             isFollowing = uiState.isFollowing,
-                            onFollowClick = { viewModel.toggleFollow() },
+                            onFollowClick = { onToggleFollow() },
                             onShareClick = {
                                 val sendIntent: Intent = Intent().apply {
                                     action = Intent.ACTION_SEND
@@ -159,7 +188,7 @@ fun StreamerProfileScreen(
                                     videos = uiState.videos,
                                     loadingVideoId = loadingVideoId,
                                     onVideoClick = { video ->
-                                        viewModel.loadVideoPlaybackUrl(video.id) { result ->
+                                        onLoadVideoPlaybackUrl(video.id) { result ->
                                             result.onSuccess { url ->
                                                 val videoWithUrl = video.copy(videoUrl = url)
                                                 onVideoClick(videoWithUrl, uiState.info)

@@ -29,14 +29,30 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AllFollowsScreen(
+fun AllFollowsRoute(
     viewModel: FollowingViewModel = koinViewModel(),
     onBackClick: () -> Unit,
     onStreamerClick: (String) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AllFollowsScreen(
+        state = state,
+        onUnfollowStreamer = { viewModel.unfollowStreamer(it) },
+        onBackClick = onBackClick,
+        onStreamerClick = onStreamerClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AllFollowsScreen(
+    state: FollowingUiState,
+    onUnfollowStreamer: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onStreamerClick: (String) -> Unit
+) {
     val context = LocalContext.current
 
     val kickGradient = remember {
@@ -119,7 +135,7 @@ fun AllFollowsScreen(
 
 
                                 FilledTonalButton(
-                                    onClick = { viewModel.unfollowStreamer(streamer.slug) },
+                                    onClick = { onUnfollowStreamer(streamer.slug) },
                                     colors = ButtonDefaults.filledTonalButtonColors(
                                         containerColor = MaterialTheme.colorScheme.errorContainer,
                                         contentColor = MaterialTheme.colorScheme.onErrorContainer

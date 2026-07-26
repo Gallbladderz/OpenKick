@@ -26,18 +26,40 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.filled.Visibility
 import com.gallbladderz.openkick.core.datastore.AppTheme
 
+@Composable
+fun SettingsRoute(
+    onLanguageSettingsClick: () -> Unit,
+    onNotificationSettingsClick: () -> Unit,
+    onContentSettingsClick: () -> Unit,
+    onThemeSettingsClick: () -> Unit,
+    mainViewModel: MainViewModel = koinViewModel()
+) {
+    val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
+    val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
+    val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
+
+    SettingsScreen(
+        selectedLanguages = selectedLanguages,
+        appTheme = appTheme,
+        useDynamicColors = useDynamicColors,
+        onLanguageSettingsClick = onLanguageSettingsClick,
+        onNotificationSettingsClick = onNotificationSettingsClick,
+        onContentSettingsClick = onContentSettingsClick,
+        onThemeSettingsClick = onThemeSettingsClick
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    selectedLanguages: Set<String>,
+    appTheme: AppTheme,
+    useDynamicColors: Boolean,
     onLanguageSettingsClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
     onContentSettingsClick: () -> Unit,
     onThemeSettingsClick: () -> Unit
 ) {
-    val mainViewModel: MainViewModel = koinViewModel()
-    val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
-    val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
-    val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
 
     val availableLanguages = mapOf(
         "ru" to stringResource(R.string.russian_lang),

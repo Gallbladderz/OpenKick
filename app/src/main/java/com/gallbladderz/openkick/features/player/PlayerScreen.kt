@@ -106,23 +106,76 @@ import org.koin.androidx.compose.koinViewModel
 import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
 
+import com.gallbladderz.openkick.features.player.VideoQuality
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayerScreen(
+fun PlayerRoute(
     streamerName: String,
     onBackClick: () -> Unit,
     onAvatarClick: (String) -> Unit = {},
     viewModel: PlayerViewModel = koinViewModel()
 ) {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
     val channelLinks by viewModel.channelLinks.collectAsStateWithLifecycle()
     val isFollowed by viewModel.isStreamerFollowed(streamerName).collectAsStateWithLifecycle(initialValue = false)
+    val playWhenReady by viewModel.playerManager.playWhenReady.collectAsStateWithLifecycle()
+    val playbackState by viewModel.playerManager.playbackState.collectAsStateWithLifecycle()
+    val availableQualities by viewModel.availableQualities.collectAsStateWithLifecycle()
+    val selectedQuality by viewModel.selectedQuality.collectAsStateWithLifecycle()
+
+    PlayerScreen(
+        streamerName = streamerName,
+        state = state,
+        chatMessages = chatMessages,
+        channelLinks = channelLinks,
+        isFollowed = isFollowed,
+        playWhenReady = playWhenReady,
+        playbackState = playbackState,
+        availableQualities = availableQualities,
+        selectedQuality = selectedQuality,
+        player = viewModel.playerManager.player,
+        onLoadStreamInfo = { viewModel.loadStreamInfo(it) },
+        onLoadChannelLinks = { viewModel.loadChannelLinks(it) },
+        onPause = { viewModel.pause() },
+        onPlay = { viewModel.play() },
+        onPlayerManagerRelease = { viewModel.playerManager.release() },
+        onPlayerManagerPause = { viewModel.playerManager.pause() },
+        onPlayerManagerResume = { viewModel.playerManager.resume() },
+        onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
+        onSetVideoQuality = { viewModel.setVideoQuality(it) },
+        onBackClick = onBackClick,
+        onAvatarClick = onAvatarClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlayerScreen(
+    streamerName: String,
+    state: PlayerUiState,
+    chatMessages: List<ChatMessage>,
+    channelLinks: List<ChannelLink>,
+    isFollowed: Boolean,
+    playWhenReady: Boolean,
+    playbackState: Int,
+    availableQualities: List<VideoQuality>,
+    selectedQuality: VideoQuality?,
+    player: Player,
+    onLoadStreamInfo: (String) -> Unit,
+    onLoadChannelLinks: (String) -> Unit,
+    onPause: () -> Unit,
+    onPlay: () -> Unit,
+    onPlayerManagerRelease: () -> Unit,
+    onPlayerManagerPause: () -> Unit,
+    onPlayerManagerResume: () -> Unit,
+    onToggleFollow: (String, Boolean) -> Unit,
+    onSetVideoQuality: (VideoQuality) -> Unit,
+    onBackClick: () -> Unit,
+    onAvatarClick: (String) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
 
     var showControls by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
@@ -132,11 +185,6 @@ fun PlayerScreen(
     var isFullscreen by remember {
         mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
     }
-
-    val playWhenReady by viewModel.playerManager.playWhenReady.collectAsStateWithLifecycle()
-    val playbackState by viewModel.playerManager.playbackState.collectAsStateWithLifecycle()
-    val availableQualities by viewModel.availableQualities.collectAsStateWithLifecycle()
-    val selectedQuality by viewModel.selectedQuality.collectAsStateWithLifecycle()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -188,9 +236,9 @@ fun PlayerScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_PAUSE -> viewModel.pause()
-                Lifecycle.Event.ON_RESUME -> viewModel.play()
-                Lifecycle.Event.ON_DESTROY -> viewModel.playerManager.release()
+                Lifecycle.Event.ON_PAUSE -> onPause()
+                Lifecycle.Event.ON_RESUME -> onPlay()
+                Lifecycle.Event.ON_DESTROY -> onPlayerManagerRelease()
                 else -> {}
             }
         }
@@ -201,8 +249,8 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(streamerName) {
-        viewModel.loadStreamInfo(streamerName)
-        viewModel.loadChannelLinks(streamerName)
+        onLoadStreamInfo(streamerName)
+        onLoadChannelLinks(streamerName)
     }
 
     val rootModifier = Modifier
@@ -233,7 +281,7 @@ fun PlayerScreen(
                 }
                 is PlayerUiState.Playing -> {
                     KickStreamPlayer(
-                        player = viewModel.playerManager.player,
+                        player = player,
                         modifier = Modifier.fillMaxSize()
                     )
 
@@ -249,8 +297,8 @@ fun PlayerScreen(
                                 playbackState = playbackState,
                                 isFullscreen = isFullscreen,
                                 onPlayPause = {
-                                    if (playWhenReady) viewModel.playerManager.pause()
-                                    else viewModel.playerManager.resume()
+                                    if (playWhenReady) onPlayerManagerPause()
+                                    else onPlayerManagerResume()
                                 },
                                 onFullscreen = { isFullscreen = !isFullscreen },
                                 onSettings = { showSettingsSheet = true },
@@ -292,7 +340,7 @@ fun PlayerScreen(
                     avatarUrl = playingState.avatarUrl,
                     viewers = playingState.viewers,
                     isFollowed = isFollowed,
-                    onToggleFollow = { viewModel.toggleFollow(streamerName, isFollowed) },
+                    onToggleFollow = { onToggleFollow(streamerName, isFollowed) },
                     onAvatarClick = { onAvatarClick(streamerName) }
                 )
             }
@@ -329,7 +377,7 @@ fun PlayerScreen(
             qualities = availableQualities,
             selectedQuality = selectedQuality,
             onQualitySelect = { quality ->
-                viewModel.setVideoQuality(quality)
+                onSetVideoQuality(quality)
                 showSettingsSheet = false
             },
             onDismiss = { showSettingsSheet = false }

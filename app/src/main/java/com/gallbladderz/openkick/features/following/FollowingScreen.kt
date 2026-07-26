@@ -40,9 +40,8 @@ import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import androidx.compose.ui.draw.clipToBounds
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FollowingScreen(
+fun FollowingRoute(
     viewModel: FollowingViewModel = koinViewModel(),
     onManageClick: () -> Unit = {},
     onStreamerClick: (String) -> Unit = {},
@@ -51,11 +50,31 @@ fun FollowingScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
+    FollowingScreen(
+        state = state,
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.refresh() },
+        onManageClick = onManageClick,
+        onStreamerClick = onStreamerClick,
+        onCategoryClick = onCategoryClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FollowingScreen(
+    state: FollowingUiState,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    onManageClick: () -> Unit = {},
+    onStreamerClick: (String) -> Unit = {},
+    onCategoryClick: (String) -> Unit = {}
+) {
     val pullRefreshState = rememberPullToRefreshState()
 
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
-            viewModel.refresh()
+            onRefresh()
         }
     }
 

@@ -25,14 +25,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguageSettingsScreen(
+fun LanguageSettingsRoute(
     onBackClick: () -> Unit,
     viewModel: MainViewModel = koinViewModel()
 ) {
     val selectedLanguages by viewModel.selectedLanguages.collectAsStateWithLifecycle()
 
+    LanguageSettingsScreen(
+        selectedLanguages = selectedLanguages,
+        onToggleLanguage = { code, checked -> viewModel.toggleLanguage(code, checked) },
+        onBackClick = onBackClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LanguageSettingsScreen(
+    selectedLanguages: Set<String>,
+    onToggleLanguage: (String, Boolean) -> Unit,
+    onBackClick: () -> Unit
+) {
     
     val configuration = LocalConfiguration.current
     val appLanguage = configuration.locales[0].language
@@ -129,7 +142,7 @@ fun LanguageSettingsScreen(
                         .toggleable(
                             value = isChecked,
                             onValueChange = { checked ->
-                                viewModel.toggleLanguage(code, checked)
+                                onToggleLanguage(code, checked)
                             },
                             role = Role.Checkbox
                         )
