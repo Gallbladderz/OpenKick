@@ -227,7 +227,7 @@ fun PlayerScreen(
             when (val currentState = state) {
                 is PlayerUiState.Loading -> {
                     CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color(0xFF7CFC00),
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
