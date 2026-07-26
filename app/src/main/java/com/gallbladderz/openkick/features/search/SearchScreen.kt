@@ -139,7 +139,7 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
                 .data(finalImageUrl)
                 .crossfade(true)
                 .build(),
-            contentDescription = "Аватар",
+            contentDescription = stringResource(R.string.avatar_desc),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(48.dp)

@@ -281,7 +281,7 @@ private fun LiveStreamCard(streamer: FollowedStreamerUi, modifier: Modifier = Mo
             Box(modifier = Modifier.fillMaxWidth()) {
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(streamer.streamThumbnailUrl.ifEmpty { streamer.avatarUrl }).crossfade(true).build(),
-                    contentDescription = "Thumbnail",
+                    contentDescription = stringResource(R.string.thumbnail_desc),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp))
                 )

@@ -73,7 +73,7 @@ fun VideosTab(
                     Box(modifier = Modifier.width(140.dp).aspectRatio(16f / 9f)) {
                         AsyncImage(
                             model = ImageRequest.Builder(context).data(video.thumbnailUrl).crossfade(true).build(),
-                            contentDescription = "VOD",
+                            contentDescription = stringResource(R.string.vod_desc),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
                         )
@@ -107,7 +107,7 @@ fun VideosTab(
                     Column(modifier = Modifier.weight(1f).align(Alignment.CenterVertically)) {
                         Text(text = video.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "👁 ${video.views}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = stringResource(R.string.views_count_icon, video.views), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

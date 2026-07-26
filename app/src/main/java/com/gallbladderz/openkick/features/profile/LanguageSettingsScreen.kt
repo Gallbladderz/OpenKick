@@ -90,7 +90,7 @@ fun LanguageSettingsScreen(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.application_language)) },
                     supportingContent = {
-                        Text(if (appLanguage == "ru") stringResource(R.string.russian_lang) else "English")
+                        Text(if (appLanguage == "ru") stringResource(R.string.russian_lang) else stringResource(R.string.english_lang))
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier
