@@ -80,7 +80,7 @@ fun VideosTab(
                         .aspectRatio(16f / 9f)) {
                         AsyncImage(
                             model = ImageRequest.Builder(context).data(video.thumbnailUrl)
-                                .crossfade(true).build(),
+                                .build(),
                             contentDescription = stringResource(R.string.vod_desc),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier

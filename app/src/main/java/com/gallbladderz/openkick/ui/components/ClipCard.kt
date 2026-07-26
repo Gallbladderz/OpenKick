@@ -46,7 +46,6 @@ fun ClipCard(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(clip.thumbnailUrl)
-                        .crossfade(true)
                         .build(),
                     contentDescription = clip.title,
                     contentScale = ContentScale.Crop,
