@@ -3,13 +3,31 @@ package com.gallbladderz.openkick.features.following
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -19,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -38,7 +57,6 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
-import androidx.compose.ui.draw.clipToBounds
 
 @Composable
 fun FollowingRoute(
@@ -106,7 +124,7 @@ fun FollowingScreen(
         }
     ) { paddingValues ->
 
-        
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -121,6 +139,7 @@ fun FollowingScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+
                 is FollowingUiState.Error -> {
                     Text(
                         text = uiState.message,
@@ -128,6 +147,7 @@ fun FollowingScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+
                 is FollowingUiState.Success -> {
                     LazyColumn(
                         modifier = Modifier
@@ -196,7 +216,9 @@ fun FollowingScreen(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         items(uiState.categories, key = { it.slug }) { category ->
-                                            FollowedCategoryItem(category, onClick = { onCategoryClick(category.slug) })
+                                            FollowedCategoryItem(
+                                                category,
+                                                onClick = { onCategoryClick(category.slug) })
                                         }
                                     }
                                 }
@@ -232,7 +254,9 @@ fun FollowingScreen(
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth().padding(32.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp)
                                 )
                             }
                         }
@@ -240,7 +264,7 @@ fun FollowingScreen(
                 }
             }
 
-            
+
             PullToRefreshContainer(
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),
@@ -254,11 +278,20 @@ fun FollowingScreen(
 @Composable
 private fun StoryAvatarItem(streamer: FollowedStreamerUi, onClick: () -> Unit) {
     val context = LocalContext.current
-    val kickGradient = remember { Brush.linearGradient(colors = listOf(com.gallbladderz.openkick.ui.theme.KickGradientStart, com.gallbladderz.openkick.ui.theme.KickGradientEnd)) }
+    val kickGradient = remember {
+        Brush.linearGradient(
+            colors = listOf(
+                com.gallbladderz.openkick.ui.theme.KickGradientStart,
+                com.gallbladderz.openkick.ui.theme.KickGradientEnd
+            )
+        )
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(72.dp).clickable { onClick() }
+        modifier = Modifier
+            .width(72.dp)
+            .clickable { onClick() }
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context).data(streamer.avatarUrl).crossfade(true).build(),
@@ -289,37 +322,77 @@ private fun StoryAvatarItem(streamer: FollowedStreamerUi, onClick: () -> Unit) {
 }
 
 @Composable
-private fun LiveStreamCard(streamer: FollowedStreamerUi, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun LiveStreamCard(
+    streamer: FollowedStreamerUi,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     val context = LocalContext.current
     ElevatedCard(
-        modifier = modifier.fillMaxWidth().clickable { onClick() },
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.Transparent)
     ) {
         Column {
             Box(modifier = Modifier.fillMaxWidth()) {
                 AsyncImage(
-                    model = ImageRequest.Builder(context).data(streamer.streamThumbnailUrl.ifEmpty { streamer.avatarUrl }).crossfade(true).build(),
+                    model = ImageRequest.Builder(context)
+                        .data(streamer.streamThumbnailUrl.ifEmpty { streamer.avatarUrl })
+                        .crossfade(true).build(),
                     contentDescription = stringResource(R.string.thumbnail_desc),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp))
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp))
                 )
                 Box(
-                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 4.dp)
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
                 ) { ViewerCountBadge(viewers = streamer.viewers) }
             }
-            Row(modifier = Modifier.padding(top = 12.dp, bottom = 4.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 4.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
                 AsyncImage(
-                    model = ImageRequest.Builder(context).data(streamer.avatarUrl).crossfade(true).build(),
+                    model = ImageRequest.Builder(context).data(streamer.avatarUrl).crossfade(true)
+                        .build(),
                     contentDescription = streamer.username,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = streamer.username, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(text = streamer.streamTitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(text = streamer.categoryName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 2.dp))
+                    Text(
+                        text = streamer.username,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = streamer.streamTitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = streamer.categoryName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
             }
         }
@@ -329,15 +402,47 @@ private fun LiveStreamCard(streamer: FollowedStreamerUi, modifier: Modifier = Mo
 @Composable
 private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Unit) {
     val context = LocalContext.current
-    Column(modifier = Modifier.width(100.dp).clickable { onClick() }) {
-        Box(modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
-            AsyncImage(model = ImageRequest.Builder(context).data(category.bannerUrl).crossfade(true).build(), contentDescription = category.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp).background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 2.dp)) {
-                Text(text = formatShortViewers(category.viewers), color = Color.White, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    Column(modifier = Modifier
+        .width(100.dp)
+        .clickable { onClick() }) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(3f / 4f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context).data(category.bannerUrl).crossfade(true)
+                    .build(),
+                contentDescription = category.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 6.dp)
+                    .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = formatShortViewers(category.viewers),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
-        Text(text = category.name, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            text = category.name,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

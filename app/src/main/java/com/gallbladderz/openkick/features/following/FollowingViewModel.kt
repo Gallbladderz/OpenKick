@@ -8,10 +8,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class FollowedStreamerUi(
@@ -25,7 +25,12 @@ data class FollowedStreamerUi(
     val streamThumbnailUrl: String = ""
 )
 
-data class FollowedCategoryUi(val slug: String, val name: String, val bannerUrl: String, val viewers: Int)
+data class FollowedCategoryUi(
+    val slug: String,
+    val name: String,
+    val bannerUrl: String,
+    val viewers: Int
+)
 
 sealed interface FollowingUiState {
     data object Loading : FollowingUiState
@@ -34,6 +39,7 @@ sealed interface FollowingUiState {
         val offlineStreamers: List<FollowedStreamerUi>,
         val categories: List<FollowedCategoryUi>
     ) : FollowingUiState
+
     data class Error(val message: String) : FollowingUiState
 }
 
@@ -44,11 +50,11 @@ class FollowingViewModel(
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    
+
     private val refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     init {
@@ -61,7 +67,7 @@ class FollowingViewModel(
         }
     }
 
-    
+
     fun refresh() {
         if (_isRefreshing.value) return
         _isRefreshing.value = true
@@ -73,14 +79,20 @@ class FollowingViewModel(
             combine(
                 followsRepository.getFollowedCategoriesSlugs(),
                 followsRepository.getFollowedStreamersSlugs(),
-                refreshTrigger.onStart { emit(Unit) } 
+                refreshTrigger.onStart { emit(Unit) }
             ) { categorySlugs, streamerSlugs, _ ->
                 Pair(categorySlugs, streamerSlugs)
             }.collect { (categorySlugs, streamerSlugs) ->
 
                 if (categorySlugs.isEmpty() && streamerSlugs.isEmpty()) {
-                    _uiState.update { FollowingUiState.Success(emptyList(), emptyList(), emptyList()) }
-                    _isRefreshing.value = false 
+                    _uiState.update {
+                        FollowingUiState.Success(
+                            emptyList(),
+                            emptyList(),
+                            emptyList()
+                        )
+                    }
+                    _isRefreshing.value = false
                     return@collect
                 }
 
@@ -95,8 +107,10 @@ class FollowingViewModel(
                 val fetchedCategories = categoriesDeferred.awaitAll().mapNotNull { it.getOrNull() }
                 val fetchedStreamers = streamersDeferred.awaitAll().mapNotNull { it.getOrNull() }
 
-                val liveStreamers = fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }
-                val offlineStreamers = fetchedStreamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
+                val liveStreamers =
+                    fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }
+                val offlineStreamers =
+                    fetchedStreamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
 
                 _uiState.update {
                     FollowingUiState.Success(
@@ -106,7 +120,7 @@ class FollowingViewModel(
                     )
                 }
 
-                
+
                 _isRefreshing.value = false
             }
         }

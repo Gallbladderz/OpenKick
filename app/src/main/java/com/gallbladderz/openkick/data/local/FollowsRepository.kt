@@ -20,23 +20,27 @@ class FollowsRepository(private val dao: FollowsDao) {
             .flowOn(Dispatchers.IO)
     }
 
-    fun isCategoryFollowed(slug: String): Flow<Boolean> = dao.isFollowed(slug, FollowType.CATEGORY).flowOn(Dispatchers.IO)
+    fun isCategoryFollowed(slug: String): Flow<Boolean> =
+        dao.isFollowed(slug, FollowType.CATEGORY).flowOn(Dispatchers.IO)
 
-    suspend fun toggleCategoryFollow(slug: String, isCurrentlyFollowed: Boolean) = withContext(Dispatchers.IO) {
-        if (isCurrentlyFollowed) {
-            dao.delete(slug, FollowType.CATEGORY)
-        } else {
-            dao.insert(FollowedEntity(slug, FollowType.CATEGORY))
+    suspend fun toggleCategoryFollow(slug: String, isCurrentlyFollowed: Boolean) =
+        withContext(Dispatchers.IO) {
+            if (isCurrentlyFollowed) {
+                dao.delete(slug, FollowType.CATEGORY)
+            } else {
+                dao.insert(FollowedEntity(slug, FollowType.CATEGORY))
+            }
         }
-    }
 
-    fun isStreamerFollowed(slug: String): Flow<Boolean> = dao.isFollowed(slug, FollowType.STREAMER).flowOn(Dispatchers.IO)
+    fun isStreamerFollowed(slug: String): Flow<Boolean> =
+        dao.isFollowed(slug, FollowType.STREAMER).flowOn(Dispatchers.IO)
 
-    suspend fun toggleStreamerFollow(slug: String, isCurrentlyFollowed: Boolean) = withContext(Dispatchers.IO) {
-        if (isCurrentlyFollowed) {
-            dao.delete(slug, FollowType.STREAMER)
-        } else {
-            dao.insert(FollowedEntity(slug, FollowType.STREAMER))
+    suspend fun toggleStreamerFollow(slug: String, isCurrentlyFollowed: Boolean) =
+        withContext(Dispatchers.IO) {
+            if (isCurrentlyFollowed) {
+                dao.delete(slug, FollowType.STREAMER)
+            } else {
+                dao.insert(FollowedEntity(slug, FollowType.STREAMER))
+            }
         }
-    }
 }

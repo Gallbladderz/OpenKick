@@ -31,33 +31,37 @@ class CategoriesRepository(private val apiService: KickApiService) {
         }
     }.flowOn(Dispatchers.IO)
 
-    suspend fun fetchCategoryDetails(slug: String): Result<CategoryDetailsUiModel> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getCategoryDetails(slug)
-            Result.success(response.toDomain())
-        } catch (e: Exception) {
-            Result.failure(e.toDomainError())
+    suspend fun fetchCategoryDetails(slug: String): Result<CategoryDetailsUiModel> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getCategoryDetails(slug)
+                Result.success(response.toDomain())
+            } catch (e: Exception) {
+                Result.failure(e.toDomainError())
+            }
         }
-    }
 
-    suspend fun fetchCategoryClips(slug: String): Result<List<ClipUiModel>> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getCategoryClips(slug)
-            Result.success(response.clips.map { it.toUiModel() })
-        } catch (e: Exception) {
-            Result.failure(e.toDomainError())
+    suspend fun fetchCategoryClips(slug: String): Result<List<ClipUiModel>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getCategoryClips(slug)
+                Result.success(response.clips.map { it.toUiModel() })
+            } catch (e: Exception) {
+                Result.failure(e.toDomainError())
+            }
         }
-    }
 
-    suspend fun fetchCategoryStreams(slug: String): Result<List<StreamUiModel>> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
-            val streams = response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
-            Result.success(streams)
-        } catch (e: Exception) {
-            Result.failure(e.toDomainError())
+    suspend fun fetchCategoryStreams(slug: String): Result<List<StreamUiModel>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
+                val streams =
+                    response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
+                Result.success(streams)
+            } catch (e: Exception) {
+                Result.failure(e.toDomainError())
+            }
         }
-    }
 }
 
 fun CategoryDto.toDomain(): CategoryUiModel {

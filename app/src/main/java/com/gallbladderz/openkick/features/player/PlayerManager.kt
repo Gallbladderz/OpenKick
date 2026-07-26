@@ -33,7 +33,6 @@ class PlayerManager(
     val player: ExoPlayer = ExoPlayer.Builder(context).build()
 
 
-
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
 
@@ -70,8 +69,9 @@ class PlayerManager(
                     if (group.type == C.TRACK_TYPE_VIDEO) {
                         for (i in 0 until group.length) {
                             val format = group.getTrackFormat(i)
-                            if (format.height != androidx.media3.common.Format.NO_VALUE) {
-                                val fps = if (format.frameRate > 0) format.frameRate.toInt().toString() else ""
+                            if (format.height != Format.NO_VALUE) {
+                                val fps = if (format.frameRate > 0) format.frameRate.toInt()
+                                    .toString() else ""
                                 val name = "${format.height}p${if (fps == "60") "60" else ""}"
                                 parsedQualities.add(VideoQuality(name, group.mediaTrackGroup, i))
                             }
@@ -85,7 +85,12 @@ class PlayerManager(
 
                 _availableQualities.value = listOf(
                     VideoQuality("Auto", null, null),
-                    VideoQuality(context.getString(R.string.audio_only), null, null, isAudioOnly = true)
+                    VideoQuality(
+                        context.getString(R.string.audio_only),
+                        null,
+                        null,
+                        isAudioOnly = true
+                    )
                 ) + sortedQualities
             }
         })
@@ -110,7 +115,12 @@ class PlayerManager(
                 builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
             } else {
 
-                builder.setOverrideForType(TrackSelectionOverride(quality.trackGroup, listOf(quality.trackIndex)))
+                builder.setOverrideForType(
+                    TrackSelectionOverride(
+                        quality.trackGroup,
+                        listOf(quality.trackIndex)
+                    )
+                )
             }
         }
 

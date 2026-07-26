@@ -1,14 +1,22 @@
 package com.gallbladderz.openkick.navigation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
@@ -16,14 +24,16 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,14 +44,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.categories.CategoryDetailsScreen
-import com.gallbladderz.openkick.features.following.AllFollowsScreen
-import com.gallbladderz.openkick.features.following.FollowingScreen
-import com.gallbladderz.openkick.features.home.HomeScreen
-import com.gallbladderz.openkick.features.player.PlayerScreen
-import com.gallbladderz.openkick.features.profile.LanguageSettingsScreen
-import com.gallbladderz.openkick.features.profile.SettingsScreen
-import com.gallbladderz.openkick.features.profile.StreamerProfileScreen
 import com.gallbladderz.openkick.features.search.SearchScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -51,7 +53,11 @@ import kotlinx.serialization.Serializable
 object MainTabsRoute
 
 
-private enum class MainTab(val titleResId: Int, val icon: ImageVector, val selectedIcon: ImageVector) {
+private enum class MainTab(
+    val titleResId: Int,
+    val icon: ImageVector,
+    val selectedIcon: ImageVector
+) {
     HOME(R.string.home, Icons.Outlined.Home, Icons.Filled.Home),
     FOLLOWERS(R.string.followers, Icons.Outlined.FavoriteBorder, Icons.Filled.Favorite),
     PROFILE(R.string.profile, Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
@@ -92,8 +98,18 @@ fun OpenKickNavHost() {
                     when (MainTab.entries[page]) {
                         MainTab.HOME -> {
                             com.gallbladderz.openkick.features.home.HomeRoute(
-                                onStreamClick = { streamerName -> navController.navigate(PlayerRoute(streamerName)) },
-                                onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) },
+                                onStreamClick = { streamerName ->
+                                    navController.navigate(
+                                        PlayerRoute(
+                                            streamerName
+                                        )
+                                    )
+                                },
+                                onCategoryClick = { slug ->
+                                    navController.navigate(
+                                        CategoryDetailsRoute(slug)
+                                    )
+                                },
                                 onClipClick = { clip ->
                                     navController.navigate(
                                         ClipPlayerRoute(
@@ -109,13 +125,19 @@ fun OpenKickNavHost() {
                                 onSearchClick = { navController.navigate(SearchRoute) }
                             )
                         }
+
                         MainTab.FOLLOWERS -> {
                             com.gallbladderz.openkick.features.following.FollowingRoute(
                                 onManageClick = { navController.navigate(AllFollowsRoute) },
                                 onStreamerClick = { slug -> navController.navigate(PlayerRoute(slug)) },
-                                onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) }
+                                onCategoryClick = { slug ->
+                                    navController.navigate(
+                                        CategoryDetailsRoute(slug)
+                                    )
+                                }
                             )
                         }
+
                         MainTab.PROFILE -> {
                             com.gallbladderz.openkick.features.profile.SettingsRoute(
                                 onLanguageSettingsClick = {
@@ -124,7 +146,7 @@ fun OpenKickNavHost() {
                                 onNotificationSettingsClick = {
                                     navController.navigate(NotificationSettingsRoute)
                                 },
-                                onContentSettingsClick = { 
+                                onContentSettingsClick = {
                                     navController.navigate(ContentSettingsRoute)
                                 },
                                 onThemeSettingsClick = {
@@ -181,10 +203,10 @@ fun OpenKickNavHost() {
             SearchScreen(
                 onChannelClick = { streamerName, isLive ->
                     if (isLive) {
-                        
+
                         navController.navigate(PlayerRoute(streamerName))
                     } else {
-                        
+
                         navController.navigate(StreamerProfileRoute(slug = streamerName))
                     }
                 }
@@ -226,8 +248,8 @@ fun OpenKickNavHost() {
                             durationFormatted = video.durationFormatted
                         )
                     )
-                }, 
-                onClipClick = { clip -> 
+                },
+                onClipClick = { clip ->
                     navController.navigate(
                         ClipPlayerRoute(
                             videoUrl = clip.videoUrl,
@@ -239,7 +261,7 @@ fun OpenKickNavHost() {
                         )
                     )
                 }
-            ) 
+            )
         }
 
         composable<PlayerRoute> { backStackEntry ->
@@ -272,14 +294,14 @@ private fun OpenKickBottomBar(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp, 
-        shadowElevation = 8.dp 
+        tonalElevation = 0.dp,
+        shadowElevation = 8.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars) 
-                .height(70.dp), 
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .height(70.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -287,8 +309,9 @@ private fun OpenKickBottomBar(
                 val isSelected = currentPage == tab.ordinal
                 val title = stringResource(id = tab.titleResId)
 
-                
-                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                val contentColor =
+                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
                 Column(
                     modifier = Modifier
@@ -296,7 +319,7 @@ private fun OpenKickBottomBar(
                         .fillMaxHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null, 
+                            indication = null,
                             onClick = { onTabSelected(tab.ordinal) }
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,

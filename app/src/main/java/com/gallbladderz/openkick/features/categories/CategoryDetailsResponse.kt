@@ -15,7 +15,7 @@ data class CategoryBannerDto(
     val srcset: String? = null,
     val responsive: String? = null
 ) {
-    
+
     val finalUrl: String
         get() = responsive ?: srcset ?: ""
 }

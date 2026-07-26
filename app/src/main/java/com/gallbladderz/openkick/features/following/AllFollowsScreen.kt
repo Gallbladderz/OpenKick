@@ -3,30 +3,49 @@ package com.gallbladderz.openkick.features.following
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.res.stringResource
-import com.gallbladderz.openkick.R
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.gallbladderz.openkick.R
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -56,16 +75,29 @@ fun AllFollowsScreen(
     val context = LocalContext.current
 
     val kickGradient = remember {
-        Brush.linearGradient(colors = listOf(com.gallbladderz.openkick.ui.theme.KickGradientStart, com.gallbladderz.openkick.ui.theme.KickGradientEnd))
+        Brush.linearGradient(
+            colors = listOf(
+                com.gallbladderz.openkick.ui.theme.KickGradientStart,
+                com.gallbladderz.openkick.ui.theme.KickGradientEnd
+            )
+        )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.all_followed), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(R.string.all_followed),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button)
+                        )
                     }
                 }
             )
@@ -105,7 +137,9 @@ fun AllFollowsScreen(
                                         .size(56.dp)
                                         .border(
                                             width = if (streamer.isLive) 3.dp else 1.dp,
-                                            brush = if (streamer.isLive) kickGradient else SolidColor(MaterialTheme.colorScheme.surfaceVariant),
+                                            brush = if (streamer.isLive) kickGradient else SolidColor(
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                            ),
                                             shape = CircleShape
                                         )
                                         .padding(4.dp)
@@ -147,6 +181,7 @@ fun AllFollowsScreen(
                         }
                     }
                 }
+
                 else -> {}
             }
         }

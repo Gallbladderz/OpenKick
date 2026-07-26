@@ -20,6 +20,7 @@ sealed interface CategoryDetailsUiState {
         val clips: List<ClipUiModel>,
         val streams: List<StreamUiModel>
     ) : CategoryDetailsUiState
+
     data class Error(val message: String) : CategoryDetailsUiState
 }
 
@@ -50,7 +51,11 @@ class CategoryDetailsViewModel(
                 val streamsResult = streamsDeferred.await()
 
                 if (detailsResult.isFailure) {
-                    _uiState.update { CategoryDetailsUiState.Error(detailsResult.exceptionOrNull()?.message ?: "Unknown error") }
+                    _uiState.update {
+                        CategoryDetailsUiState.Error(
+                            detailsResult.exceptionOrNull()?.message ?: "Unknown error"
+                        )
+                    }
                     return@launch
                 }
 

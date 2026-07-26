@@ -40,10 +40,10 @@ fun CustomPlayerControls(
     playWhenReady: Boolean,
     playbackState: Int,
     isFullscreen: Boolean,
-    isLive: Boolean = true, 
-    currentPosition: Long = 0L, 
-    duration: Long = 0L, 
-    onSeek: (Long) -> Unit = {}, 
+    isLive: Boolean = true,
+    currentPosition: Long = 0L,
+    duration: Long = 0L,
+    onSeek: (Long) -> Unit = {},
     onPlayPause: () -> Unit,
     onFullscreen: () -> Unit,
     onSettings: () -> Unit,
@@ -53,9 +53,15 @@ fun CustomPlayerControls(
 
         IconButton(
             onClick = onSettings,
-            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
         ) {
-            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_desc), tint = Color.White)
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = stringResource(R.string.settings_desc),
+                tint = Color.White
+            )
         }
 
         if (playbackState == Player.STATE_BUFFERING) {
@@ -66,7 +72,9 @@ fun CustomPlayerControls(
         } else {
             IconButton(
                 onClick = onPlayPause,
-                modifier = Modifier.align(Alignment.Center).size(72.dp)
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(72.dp)
             ) {
                 Icon(
                     imageVector = if (playWhenReady) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -86,7 +94,7 @@ fun CustomPlayerControls(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isLive) {
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -102,16 +110,20 @@ fun CustomPlayerControls(
                     )
                 }
             } else {
-                
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
                 ) {
                     Text(text = formatTime(currentPosition), color = Color.White, fontSize = 12.sp)
                     Slider(
                         value = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f,
                         onValueChange = { value -> onSeek((value * duration).toLong()) },
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
                         colors = SliderDefaults.colors(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary,

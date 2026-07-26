@@ -2,15 +2,15 @@ package com.gallbladderz.openkick.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.core.domain.DomainError
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.core.domain.DomainError
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface ProfileUiState {
@@ -22,6 +22,7 @@ sealed interface ProfileUiState {
         val links: List<ChannelLink>,
         val isFollowing: Boolean
     ) : ProfileUiState
+
     data class Error(val message: String) : ProfileUiState
 }
 
@@ -36,7 +37,7 @@ class StreamerProfileViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    
+
     private val _loadingVideoId = MutableStateFlow<String?>(null)
     val loadingVideoId = _loadingVideoId.asStateFlow()
 
@@ -101,7 +102,8 @@ class StreamerProfileViewModel(
             val videosDeferred = viewModelScope.async { repository.fetchVideos(profile.slug) }
             val clipsDeferred = viewModelScope.async { repository.fetchClips(profile.slug) }
             val linksDeferred = viewModelScope.async { repository.fetchChannelLinks(profile.slug) }
-            val isFollowingDeferred = viewModelScope.async { followsRepository.isStreamerFollowed(profile.slug).first() }
+            val isFollowingDeferred =
+                viewModelScope.async { followsRepository.isStreamerFollowed(profile.slug).first() }
 
             val videos = videosDeferred.await().getOrDefault(emptyList())
             val clips = clipsDeferred.await().getOrDefault(emptyList())
@@ -121,7 +123,9 @@ class StreamerProfileViewModel(
             if (_uiState.value is ProfileUiState.Loading) {
                 _uiState.update {
                     ProfileUiState.Error(
-                        profileResult.exceptionOrNull()?.let { if (it is DomainError) it.message else "Load error" } ?: "Load error"
+                        profileResult.exceptionOrNull()
+                            ?.let { if (it is DomainError) it.message else "Load error" }
+                            ?: "Load error"
                     )
                 }
             }

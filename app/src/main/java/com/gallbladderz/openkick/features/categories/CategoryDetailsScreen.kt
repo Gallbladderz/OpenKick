@@ -46,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -117,7 +116,10 @@ fun CategoryDetailsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button)
+                        )
                     }
                 }
             )
@@ -134,11 +136,13 @@ fun CategoryDetailsScreen(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
+
                 is CategoryDetailsUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(currentState.message, color = MaterialTheme.colorScheme.error)
                     }
                 }
+
                 is CategoryDetailsUiState.Success -> {
 
 
@@ -166,10 +170,18 @@ fun CategoryDetailsScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.error)
+                                )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = stringResource(R.string.viewers_count, currentState.viewers),
+                                    text = stringResource(
+                                        R.string.viewers_count,
+                                        currentState.viewers
+                                    ),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -201,7 +213,11 @@ fun CategoryDetailsScreen(
                                     contentColor = if (isFollowed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                                 )
                             ) {
-                                Text(if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(R.string.follow_action))
+                                Text(
+                                    if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(
+                                        R.string.follow_action
+                                    )
+                                )
                             }
                         }
                     }
@@ -230,8 +246,14 @@ fun CategoryDetailsScreen(
                         if (selectedTabIndex == 0) {
 
                             if (currentState.streams.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(R.string.streams_will_appear_here), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        stringResource(R.string.streams_will_appear_here),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             } else {
                                 LazyVerticalGrid(
@@ -255,8 +277,14 @@ fun CategoryDetailsScreen(
                         } else {
 
                             if (currentState.clips.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(R.string.no_popular_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        stringResource(R.string.no_popular_clips),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             } else {
                                 LazyColumn(

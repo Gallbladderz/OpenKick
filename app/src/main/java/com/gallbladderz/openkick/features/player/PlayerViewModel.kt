@@ -4,14 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.gallbladderz.openkick.core.domain.DomainError
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.core.domain.DomainError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @UnstableApi
@@ -91,7 +91,8 @@ class PlayerViewModel(
                     }.onFailure { exception ->
                         _uiState.update {
                             PlayerUiState.Error(
-                                if (exception is DomainError) exception.message ?: "Unknown error" else exception.message ?: "Unknown error"
+                                if (exception is DomainError) exception.message
+                                    ?: "Unknown error" else exception.message ?: "Unknown error"
                             )
                         }
                     }

@@ -52,7 +52,9 @@ fun QualitySelectionSheet(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp)
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp)
             )
 
             LazyColumn(
@@ -60,10 +62,13 @@ fun QualitySelectionSheet(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(qualities, key = { it.name }) { quality ->
-                    val isSelected = selectedQuality == quality || (selectedQuality == null && quality.name == "Auto")
+                    val isSelected =
+                        selectedQuality == quality || (selectedQuality == null && quality.name == "Auto")
 
-                    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
-                    val textColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    val bgColor =
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
+                    val textColor =
+                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
                     Row(
                         modifier = Modifier

@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface CategoriesUiState {
@@ -61,12 +61,16 @@ class CategoriesViewModel(
                         _uiState.update { CategoriesUiState.Error("Could not find games") }
                         isLastPage = true
                     } else {
-                        
+
                         val sorted = categories.sortedByDescending { it.viewers }
                         _uiState.update { CategoriesUiState.Success(sorted) }
                     }
                 }.onFailure { exception ->
-                    _uiState.update { CategoriesUiState.Error(exception.message ?: "Network error") }
+                    _uiState.update {
+                        CategoriesUiState.Error(
+                            exception.message ?: "Network error"
+                        )
+                    }
                 }
             }
         }
@@ -84,9 +88,10 @@ class CategoriesViewModel(
                         isLastPage = true
                     } else {
                         val currentState = _uiState.value as CategoriesUiState.Success
-                        
-                        val merged = (currentState.categories + newCategories.sortedByDescending { it.viewers })
-                            .distinctBy { it.id }
+
+                        val merged =
+                            (currentState.categories + newCategories.sortedByDescending { it.viewers })
+                                .distinctBy { it.id }
                         _uiState.update { CategoriesUiState.Success(merged) }
                     }
                     isLoadingMore = false

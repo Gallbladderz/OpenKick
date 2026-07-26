@@ -82,7 +82,7 @@ data class TopClipsResponse(
     val cursor: String? = null,
     val pagination: PaginationDto? = null
 ) {
-    
+
     val actualClips: List<ClipDto> get() = clips.ifEmpty { data }
     val actualCursor: String? get() = nextCursor ?: cursor ?: pagination?.nextCursor
 }

@@ -48,8 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -74,7 +74,8 @@ fun ClipPlayerRoute(
     viewModel: PlayerViewModel = koinViewModel(),
     clipPlayerViewModel: ClipPlayerViewModel = koinViewModel()
 ) {
-    val isFollowed by viewModel.isStreamerFollowed(streamerName).collectAsStateWithLifecycle(initialValue = false)
+    val isFollowed by viewModel.isStreamerFollowed(streamerName)
+        .collectAsStateWithLifecycle(initialValue = false)
     val fetchedAvatarUrl by clipPlayerViewModel.avatarUrl.collectAsStateWithLifecycle()
 
     ClipPlayerScreen(
@@ -126,16 +127,16 @@ fun ClipPlayerScreen(
     var duration by remember { mutableLongStateOf(0L) }
     var showControls by remember { mutableStateOf(true) }
 
-    
+
     LaunchedEffect(isPlaying, playbackState) {
         while (isPlaying && playbackState == Player.STATE_READY) {
             currentPosition = exoPlayer.currentPosition
             duration = exoPlayer.duration.coerceAtLeast(0L)
-            delay(500) 
+            delay(500)
         }
     }
 
-    
+
     LaunchedEffect(showControls, isPlaying) {
         if (showControls && isPlaying) {
             delay(3000)
@@ -144,15 +145,21 @@ fun ClipPlayerScreen(
     }
 
     LaunchedEffect(streamerName, streamerAvatarUrl) {
-        if (resolvedAvatarUrl.isBlank() && streamerName.isNotBlank() && streamerName != context.getString(R.string.anonymous)) {
+        if (resolvedAvatarUrl.isBlank() && streamerName.isNotBlank() && streamerName != context.getString(
+                R.string.anonymous
+            )
+        ) {
             onLoadAvatar()
         }
     }
 
-    
+
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(play: Boolean) { isPlaying = play }
+            override fun onIsPlayingChanged(play: Boolean) {
+                isPlaying = play
+            }
+
             override fun onPlaybackStateChanged(state: Int) {
                 playbackState = state
                 if (state == Player.STATE_READY) {

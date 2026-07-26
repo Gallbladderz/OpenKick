@@ -27,7 +27,8 @@ class StreamCheckWorker(
 
     override suspend fun doWork(): Result {
 
-        val followedStreamers = followsDao.getAllFollows().first().filter { it.type == FollowType.STREAMER }
+        val followedStreamers =
+            followsDao.getAllFollows().first().filter { it.type == FollowType.STREAMER }
 
         for (entity in followedStreamers) {
             val result = followingRepository.fetchChannelDetails(entity.slug)
@@ -48,7 +49,11 @@ class StreamCheckWorker(
 
     private fun sendNotification(username: String, title: String, slug: String) {
 
-        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             return
         }
 
@@ -57,7 +62,11 @@ class StreamCheckWorker(
 
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Live streams", NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel(
+                channelId,
+                "Live streams",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
             notificationManager.createNotificationChannel(channel)
         }
 
@@ -65,7 +74,8 @@ class StreamCheckWorker(
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent =
+            PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)

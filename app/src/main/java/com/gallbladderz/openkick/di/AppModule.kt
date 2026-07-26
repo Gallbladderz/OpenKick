@@ -42,34 +42,34 @@ val appModule = module {
     single { SettingsRepository(androidContext()) }
     workerOf(::StreamCheckWorker)
 
-    
+
     single {
         okhttp3.OkHttpClient.Builder()
             .addInterceptor(MobileHeadersInterceptor())
             .build()
     }
 
-    
+
     single {
         val json = Json { ignoreUnknownKeys = true }
         val contentType = "application/json".toMediaType()
         Retrofit.Builder()
-            
+
             .baseUrl(KickApiConstants.KICK_BASE_URL + "/")
             .client(get())
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
     }
 
-    
+
     single { get<Retrofit>().create(KickApiService::class.java) }
 
-    
-    single { CategoriesRepository(get()) }
-    
 
-    
-    
+    single { CategoriesRepository(get()) }
+
+
+
+
     single { HomeRepository(get()) }
     single { SearchRepository(get()) }
     single { PlayerRepository(get()) }
@@ -109,7 +109,7 @@ val appModule = module {
     viewModel { CategoriesViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
 
-    
+
     viewModel { CategoryDetailsViewModel(get()) }
 
     viewModel { FollowingViewModel(get(), get()) }

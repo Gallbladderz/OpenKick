@@ -4,30 +4,28 @@ import com.gallbladderz.openkick.features.categories.CategoryDetailsResponse
 import com.gallbladderz.openkick.features.home.ClipResponse
 import com.gallbladderz.openkick.features.home.HomeLivestreamsResponse
 import com.gallbladderz.openkick.features.home.TopClipsResponse
+import com.gallbladderz.openkick.features.profile.VideoItemDto
 import com.gallbladderz.openkick.features.search.SearchResponse
 import kotlinx.serialization.json.JsonElement
-import okhttp3.ResponseBody
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
-import com.gallbladderz.openkick.features.profile.VideosListResponse
-import com.gallbladderz.openkick.features.profile.VideoItemDto
+
 interface KickApiService {
 
-    
-    
+
     @GET("api/v1/subcategories")
     suspend fun getCategories(
         @Query("limit") limit: Int = 50,
         @Query("page") page: Int = 1
     ): com.gallbladderz.openkick.features.categories.CategoriesResponse
-    
+
     @GET("api/v1/subcategories/{slug}")
     suspend fun getCategoryDetails(
         @Path("slug") slug: String
     ): CategoryDetailsResponse
 
-    
+
     @GET("api/v2/categories/{slug}/clips")
     suspend fun getCategoryClips(
         @Path("slug") slug: String,
@@ -48,7 +46,7 @@ interface KickApiService {
         @Query("language") languages: List<String>? = null
     ): HomeLivestreamsResponse
 
-    
+
     @GET("api/v2/clips")
     suspend fun getTopClips(
         @Query("sort") sort: String = "view",
@@ -56,7 +54,7 @@ interface KickApiService {
         @Query("cursor") cursor: String? = null
     ): TopClipsResponse
 
-    
+
     @GET("api/v2/channels/{slug}")
     suspend fun getChannelStreamInfo(
         @Path("slug") slug: String
@@ -77,10 +75,11 @@ interface KickApiService {
     suspend fun getChannelVideos(
         @Path("slug") slug: String
     ): List<VideoItemDto>
+
     @GET("api/v2/channels/{slug}/clips")
     suspend fun getChannelClips(
         @Path("slug") slug: String
-    ): com.gallbladderz.openkick.features.home.TopClipsResponse
+    ): TopClipsResponse
 
     @GET("https://mobile.kick.com/api/v1/livestreams")
     suspend fun getCategoryLivestreams(

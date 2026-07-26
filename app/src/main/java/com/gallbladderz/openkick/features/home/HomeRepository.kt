@@ -27,20 +27,21 @@ class HomeRepository(private val apiService: KickApiService) {
         }
     }
 
-    suspend fun fetchTopClips(cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getTopClips(cursor = cursor)
-            val uiModels = response.actualClips.map { it.toUiModel() }
-            val nextCursor = response.actualCursor
+    suspend fun fetchTopClips(cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getTopClips(cursor = cursor)
+                val uiModels = response.actualClips.map { it.toUiModel() }
+                val nextCursor = response.actualCursor
 
-            Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
-        } catch (e: Exception) {
-            Result.failure(e.toDomainError())
+                Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
+            } catch (e: Exception) {
+                Result.failure(e.toDomainError())
+            }
         }
-    }
 }
 
-fun HomeLivestreamItem.toDomain(): StreamUiModel? {
+fun HomeLivestreamItem.toDomain(): StreamUiModel {
     val stream = this.actualStream
     return StreamUiModel(
         id = stream.id ?: "0",

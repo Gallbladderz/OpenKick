@@ -1,7 +1,7 @@
 package com.gallbladderz.openkick.features.search
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
@@ -21,7 +21,7 @@ data class SearchChannelDto(
     val profilePic: String? = null,
     @SerialName("is_live")
     val isLive: Boolean = false,
-    
+
     val livestream: JsonElement? = null
 ) {
     val isActuallyLive: Boolean

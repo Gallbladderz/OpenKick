@@ -23,17 +23,17 @@ class OpenKickApp : Application(), ImageLoaderFactory {
 
         startKoin {
             androidContext(this@OpenKickApp)
-            workManagerFactory() 
+            workManagerFactory()
             modules(appModule)
         }
 
-        
+
         setupStreamNotifications()
     }
 
     private fun setupStreamNotifications() {
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED) 
+            .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
         val workRequest = PeriodicWorkRequestBuilder<StreamCheckWorker>(15, TimeUnit.MINUTES)
@@ -42,7 +42,7 @@ class OpenKickApp : Application(), ImageLoaderFactory {
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "StreamCheckWork",
-            ExistingPeriodicWorkPolicy.KEEP, 
+            ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
     }

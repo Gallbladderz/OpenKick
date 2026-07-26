@@ -50,14 +50,14 @@ class SettingsRepository(private val context: Context) {
     }
 
     val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[NOTIFICATIONS_ENABLED] ?: true 
+        preferences[NOTIFICATIONS_ENABLED] ?: true
     }
 
     val backgroundKeepaliveFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[BACKGROUND_KEEPALIVE] ?: false 
+        preferences[BACKGROUND_KEEPALIVE] ?: false
     }
 
-    
+
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[NOTIFICATIONS_ENABLED] = enabled

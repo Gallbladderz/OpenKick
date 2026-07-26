@@ -23,8 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.gallbladderz.openkick.features.player.models.ChatMessage
-
-val EMOTE_REGEX = Regex("\\[emote:(\\d+):([^\\]]+)\\]")
+import com.gallbladderz.openkick.features.player.models.ChatToken
 
 @Composable
 fun ChatList(chatMessages: List<ChatMessage>) {
@@ -57,7 +56,6 @@ fun ChatMessageItem(message: ChatMessage) {
         }
     }
 
-    val emotesMatches = EMOTE_REGEX.findAll(message.content).toList()
     val inlineContentMap = mutableMapOf<String, InlineTextContent>()
 
     val annotatedString = buildAnnotatedString {
@@ -65,43 +63,34 @@ fun ChatMessageItem(message: ChatMessage) {
             append("${message.sender}: ")
         }
 
-        var currentIndex = 0
-        for (match in emotesMatches) {
-            val emoteId = match.groupValues[1]
-            val emoteName = match.groupValues[2]
-            val matchStart = match.range.first
-            val matchEnd = match.range.last + 1
-
-            if (matchStart > currentIndex) {
-                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
-                    append(message.content.substring(currentIndex, matchStart))
+        for (token in message.tokens) {
+            when (token) {
+                is ChatToken.Text -> {
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
+                        append(token.text)
+                    }
                 }
-            }
 
-            val inlineId = "emote_$emoteId"
-            appendInlineContent(inlineId, "[$emoteName]")
+                is ChatToken.Emote -> {
+                    val inlineId = "emote_${token.emoteId}"
+                    appendInlineContent(inlineId, "[${token.emoteName}]")
 
-            if (!inlineContentMap.containsKey(inlineId)) {
-                inlineContentMap[inlineId] = InlineTextContent(
-                    Placeholder(
-                        width = 24.sp,
-                        height = 24.sp,
-                        placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
-                    )
-                ) {
-                    AsyncImage(
-                        model = "https://files.cdn.kick.com/emotes/$emoteId/fullsize?width=96&format=webp",
-                        contentDescription = emoteName,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    if (!inlineContentMap.containsKey(inlineId)) {
+                        inlineContentMap[inlineId] = InlineTextContent(
+                            Placeholder(
+                                width = 24.sp,
+                                height = 24.sp,
+                                placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
+                            )
+                        ) {
+                            AsyncImage(
+                                model = "https://files.cdn.kick.com/emotes/${token.emoteId}/fullsize?width=96&format=webp",
+                                contentDescription = token.emoteName,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
-            }
-            currentIndex = matchEnd
-        }
-
-        if (currentIndex < message.content.length) {
-            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
-                append(message.content.substring(currentIndex))
             }
         }
     }

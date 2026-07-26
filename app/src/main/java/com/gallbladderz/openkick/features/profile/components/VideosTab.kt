@@ -49,7 +49,10 @@ fun VideosTab(
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.no_vods), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.no_vods),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -69,30 +72,47 @@ fun VideosTab(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                    Box(modifier = Modifier.width(140.dp).aspectRatio(16f / 9f)) {
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)) {
+                    Box(modifier = Modifier
+                        .width(140.dp)
+                        .aspectRatio(16f / 9f)) {
                         AsyncImage(
-                            model = ImageRequest.Builder(context).data(video.thumbnailUrl).crossfade(true).build(),
+                            model = ImageRequest.Builder(context).data(video.thumbnailUrl)
+                                .crossfade(true).build(),
                             contentDescription = stringResource(R.string.vod_desc),
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp))
                         )
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
                                 .padding(4.dp)
-                                .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(4.dp))
+                                .background(
+                                    Color.Black.copy(alpha = 0.8f),
+                                    RoundedCornerShape(4.dp)
+                                )
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text(text = video.durationFormatted, style = MaterialTheme.typography.labelSmall, color = Color.White)
+                            Text(
+                                text = video.durationFormatted,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White
+                            )
                         }
 
-                        
+
                         if (isLoading) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+                                    .background(
+                                        Color.Black.copy(alpha = 0.5f),
+                                        RoundedCornerShape(8.dp)
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 CircularProgressIndicator(
@@ -104,10 +124,21 @@ fun VideosTab(
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                        Text(text = video.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2)
+                    Column(modifier = Modifier
+                        .weight(1f)
+                        .align(Alignment.CenterVertically)) {
+                        Text(
+                            text = video.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = stringResource(R.string.views_count_icon, video.views), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = stringResource(R.string.views_count_icon, video.views),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

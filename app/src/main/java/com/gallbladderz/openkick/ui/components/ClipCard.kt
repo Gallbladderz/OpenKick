@@ -2,9 +2,16 @@ package com.gallbladderz.openkick.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +56,7 @@ fun ClipCard(
                         .clip(RoundedCornerShape(8.dp))
                 )
 
-                
+
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -64,7 +71,7 @@ fun ClipCard(
                     )
                 }
 
-                
+
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)

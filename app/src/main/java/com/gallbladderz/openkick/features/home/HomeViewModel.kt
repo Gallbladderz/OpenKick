@@ -1,6 +1,5 @@
 package com.gallbladderz.openkick.features.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
@@ -16,6 +15,7 @@ sealed interface HomeUiState {
         val streams: List<StreamUiModel>,
         val clips: List<ClipUiModel>
     ) : HomeUiState
+
     data class Error(val message: String) : HomeUiState
 }
 
@@ -41,11 +41,11 @@ class HomeViewModel(
     private var currentLanguages: Set<String>? = null
     private var currentHideCategories: Boolean = false
 
-    
+
     private fun filterBanned(streams: List<StreamUiModel>): List<StreamUiModel> {
         if (!currentHideCategories) return streams
 
-        
+
         val bannedSlugs = setOf(
             "slots",
             "pools-hot-tubs-bikinis",
@@ -60,7 +60,7 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            
+
             kotlinx.coroutines.flow.combine(
                 settingsRepository.selectedLanguagesFlow,
                 settingsRepository.hideCategoriesFlow
@@ -70,7 +70,7 @@ class HomeViewModel(
                 val langsChanged = currentLanguages != langs
                 val hideChanged = currentHideCategories != hide
 
-                
+
                 if (langsChanged || hideChanged || currentLanguages == null) {
                     currentLanguages = langs
                     currentHideCategories = hide
@@ -112,7 +112,7 @@ class HomeViewModel(
                     _uiState.value =
                         HomeUiState.Error(ex?.message ?: "Total failure, nothing loaded")
                 } else {
-                    
+
                     val filteredStreams = filterBanned(streamsList)
                     _uiState.value = HomeUiState.Success(
                         streams = filteredStreams,
@@ -152,7 +152,7 @@ class HomeViewModel(
                     isClipsEnd = false
 
                     _uiState.value = HomeUiState.Success(
-                        
+
                         streams = filterBanned(streamsPair?.first ?: emptyList()),
                         clips = clipsPair?.first ?: emptyList()
                     )
@@ -179,11 +179,11 @@ class HomeViewModel(
                 val (newStreams, nextCursor) = result.getOrThrow()
                 streamsCursor = nextCursor
 
-                
+
                 val filteredNewStreams = filterBanned(newStreams)
 
                 if (filteredNewStreams.isEmpty() && newStreams.isNotEmpty()) {
-                    
+
                 } else if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {
@@ -191,7 +191,7 @@ class HomeViewModel(
                         isStreamsEnd = true
                     }
                     val currentState = _uiState.value as HomeUiState.Success
-                    
+
                     val merged = (currentState.streams + filteredNewStreams).distinctBy { it.id }
                     _uiState.value = currentState.copy(streams = merged)
                 }

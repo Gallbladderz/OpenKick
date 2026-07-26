@@ -29,7 +29,10 @@ fun ClipsTab(
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.no_clips), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.no_clips),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -43,11 +46,20 @@ fun ClipsTab(
     ) {
         val clipRows = clips.chunked(2)
         items(clipRows) { rowItems ->
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ClipCard(clip = rowItems[0], modifier = Modifier.weight(1f), onClick = { onClipClick(rowItems[0]) })
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ClipCard(
+                    clip = rowItems[0],
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClipClick(rowItems[0]) })
 
                 if (rowItems.size > 1) {
-                    ClipCard(clip = rowItems[1], modifier = Modifier.weight(1f), onClick = { onClipClick(rowItems[1]) })
+                    ClipCard(
+                        clip = rowItems[1],
+                        modifier = Modifier.weight(1f),
+                        onClick = { onClipClick(rowItems[1]) })
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }

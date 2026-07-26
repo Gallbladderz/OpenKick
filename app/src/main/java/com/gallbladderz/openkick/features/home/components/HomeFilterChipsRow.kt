@@ -21,18 +21,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.gallbladderz.openkick.R
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
-
 
 
 @Composable
@@ -49,7 +48,11 @@ fun HomeFilterChipsRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(1f)) {
-            val filters = listOf(stringResource(R.string.filter_all), stringResource(R.string.filter_categories), stringResource(R.string.filter_clips))
+            val filters = listOf(
+                stringResource(R.string.filter_all),
+                stringResource(R.string.filter_categories),
+                stringResource(R.string.filter_clips)
+            )
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -60,7 +63,12 @@ fun HomeFilterChipsRow(
                     FilterChip(
                         selected = selectedFilter == filter,
                         onClick = { onFilterSelected(filter) },
-                        label = { Text(filter, fontWeight = if (selectedFilter == filter) FontWeight.Bold else FontWeight.Normal) },
+                        label = {
+                            Text(
+                                filter,
+                                fontWeight = if (selectedFilter == filter) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                             selectedLabelColor = MaterialTheme.colorScheme.primary

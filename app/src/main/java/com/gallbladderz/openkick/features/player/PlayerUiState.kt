@@ -8,5 +8,6 @@ sealed interface PlayerUiState {
         val viewers: Int,
         val title: String
     ) : PlayerUiState
+
     data class Error(val message: String) : PlayerUiState
 }

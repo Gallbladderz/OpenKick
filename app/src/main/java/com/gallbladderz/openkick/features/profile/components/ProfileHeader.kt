@@ -57,12 +57,16 @@ fun ProfileHeader(
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
-        Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)) {
             AsyncImage(
                 model = ImageRequest.Builder(context).data(info.bannerUrl).crossfade(true).build(),
                 contentDescription = stringResource(R.string.banner_desc),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().height(120.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
             )
 
             Box(
@@ -115,7 +119,9 @@ fun ProfileHeader(
         ) {
             Button(
                 onClick = onFollowClick,
-                modifier = Modifier.weight(1f).height(48.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
@@ -129,7 +135,9 @@ fun ProfileHeader(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (isFollowing) stringResource(R.string.unfollow_action) else stringResource(R.string.follow_action),
+                    text = if (isFollowing) stringResource(R.string.unfollow_action) else stringResource(
+                        R.string.follow_action
+                    ),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.labelLarge
                 )

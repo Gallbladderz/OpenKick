@@ -54,7 +54,10 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
             item {
 
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.streamer_wrote_nothing), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.streamer_wrote_nothing),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         } else {
@@ -91,7 +94,11 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
                                 Text(
                                     text = link.link,
                                     color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                                    modifier = Modifier.padding(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        bottom = 16.dp
+                                    )
                                 )
                             }
                         }

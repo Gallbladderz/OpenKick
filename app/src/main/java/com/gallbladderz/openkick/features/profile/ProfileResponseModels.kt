@@ -1,7 +1,7 @@
 package com.gallbladderz.openkick.features.profile
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
@@ -9,7 +9,7 @@ data class ChannelV1Response(
     val id: Int? = null,
     val slug: String? = null,
     val user: ChannelV1User? = null,
-    @SerialName("banner_image") val bannerImage: JsonElement? = null, 
+    @SerialName("banner_image") val bannerImage: JsonElement? = null,
     val followersCount: Int = 0,
     val livestream: ChannelV1Livestream? = null
 )
@@ -53,7 +53,7 @@ data class VideoDto(
     val thumbnail: VideoThumbnailDto? = null,
     val video: VideoInnerDto? = null
 ) {
-    
+
     val actualId: String get() = video?.uuid ?: id ?: ""
 }
 

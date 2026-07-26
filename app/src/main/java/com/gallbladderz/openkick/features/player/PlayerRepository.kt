@@ -1,12 +1,12 @@
 package com.gallbladderz.openkick.features.player
 
-import com.gallbladderz.openkick.core.network.KickApiService
-import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.features.player.models.StreamInfo
 import com.gallbladderz.openkick.core.domain.DomainError
 import com.gallbladderz.openkick.core.domain.toDomainError
+import com.gallbladderz.openkick.core.network.KickApiService
+import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.ChannelLinkDto
 import com.gallbladderz.openkick.features.player.models.ChannelStreamInfoResponse
+import com.gallbladderz.openkick.features.player.models.StreamInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -30,15 +30,16 @@ class PlayerRepository(
         }
     }.flowOn(Dispatchers.IO)
 
-    suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> = withContext(Dispatchers.IO) {
-        try {
-            val dtos = apiService.getChannelLinks(streamerName)
-            val links = dtos.map { it.toDomain() }
-            Result.success(links)
-        } catch (e: Exception) {
-            Result.failure(e.toDomainError())
+    suspend fun fetchChannelLinks(streamerName: String): Result<List<ChannelLink>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val dtos = apiService.getChannelLinks(streamerName)
+                val links = dtos.map { it.toDomain() }
+                Result.success(links)
+            } catch (e: Exception) {
+                Result.failure(e.toDomainError())
+            }
         }
-    }
 }
 
 fun ChannelStreamInfoResponse.toDomain(): StreamInfo? {

@@ -3,7 +3,11 @@ package com.gallbladderz.openkick.features.profile
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -11,9 +15,16 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -22,9 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
-import org.koin.androidx.compose.koinViewModel
-import androidx.compose.material.icons.filled.Visibility
 import com.gallbladderz.openkick.core.datastore.AppTheme
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsRoute(
@@ -129,14 +139,15 @@ fun SettingsScreen(
         }
 
         item {
-val themeDesc = when (appTheme) {
+            val themeDesc = when (appTheme) {
                 AppTheme.SYSTEM -> "Системная"
                 AppTheme.LIGHT -> "Светлая"
                 AppTheme.DARK -> "Темная"
                 AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
                 AppTheme.CATPPUCCIN_LATTE -> "Catppuccin Latte"
             }
-            val dynamicDesc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""
+            val dynamicDesc =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""
             SettingsListItem(
                 headline = stringResource(R.string.theme_settings),
                 supporting = "$themeDesc$dynamicDesc",

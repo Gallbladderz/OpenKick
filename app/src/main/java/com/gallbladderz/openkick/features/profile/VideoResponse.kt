@@ -2,16 +2,16 @@ package com.gallbladderz.openkick.features.profile
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class VideosListResponse(
     val data: List<VideoItemDto> = emptyList()
 )
 
-@Serializable data class VideoItemDto(
+@Serializable
+data class VideoItemDto(
     val id: Int? = null,
-    val video: VideoInnerDto? = null, 
+    val video: VideoInnerDto? = null,
     @SerialName("session_title") val sessionTitle: String? = null,
     val title: String? = null,
     val duration: Long = 0L,

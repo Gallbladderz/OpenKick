@@ -25,7 +25,9 @@ object LanguageSettingsRoute
 @Serializable
 object NotificationSettingsRoute
 
-@Serializable object ContentSettingsRoute
+@Serializable
+object ContentSettingsRoute
+
 @Serializable
 object AllFollowsRoute
 
