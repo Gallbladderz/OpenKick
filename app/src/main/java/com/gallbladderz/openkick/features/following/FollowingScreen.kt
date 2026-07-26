@@ -294,7 +294,7 @@ private fun StoryAvatarItem(streamer: FollowedStreamerUi, onClick: () -> Unit) {
             .clickable { onClick() }
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(context).data(streamer.avatarUrl).crossfade(true).build(),
+            model = ImageRequest.Builder(context).data(streamer.avatarUrl).build(),
             contentDescription = streamer.username,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -340,7 +340,7 @@ private fun LiveStreamCard(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(streamer.streamThumbnailUrl.ifEmpty { streamer.avatarUrl })
-                        .crossfade(true).build(),
+                        .build(),
                     contentDescription = stringResource(R.string.thumbnail_desc),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -363,7 +363,7 @@ private fun LiveStreamCard(
                 verticalAlignment = Alignment.Top
             ) {
                 AsyncImage(
-                    model = ImageRequest.Builder(context).data(streamer.avatarUrl).crossfade(true)
+                    model = ImageRequest.Builder(context).data(streamer.avatarUrl)
                         .build(),
                     contentDescription = streamer.username,
                     contentScale = ContentScale.Crop,
@@ -413,7 +413,7 @@ private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Un
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(context).data(category.bannerUrl).crossfade(true)
+                model = ImageRequest.Builder(context).data(category.bannerUrl)
                     .build(),
                 contentDescription = category.name,
                 contentScale = ContentScale.Crop,

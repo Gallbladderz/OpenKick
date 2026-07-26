@@ -53,7 +53,6 @@ fun StreamCard(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(stream.thumbnailUrl)
-                        .crossfade(true)
                         .build(),
                     contentDescription = stringResource(R.string.thumbnail_desc),
                     contentScale = ContentScale.Crop,

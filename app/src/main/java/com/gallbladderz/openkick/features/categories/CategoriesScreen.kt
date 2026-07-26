@@ -158,7 +158,6 @@ fun CategoryCard(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(category.bannerUrl)
-                    .crossfade(true)
                     .build(),
                 contentDescription = category.name,
                 contentScale = ContentScale.Crop,
