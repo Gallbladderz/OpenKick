@@ -39,8 +39,10 @@ fun AllFollowsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val kickGradient = remember {
-        Brush.linearGradient(colors = listOf(Color(0xFF53FC18), Color(0xFF13B500)))
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val onTertiaryColor = MaterialTheme.colorScheme.onTertiary
+    val kickGradient = remember(tertiaryColor, onTertiaryColor) {
+        Brush.linearGradient(colors = listOf(tertiaryColor, onTertiaryColor))
     }
 
     Scaffold(

@@ -17,11 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.material3.MaterialTheme
+
 @Composable
 fun ViewerCountBadge(
     viewers: Int,
     modifier: Modifier = Modifier,
-    textColor: Color = Color.White,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
     fontSize: Int = 12
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
@@ -29,7 +31,7 @@ fun ViewerCountBadge(
             modifier = Modifier
                 .size(6.dp)
                 .clip(CircleShape)
-                .background(Color.Red)
+                .background(MaterialTheme.colorScheme.error)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
