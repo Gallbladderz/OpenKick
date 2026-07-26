@@ -31,14 +31,13 @@ import com.gallbladderz.openkick.core.datastore.AppTheme
 fun SettingsScreen(
     onLanguageSettingsClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
-    onContentSettingsClick: () -> Unit
+    onContentSettingsClick: () -> Unit,
+    onThemeSettingsClick: () -> Unit
 ) {
     val mainViewModel: MainViewModel = koinViewModel()
     val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
     val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
     val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
-
-    var showThemeDialog by remember { mutableStateOf(false) }
 
     val availableLanguages = mapOf(
         "ru" to stringResource(R.string.russian_lang),
@@ -50,86 +49,6 @@ fun SettingsScreen(
         "fr" to "Français",
         "or" to "Odia"
     )
-
-    if (showThemeDialog) {
-        AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
-            title = { Text(text = "Theme Settings") },
-            text = {
-                Column {
-                    Text(text = "Base Theme", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { mainViewModel.updateAppTheme(AppTheme.SYSTEM) }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = appTheme == AppTheme.SYSTEM,
-                            onClick = { mainViewModel.updateAppTheme(AppTheme.SYSTEM) }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("System Default")
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { mainViewModel.updateAppTheme(AppTheme.LIGHT) }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = appTheme == AppTheme.LIGHT,
-                            onClick = { mainViewModel.updateAppTheme(AppTheme.LIGHT) }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Light")
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { mainViewModel.updateAppTheme(AppTheme.DARK) }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = appTheme == AppTheme.DARK,
-                            onClick = { mainViewModel.updateAppTheme(AppTheme.DARK) }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Dark")
-                    }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = "Dynamic Colors", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { mainViewModel.updateUseDynamicColors(!useDynamicColors) }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Use Material You")
-                            Switch(
-                                checked = useDynamicColors,
-                                onCheckedChange = { mainViewModel.updateUseDynamicColors(it) }
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
 
     LazyColumn(
         modifier = Modifier
@@ -192,13 +111,15 @@ fun SettingsScreen(
                 AppTheme.SYSTEM -> "Системная"
                 AppTheme.LIGHT -> "Светлая"
                 AppTheme.DARK -> "Темная"
+                AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
+                AppTheme.CATPPUCCIN_LATTE -> "Catppuccin Latte"
             }
             val dynamicDesc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""
             SettingsListItem(
                 headline = stringResource(R.string.theme_settings),
                 supporting = "$themeDesc$dynamicDesc",
                 icon = Icons.Default.Edit,
-                onClick = { showThemeDialog = true }
+                onClick = onThemeSettingsClick
             )
         }
 
