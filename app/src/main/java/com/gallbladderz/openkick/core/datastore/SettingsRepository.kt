@@ -3,6 +3,7 @@ package com.gallbladderz.openkick.core.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,33 @@ class SettingsRepository(private val context: Context) {
         private val SELECTED_LANGUAGES = stringSetPreferencesKey("selected_languages")
         private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val BACKGROUND_KEEPALIVE = booleanPreferencesKey("background_keepalive")
+        private val APP_THEME = stringPreferencesKey("app_theme")
+        private val USE_DYNAMIC_COLORS = booleanPreferencesKey("use_dynamic_colors")
+    }
+
+    val appThemeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
+        val themeName = preferences[APP_THEME] ?: AppTheme.SYSTEM.name
+        try {
+            AppTheme.valueOf(themeName)
+        } catch (e: IllegalArgumentException) {
+            AppTheme.SYSTEM
+        }
+    }
+
+    suspend fun setAppTheme(theme: AppTheme) {
+        context.dataStore.edit { preferences ->
+            preferences[APP_THEME] = theme.name
+        }
+    }
+
+    val useDynamicColorsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[USE_DYNAMIC_COLORS] ?: true
+    }
+
+    suspend fun setUseDynamicColors(use: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[USE_DYNAMIC_COLORS] = use
+        }
     }
 
     val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->

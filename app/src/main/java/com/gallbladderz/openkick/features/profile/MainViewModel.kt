@@ -2,6 +2,7 @@ package com.gallbladderz.openkick.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.core.datastore.AppTheme
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -30,8 +31,36 @@ class MainViewModel(
                 initialValue = emptySet()
             )
 
+    val appTheme: StateFlow<AppTheme> =
+        settingsRepository.appThemeFlow
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = AppTheme.SYSTEM
+            )
+
+    val useDynamicColors: StateFlow<Boolean> =
+        settingsRepository.useDynamicColorsFlow
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = true
+            )
+
     val appLanguage: String
         get() = AppCompatDelegate.getApplicationLocales().toLanguageTags().let { if (it.isEmpty()) "en" else it.split("-")[0] }
+
+    fun updateAppTheme(theme: AppTheme) {
+        viewModelScope.launch {
+            settingsRepository.setAppTheme(theme)
+        }
+    }
+
+    fun updateUseDynamicColors(use: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setUseDynamicColors(use)
+        }
+    }
 
     fun toggleCategories(hide: Boolean) {
         viewModelScope.launch {

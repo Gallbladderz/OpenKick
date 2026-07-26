@@ -1,5 +1,6 @@
 package com.gallbladderz.openkick.features.profile
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,8 +12,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -23,7 +24,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.filled.Visibility
+import com.gallbladderz.openkick.core.datastore.AppTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onLanguageSettingsClick: () -> Unit,
@@ -32,6 +35,10 @@ fun SettingsScreen(
 ) {
     val mainViewModel: MainViewModel = koinViewModel()
     val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
+    val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
+    val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
+
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     val availableLanguages = mapOf(
         "ru" to stringResource(R.string.russian_lang),
@@ -43,6 +50,86 @@ fun SettingsScreen(
         "fr" to "Français",
         "or" to "Odia"
     )
+
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text(text = "Theme Settings") },
+            text = {
+                Column {
+                    Text(text = "Base Theme", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { mainViewModel.updateAppTheme(AppTheme.SYSTEM) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = appTheme == AppTheme.SYSTEM,
+                            onClick = { mainViewModel.updateAppTheme(AppTheme.SYSTEM) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("System Default")
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { mainViewModel.updateAppTheme(AppTheme.LIGHT) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = appTheme == AppTheme.LIGHT,
+                            onClick = { mainViewModel.updateAppTheme(AppTheme.LIGHT) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Light")
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { mainViewModel.updateAppTheme(AppTheme.DARK) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = appTheme == AppTheme.DARK,
+                            onClick = { mainViewModel.updateAppTheme(AppTheme.DARK) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Dark")
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "Dynamic Colors", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { mainViewModel.updateUseDynamicColors(!useDynamicColors) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Use Material You")
+                            Switch(
+                                checked = useDynamicColors,
+                                onCheckedChange = { mainViewModel.updateUseDynamicColors(it) }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -101,11 +188,17 @@ fun SettingsScreen(
         }
 
         item {
+            val themeDesc = when (appTheme) {
+                AppTheme.SYSTEM -> "Системная"
+                AppTheme.LIGHT -> "Светлая"
+                AppTheme.DARK -> "Темная"
+            }
+            val dynamicDesc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""
             SettingsListItem(
                 headline = stringResource(R.string.theme_settings),
-                supporting = stringResource(R.string.theme_settings_desc),
+                supporting = "$themeDesc$dynamicDesc",
                 icon = Icons.Default.Edit,
-                onClick = { /* TODO */ }
+                onClick = { showThemeDialog = true }
             )
         }
 
