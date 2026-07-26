@@ -31,14 +31,13 @@ import com.gallbladderz.openkick.core.datastore.AppTheme
 fun SettingsScreen(
     onLanguageSettingsClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
-    onContentSettingsClick: () -> Unit
+    onContentSettingsClick: () -> Unit,
+    onThemeSettingsClick: () -> Unit
 ) {
     val mainViewModel: MainViewModel = koinViewModel()
     val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
     val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
     val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
-
-    var showThemeDialog by remember { mutableStateOf(false) }
 
     val availableLanguages = mapOf(
         "ru" to stringResource(R.string.russian_lang),
@@ -188,17 +187,19 @@ fun SettingsScreen(
         }
 
         item {
-            val themeDesc = when (appTheme) {
+val themeDesc = when (appTheme) {
                 AppTheme.SYSTEM -> "Системная"
                 AppTheme.LIGHT -> "Светлая"
                 AppTheme.DARK -> "Темная"
+                AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
+                AppTheme.CATPPUCCIN_LATTE -> "Catppuccin Latte"
             }
             val dynamicDesc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""
             SettingsListItem(
                 headline = stringResource(R.string.theme_settings),
                 supporting = "$themeDesc$dynamicDesc",
                 icon = Icons.Default.Edit,
-                onClick = { showThemeDialog = true }
+                onClick = onThemeSettingsClick
             )
         }
 

@@ -126,6 +126,9 @@ fun OpenKickNavHost() {
                                 },
                                 onContentSettingsClick = { 
                                     navController.navigate(ContentSettingsRoute)
+                                },
+                                onThemeSettingsClick = {
+                                    navController.navigate(ThemeSettingsRoute)
                                 }
                             )
                         }
@@ -253,6 +256,12 @@ fun OpenKickNavHost() {
                 onBackClick = { navController.popBackStack() }
             )
         }
+
+        composable<ThemeSettingsRoute> {
+            com.gallbladderz.openkick.features.profile.ThemeSettingsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
     }
 }
 
@@ -262,7 +271,7 @@ private fun OpenKickBottomBar(
     onTabSelected: (Int) -> Unit
 ) {
     Surface(
-        color = Color(0xFF141416), 
+        color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp, 
         shadowElevation = 8.dp 
     ) {
@@ -279,7 +288,7 @@ private fun OpenKickBottomBar(
                 val title = stringResource(id = tab.titleResId)
 
                 
-                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF757575)
+                val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
                 Column(
                     modifier = Modifier
