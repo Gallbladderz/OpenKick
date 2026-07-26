@@ -13,3 +13,7 @@ val KickTextPrimary = Color(0xFFFFFFFF)
 val KickTextSecondary = Color(0xFF9E9E9E)
 
 val KickError = Color(0xFFFF3333)
+
+val KickGradientStart = Color(0xFF53FC18)
+val KickGradientEnd = Color(0xFF13B500)
+val LiveIndicatorRed = Color(0xFFFF0000)

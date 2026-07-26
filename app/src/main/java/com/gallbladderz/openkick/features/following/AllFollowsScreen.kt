@@ -40,7 +40,7 @@ fun AllFollowsScreen(
     val context = LocalContext.current
 
     val kickGradient = remember {
-        Brush.linearGradient(colors = listOf(Color(0xFF53FC18), Color(0xFF13B500)))
+        Brush.linearGradient(colors = listOf(com.gallbladderz.openkick.ui.theme.KickGradientStart, com.gallbladderz.openkick.ui.theme.KickGradientEnd))
     }
 
     Scaffold(

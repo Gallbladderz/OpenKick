@@ -29,7 +29,7 @@ fun ViewerCountBadge(
             modifier = Modifier
                 .size(6.dp)
                 .clip(CircleShape)
-                .background(Color.Red)
+                .background(com.gallbladderz.openkick.ui.theme.LiveIndicatorRed)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(

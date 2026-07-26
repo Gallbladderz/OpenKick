@@ -13,15 +13,20 @@ import com.gallbladderz.openkick.navigation.OpenKickNavHost
 import com.gallbladderz.openkick.ui.theme.OpenKickTheme
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.features.notifications.StreamKeepaliveService
+import com.gallbladderz.openkick.features.profile.MainViewModel
 import kotlinx.coroutines.flow.first
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : AppCompatActivity() {
 
     private val settingsRepository: SettingsRepository by inject()
+    private val mainViewModel: MainViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +34,8 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         setContent {
+            val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
+            val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
 
             val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
@@ -49,7 +56,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            OpenKickTheme {
+            OpenKickTheme(appTheme = appTheme, useDynamicColors = useDynamicColors) {
                 OpenKickNavHost()
             }
         }
