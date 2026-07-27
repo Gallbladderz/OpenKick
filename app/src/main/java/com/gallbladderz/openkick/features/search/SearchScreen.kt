@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.gallbladderz.openkick.features.search
 
 import androidx.compose.foundation.background
@@ -8,14 +9,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,12 +33,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,23 +54,25 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.gallbladderz.openkick.R
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = koinViewModel(),
-    onChannelClick: (String, Boolean) -> Unit = { _, _ -> }
+    onChannelClick: (String, Boolean) -> Unit = { _, _ -> },
+    onCategoryClick: (String) -> Unit = {},
+    onStreamClick: (String) -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
-
-
         focusRequester.requestFocus()
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -72,7 +86,6 @@ fun SearchScreen(
         delay(500)
         viewModel.searchStreamer(query)
     }
-
 
     Column(
         modifier = Modifier
@@ -126,19 +139,14 @@ fun SearchScreen(
                 }
 
                 is SearchUiState.Success -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(uiState.channels, key = { it.username }) { channel ->
-
-                            SearchChannelCard(
-                                channel = channel,
-                                onClick = { onChannelClick(channel.username, channel.isLive) }
-                            )
-                        }
-                    }
+                    SearchTabsContent(
+                        channels = uiState.channels,
+                        streams = uiState.streams,
+                        categories = uiState.categories,
+                        onChannelClick = onChannelClick,
+                        onStreamClick = onStreamClick,
+                        onCategoryClick = onCategoryClick
+                    )
                 }
 
                 is SearchUiState.Error -> {
@@ -152,6 +160,87 @@ fun SearchScreen(
         }
     }
 }
+
+@Composable
+fun SearchTabsContent(
+    channels: List<SearchUiModel>,
+    streams: List<SearchStreamUiModel>,
+    categories: List<SearchCategoryUiModel>,
+    onChannelClick: (String, Boolean) -> Unit,
+    onStreamClick: (String) -> Unit,
+    onCategoryClick: (String) -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val coroutineScope = rememberCoroutineScope()
+    val titles = listOf("Channels", "Streams", "Categories")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
+            titles.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                    text = { Text(text = title, overflow = TextOverflow.Ellipsis, maxLines = 1) }
+                )
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(channels, key = { it.username }) { channel ->
+                            SearchChannelCard(
+                                channel = channel,
+                                onClick = { onChannelClick(channel.username, channel.isLive) }
+                            )
+                        }
+                    }
+                }
+                1 -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(streams, key = { it.slug }) { stream ->
+                            SearchStreamCard(
+                                stream = stream,
+                                onClick = { onStreamClick(stream.slug) }
+                            )
+                        }
+                    }
+                }
+                2 -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(categories, key = { it.slug }) { category ->
+                            SearchCategoryCard(
+                                category = category,
+                                onClick = { onCategoryClick(category.slug) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
@@ -201,5 +290,69 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(stream.thumbnailUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stream.title,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+fun SearchCategoryCard(category: SearchCategoryUiModel, onClick: () -> Unit) {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(category.thumbnailUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(3f / 4f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = category.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }

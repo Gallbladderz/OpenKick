@@ -209,7 +209,9 @@ fun OpenKickNavHost() {
 
                         navController.navigate(StreamerProfileRoute(slug = streamerName))
                     }
-                }
+                },
+                onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) },
+                onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) }
             )
         }
 
