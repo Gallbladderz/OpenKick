@@ -269,7 +269,8 @@ fun OpenKickNavHost() {
             com.gallbladderz.openkick.features.player.PlayerRoute(
                 streamerName = playerRoute.streamerName,
                 onBackClick = { navController.popBackStack() },
-                onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
+                onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) },
+                onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) }
             )
         }
 

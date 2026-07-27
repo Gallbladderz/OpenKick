@@ -5,5 +5,7 @@ data class StreamInfo(
     val avatarUrl: String,
     val viewers: Int,
     val title: String,
-    val chatroomId: String?
+    val chatroomId: String?,
+    val categoryName: String?,
+    val categorySlug: String?
 )

@@ -27,15 +27,20 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+
 @Composable
 fun StreamerInfoCard(
     streamerName: String,
     title: String,
     avatarUrl: String,
     viewers: Int,
+    categoryName: String?,
     isFollowed: Boolean,
     onToggleFollow: () -> Unit,
-    onAvatarClick: () -> Unit
+    onAvatarClick: () -> Unit,
+    onCategoryClick: () -> Unit
 ) {
     Column(modifier = Modifier
         .fillMaxWidth()
@@ -48,6 +53,24 @@ fun StreamerInfoCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
+
+        if (!categoryName.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                modifier = Modifier.clickable { onCategoryClick() },
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = categoryName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -6,7 +6,9 @@ sealed interface PlayerUiState {
         val url: String,
         val avatarUrl: String,
         val viewers: Int,
-        val title: String
+        val title: String,
+        val categoryName: String?,
+        val categorySlug: String?
     ) : PlayerUiState
 
     data class Error(val message: String) : PlayerUiState

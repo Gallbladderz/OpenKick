@@ -73,7 +73,9 @@ class PlayerViewModel(
                                 url = streamInfo.playbackUrl,
                                 avatarUrl = streamInfo.avatarUrl,
                                 viewers = streamInfo.viewers,
-                                title = streamInfo.title
+                                title = streamInfo.title,
+                                categoryName = streamInfo.categoryName,
+                                categorySlug = streamInfo.categorySlug
                             )
                         }
 

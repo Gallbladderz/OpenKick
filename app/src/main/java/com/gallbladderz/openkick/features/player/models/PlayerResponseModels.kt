@@ -19,7 +19,8 @@ data class LivestreamDto(
     val uuid: String? = null,
     val playback_url: String? = null,
     val viewer_count: Int = 0,
-    val session_title: String = "Stream"
+    val session_title: String = "Stream",
+    val category: CategoryDto? = null
 ) {
     val parsedId: String?
         get() = (id as? kotlinx.serialization.json.JsonPrimitive)?.content
@@ -47,4 +48,11 @@ data class ChannelLinkDto(
 @Serializable
 data class ImageDto(
     val url: String = ""
+)
+
+@Serializable
+data class CategoryDto(
+    val id: Int = 0,
+    val name: String = "",
+    val slug: String = ""
 )
