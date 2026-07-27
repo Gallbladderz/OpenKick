@@ -67,6 +67,7 @@ fun PlayerRoute(
     streamerName: String,
     onBackClick: () -> Unit,
     onAvatarClick: (String) -> Unit = {},
+    onCategoryClick: (String) -> Unit = {},
     viewModel: PlayerViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -100,7 +101,8 @@ fun PlayerRoute(
         onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
         onSetVideoQuality = { viewModel.setVideoQuality(it) },
         onBackClick = onBackClick,
-        onAvatarClick = onAvatarClick
+        onAvatarClick = onAvatarClick,
+        onCategoryClick = onCategoryClick
     )
 }
 
@@ -127,7 +129,8 @@ fun PlayerScreen(
     onToggleFollow: (String, Boolean) -> Unit,
     onSetVideoQuality: (VideoQuality) -> Unit,
     onBackClick: () -> Unit,
-    onAvatarClick: (String) -> Unit = {}
+    onAvatarClick: (String) -> Unit = {},
+    onCategoryClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -308,9 +311,13 @@ fun PlayerScreen(
                     title = playingState.title,
                     avatarUrl = playingState.avatarUrl,
                     viewers = playingState.viewers,
+                    categoryName = playingState.categoryName,
                     isFollowed = isFollowed,
                     onToggleFollow = { onToggleFollow(streamerName, isFollowed) },
-                    onAvatarClick = { onAvatarClick(streamerName) }
+                    onAvatarClick = { onAvatarClick(streamerName) },
+                    onCategoryClick = {
+                        playingState.categorySlug?.let { slug -> onCategoryClick(slug) }
+                    }
                 )
             }
 

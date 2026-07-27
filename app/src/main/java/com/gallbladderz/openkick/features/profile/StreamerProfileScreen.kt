@@ -23,11 +23,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -91,12 +93,13 @@ fun StreamerProfileScreen(
     onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
     onClipClick: (ClipUiModel) -> Unit
 ) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.description),
         stringResource(R.string.vods),
         stringResource(R.string.filter_clips)
     )
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val coroutineScope = rememberCoroutineScope()
 
     val context = LocalContext.current
     val pullRefreshState = rememberPullToRefreshState()
@@ -187,24 +190,30 @@ fun StreamerProfileScreen(
                             }
                         )
                         PrimaryTabRow(
-                            selectedTabIndex = selectedTabIndex,
+                            selectedTabIndex = pagerState.currentPage,
                             containerColor = MaterialTheme.colorScheme.background,
                             contentColor = MaterialTheme.colorScheme.primary
                         ) {
                             tabs.forEachIndexed { index, title ->
                                 Tab(
-                                    selected = selectedTabIndex == index,
-                                    onClick = { selectedTabIndex = index },
+                                    selected = pagerState.currentPage == index,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
+                                    },
                                     text = { Text(title, fontWeight = FontWeight.SemiBold) }
                                 )
                             }
                         }
-                        Box(
+
+                        HorizontalPager(
+                            state = pagerState,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        ) {
-                            when (selectedTabIndex) {
+                        ) { page ->
+                            when (page) {
                                 0 -> DescriptionTab(uiState.info.bio, uiState.links)
                                 1 -> VideosTab(
                                     videos = uiState.videos,
@@ -224,7 +233,6 @@ fun StreamerProfileScreen(
                                         }
                                     }
                                 )
-
                                 2 -> ClipsTab(
                                     clips = uiState.clips,
                                     onClipClick = onClipClick
