@@ -50,8 +50,8 @@ fun ChannelStreamInfoResponse.toDomain(): StreamInfo? {
     val avatar = this.user?.profile_pic?.replace("\\/", "/") ?: ""
     val viewers = this.livestream?.viewer_count ?: 0
     val title = this.livestream?.session_title ?: "Stream"
-    val categoryName = this.livestream?.category?.name
-    val categorySlug = this.livestream?.category?.slug
+    val categoryName = this.livestream?.category?.name ?: this.recent_categories.firstOrNull()?.name
+    val categorySlug = this.livestream?.category?.slug ?: this.recent_categories.firstOrNull()?.slug
 
     return StreamInfo(
         playbackUrl = finalUrl,

@@ -220,17 +220,25 @@ fun CategoryCard(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            category.tags.take(2).forEach { tag ->
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            category.tags.take(2).forEachIndexed { index, tag ->
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .padding(end = if (index == 0 && category.tags.size > 1) 4.dp else 0.dp)
                 ) {
                     Text(
                         text = tag,
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
