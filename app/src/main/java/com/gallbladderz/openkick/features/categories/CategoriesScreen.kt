@@ -197,7 +197,6 @@ fun CategoryCard(
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
                     .size(32.dp)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), CircleShape)
             ) {
                 Icon(
                     imageVector = if (isFollowed) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
