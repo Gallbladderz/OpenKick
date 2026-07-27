@@ -18,7 +18,7 @@ data class SearchData(
 
 @Serializable
 data class SearchChannelDto(
-    val slug: String,
+    val slug: String = "",
     @SerialName("profile_picture")
     val profilePic: String? = null,
     @SerialName("is_live")
@@ -27,14 +27,14 @@ data class SearchChannelDto(
 
 @Serializable
 data class SearchCategoryDto(
-    val name: String,
-    val slug: String,
+    val name: String = "",
+    val slug: String = "",
     val thumbnail: KickThumbnailFallback? = null
 )
 
 @Serializable
 data class SearchLivestreamDto(
-    val slug: String,
-    val title: String,
+    val slug: String = "",
+    val title: String = "",
     val thumbnail: KickThumbnailFallback? = null
 )

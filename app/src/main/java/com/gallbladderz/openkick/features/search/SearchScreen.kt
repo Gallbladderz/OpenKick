@@ -64,6 +64,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = koinViewModel(),
@@ -160,6 +161,88 @@ fun SearchScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchTabsContent(
+    channels: List<SearchUiModel>,
+    streams: List<SearchStreamUiModel>,
+    categories: List<SearchCategoryUiModel>,
+    onChannelClick: (String, Boolean) -> Unit,
+    onStreamClick: (String) -> Unit,
+    onCategoryClick: (String) -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val coroutineScope = rememberCoroutineScope()
+    val titles = listOf("Channels", "Streams", "Categories")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
+            titles.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                    text = { Text(text = title, overflow = TextOverflow.Ellipsis, maxLines = 1) }
+                )
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(channels, key = { it.username }) { channel ->
+                            SearchChannelCard(
+                                channel = channel,
+                                onClick = { onChannelClick(channel.username, channel.isLive) }
+                            )
+                        }
+                    }
+                }
+                1 -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(streams, key = { it.slug }) { stream ->
+                            SearchStreamCard(
+                                stream = stream,
+                                onClick = { onStreamClick(stream.slug) }
+                            )
+                        }
+                    }
+                }
+                2 -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(categories, key = { it.slug }) { category ->
+                            SearchCategoryCard(
+                                category = category,
+                                onClick = { onCategoryClick(category.slug) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun SearchTabsContent(
