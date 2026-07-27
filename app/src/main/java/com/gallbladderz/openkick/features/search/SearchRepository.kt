@@ -18,9 +18,9 @@ class SearchRepository(private val apiService: KickApiService) {
     fun searchStreamer(query: String): Flow<Result<SearchResultData>> = flow {
         try {
             val response = apiService.searchChannels(query)
-            val channels = response.data?.channels?.map { it.toDomain() } ?: emptyList()
-            val streams = response.data?.livestreams?.map { it.toDomain() } ?: emptyList()
-            val categories = response.data?.categories?.map { it.toDomain() } ?: emptyList()
+            val channels = response.data?.channels?.filter { it.slug.isNotBlank() }?.map { it.toDomain() } ?: emptyList()
+            val streams = response.data?.livestreams?.filter { it.slug.isNotBlank() }?.map { it.toDomain() } ?: emptyList()
+            val categories = response.data?.categories?.filter { it.slug.isNotBlank() }?.map { it.toDomain() } ?: emptyList()
 
             if (channels.isEmpty() && streams.isEmpty() && categories.isEmpty()) {
                 emit(Result.failure(DomainError.ApiError("Ничего не найдено")))
