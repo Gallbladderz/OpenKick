@@ -177,12 +177,18 @@ fun SearchTabsContent(
     val titles = listOf("Channels", "Streams", "Categories")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
+        PrimaryTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.primary
+        ) {
             titles.forEachIndexed { index, title ->
                 Tab(
                     selected = pagerState.currentPage == index,
                     onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                    text = { Text(text = title, overflow = TextOverflow.Ellipsis, maxLines = 1) }
+                    text = { Text(text = title, overflow = TextOverflow.Ellipsis, maxLines = 1) },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -207,96 +213,13 @@ fun SearchTabsContent(
                     }
                 }
                 1 -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(streams, key = { it.slug }) { stream ->
-                            SearchStreamCard(
-                                stream = stream,
-                                onClick = { onStreamClick(stream.slug) }
-                            )
-                        }
-                    }
-                }
-                2 -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(categories, key = { it.slug }) { category ->
-                            SearchCategoryCard(
-                                category = category,
-                                onClick = { onCategoryClick(category.slug) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-fun SearchTabsContent(
-    channels: List<SearchUiModel>,
-    streams: List<SearchStreamUiModel>,
-    categories: List<SearchCategoryUiModel>,
-    onChannelClick: (String, Boolean) -> Unit,
-    onStreamClick: (String) -> Unit,
-    onCategoryClick: (String) -> Unit
-) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
-    val coroutineScope = rememberCoroutineScope()
-    val titles = listOf("Channels", "Streams", "Categories")
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
-            titles.forEachIndexed { index, title ->
-                Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                    text = { Text(text = title, overflow = TextOverflow.Ellipsis, maxLines = 1) }
-                )
-            }
-        }
-
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            when (page) {
-                0 -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(channels, key = { it.username }) { channel ->
-                            SearchChannelCard(
-                                channel = channel,
-                                onClick = { onChannelClick(channel.username, channel.isLive) }
-                            )
-                        }
-                    }
-                }
-                1 -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
                         items(streams, key = { it.slug }) { stream ->
-                            SearchStreamCard(
+                            SearchStreamRow(
                                 stream = stream,
                                 onClick = { onStreamClick(stream.slug) }
                             )
@@ -304,15 +227,13 @@ fun SearchTabsContent(
                     }
                 }
                 2 -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
+                    LazyColumn(
                         contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(categories, key = { it.slug }) { category ->
-                            SearchCategoryCard(
+                            SearchCategoryRow(
                                 category = category,
                                 onClick = { onCategoryClick(category.slug) }
                             )
@@ -323,6 +244,7 @@ fun SearchTabsContent(
         }
     }
 }
+
 
 
 @Composable
@@ -377,12 +299,14 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
 }
 
 @Composable
-fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
+fun SearchStreamRow(stream: SearchStreamUiModel, onClick: () -> Unit) {
     val context = LocalContext.current
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
@@ -392,29 +316,40 @@ fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth()
+                .width(120.dp)
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(6.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stream.title,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stream.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = stream.slug,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
 @Composable
-fun SearchCategoryCard(category: SearchCategoryUiModel, onClick: () -> Unit) {
+fun SearchCategoryRow(category: SearchCategoryUiModel, onClick: () -> Unit) {
     val context = LocalContext.current
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
@@ -424,16 +359,17 @@ fun SearchCategoryCard(category: SearchCategoryUiModel, onClick: () -> Unit) {
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(3f / 4f)
-                .clip(RoundedCornerShape(8.dp))
+                .width(50.dp)
+                .height(66.dp)
+                .clip(RoundedCornerShape(6.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = category.name,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
