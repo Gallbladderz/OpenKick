@@ -19,7 +19,7 @@ class SearchRepository(private val apiService: KickApiService) {
         try {
             val response = apiService.searchChannels(query)
             val channels = response.data?.channels?.filter { it.slug.isNotBlank() }?.map { it.toDomain() } ?: emptyList()
-            val streams = response.data?.livestreams?.filter { it.slug.isNotBlank() }?.map { it.toDomain() } ?: emptyList()
+            val streams = response.data?.livestreams?.filter { (it.slug.ifBlank { it.channel?.slug ?: "" }).isNotBlank() }?.map { it.toDomain() } ?: emptyList()
             val categories = response.data?.categories?.filter { it.slug.isNotBlank() }?.map { it.toDomain() } ?: emptyList()
 
             if (channels.isEmpty() && streams.isEmpty() && categories.isEmpty()) {
@@ -42,9 +42,11 @@ fun SearchChannelDto.toDomain(): SearchUiModel {
 }
 
 fun SearchLivestreamDto.toDomain(): SearchStreamUiModel {
+    val resolvedSlug = this.slug.ifBlank { this.channel?.slug ?: "" }
+    val resolvedTitle = this.session_title ?: this.title
     return SearchStreamUiModel(
-        slug = this.slug,
-        title = this.title,
+        slug = resolvedSlug,
+        title = resolvedTitle,
         thumbnailUrl = this.thumbnail?.finalUrl?.replace("\\/", "/") ?: ""
     )
 }
