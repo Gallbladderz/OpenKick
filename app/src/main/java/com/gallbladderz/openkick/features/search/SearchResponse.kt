@@ -36,5 +36,7 @@ data class SearchCategoryDto(
 data class SearchLivestreamDto(
     val slug: String = "",
     val title: String = "",
+    val session_title: String? = null,
+    val channel: SearchChannelDto? = null,
     val thumbnail: KickThumbnailFallback? = null
 )
