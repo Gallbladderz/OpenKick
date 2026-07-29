@@ -129,7 +129,8 @@ fun OpenKickNavHost() {
                         MainTab.FOLLOWERS -> {
                             com.gallbladderz.openkick.features.following.FollowingRoute(
                                 onManageClick = { navController.navigate(AllFollowsRoute) },
-                                onStreamerClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+                                onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+                                onProfileClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) },
                                 onCategoryClick = { slug ->
                                     navController.navigate(
                                         CategoryDetailsRoute(slug)
@@ -230,7 +231,8 @@ fun OpenKickNavHost() {
         composable<AllFollowsRoute> {
             com.gallbladderz.openkick.features.following.AllFollowsRoute(
                 onBackClick = { navController.popBackStack() },
-                onStreamerClick = { slug -> navController.navigate(PlayerRoute(slug)) }
+                onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+                onProfileClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
             )
         }
 
@@ -239,6 +241,7 @@ fun OpenKickNavHost() {
             com.gallbladderz.openkick.features.profile.StreamerProfileRoute(
                 slug = route.slug,
                 onBackClick = { navController.popBackStack() },
+                onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
                 onVideoClick = { video, profile ->
                     navController.navigate(
                         ClipPlayerRoute(

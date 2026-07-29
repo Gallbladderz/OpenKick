@@ -62,7 +62,8 @@ import java.util.Locale
 fun FollowingRoute(
     viewModel: FollowingViewModel = koinViewModel(),
     onManageClick: () -> Unit = {},
-    onStreamerClick: (String) -> Unit = {},
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit,
     onCategoryClick: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -73,7 +74,8 @@ fun FollowingRoute(
         isRefreshing = isRefreshing,
         onRefresh = { viewModel.refresh() },
         onManageClick = onManageClick,
-        onStreamerClick = onStreamerClick,
+        onStreamClick = onStreamClick,
+        onProfileClick = onProfileClick,
         onCategoryClick = onCategoryClick
     )
 }
@@ -85,7 +87,8 @@ fun FollowingScreen(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onManageClick: () -> Unit = {},
-    onStreamerClick: (String) -> Unit = {},
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit,
     onCategoryClick: (String) -> Unit = {}
 ) {
     val pullRefreshState = rememberPullToRefreshState()
@@ -192,7 +195,7 @@ fun FollowingScreen(
                                         items(allStreamers, key = { it.slug }) { streamer ->
                                             StoryAvatarItem(
                                                 streamer = streamer,
-                                                onClick = { onStreamerClick(streamer.slug) }
+                                        onClick = { if (streamer.isLive) onStreamClick(streamer.slug) else onProfileClick(streamer.slug) }
                                             )
                                         }
                                     }
@@ -241,7 +244,7 @@ fun FollowingScreen(
                                 LiveStreamCard(
                                     streamer = streamer,
                                     modifier = Modifier.padding(horizontal = 16.dp),
-                                    onClick = { onStreamerClick(streamer.slug) }
+                                    onClick = { onStreamClick(streamer.slug) }
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
