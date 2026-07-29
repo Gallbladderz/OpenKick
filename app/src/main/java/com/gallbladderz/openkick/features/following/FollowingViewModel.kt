@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -47,6 +48,9 @@ class FollowingViewModel(
     private val followsRepository: FollowsRepository,
     private val followingRepository: FollowingRepository
 ) : ViewModel() {
+    private val cachedStreamers = mutableMapOf<String, FollowedStreamerUi>()
+    private val cachedCategories = mutableMapOf<String, FollowedCategoryUi>()
+
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
@@ -77,8 +81,8 @@ class FollowingViewModel(
     private fun observeFollows() {
         viewModelScope.launch(Dispatchers.IO) {
             combine(
-                followsRepository.getFollowedCategoriesSlugs(),
-                followsRepository.getFollowedStreamersSlugs(),
+                followsRepository.getFollowedCategoriesSlugs().distinctUntilChanged(),
+                followsRepository.getFollowedStreamersSlugs().distinctUntilChanged(),
                 refreshTrigger.onStart { emit(Unit) }
             ) { categorySlugs, streamerSlugs, _ ->
                 Pair(categorySlugs, streamerSlugs)
@@ -97,15 +101,23 @@ class FollowingViewModel(
                 }
 
                 val categoriesDeferred = categorySlugs.map { slug ->
-                    async { followingRepository.fetchCategoryDetails(slug) }
+                    async {
+                        followingRepository.fetchCategoryDetails(slug).getOrNull()?.also {
+                            cachedCategories[slug] = it
+                        } ?: cachedCategories[slug] ?: FollowedCategoryUi(slug, slug, "", 0)
+                    }
                 }
 
                 val streamersDeferred = streamerSlugs.map { slug ->
-                    async { followingRepository.fetchChannelDetails(slug) }
+                    async {
+                        followingRepository.fetchChannelDetails(slug).getOrNull()?.also {
+                            cachedStreamers[slug] = it
+                        } ?: cachedStreamers[slug] ?: FollowedStreamerUi(slug, slug, "", false)
+                    }
                 }
 
-                val fetchedCategories = categoriesDeferred.awaitAll().mapNotNull { it.getOrNull() }
-                val fetchedStreamers = streamersDeferred.awaitAll().mapNotNull { it.getOrNull() }
+                val fetchedCategories = categoriesDeferred.awaitAll()
+                val fetchedStreamers = streamersDeferred.awaitAll()
 
                 val liveStreamers =
                     fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }

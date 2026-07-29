@@ -21,7 +21,8 @@ data class ProfileInfoUi(
     val bio: String,
     val avatarUrl: String,
     val bannerUrl: String,
-    val followers: Int
+    val followers: Int,
+    val isLive: Boolean
 )
 
 data class VideoUiModel(
@@ -119,8 +120,9 @@ fun ChannelV1Response.toDomain(slugFallback: String): ProfileInfoUi? {
         is JsonPrimitive -> banner.content
         else -> ""
     }
+    val isLive = this.livestream != null
 
-    return ProfileInfoUi(channelId, slugFallback, username, bio, avatarUrl, bannerUrl, followers)
+    return ProfileInfoUi(channelId, slugFallback, username, bio, avatarUrl, bannerUrl, followers, isLive)
 }
 
 fun ChannelLinkDto.toDomain(): ChannelLink {
