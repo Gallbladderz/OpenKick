@@ -63,6 +63,8 @@ import com.gallbladderz.openkick.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.CardDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -198,16 +200,16 @@ fun SearchTabsContent(
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (page) {
-                0 -> {
+                1 -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp), // Сделали отступы больше, как на главной
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(channels, key = { it.username }) { channel ->
-                            SearchChannelCard(
-                                channel = channel,
-                                onClick = { onChannelClick(channel.username, channel.isLive) }
+                        items(streams, key = { it.slug }) { stream ->
+                            SearchStreamCard(
+                                stream = stream,
+                                onClick = { onStreamClick(stream.slug) }
                             )
                         }
                     }
@@ -215,11 +217,11 @@ fun SearchTabsContent(
                 1 -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp), // Воздух между карточками
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(streams, key = { it.slug }) { stream ->
-                            SearchStreamRow(
+                            SearchStreamCard(
                                 stream = stream,
                                 onClick = { onStreamClick(stream.slug) }
                             )
@@ -299,14 +301,12 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
 }
 
 @Composable
-fun SearchStreamRow(stream: SearchStreamUiModel, onClick: () -> Unit) {
+fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
     val context = LocalContext.current
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
@@ -316,24 +316,25 @@ fun SearchStreamRow(stream: SearchStreamUiModel, onClick: () -> Unit) {
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .width(120.dp)
+                .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
             Text(
                 text = stream.title,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                maxLines = 2,
+                color = MaterialTheme.colorScheme.onSurface, // Явно задаем цвет из темы (белый в дарк моде)
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = stream.slug,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, // Приглушенный цвет для юзернейма
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
