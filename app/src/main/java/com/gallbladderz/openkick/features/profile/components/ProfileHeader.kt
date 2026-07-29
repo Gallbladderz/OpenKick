@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -51,7 +52,8 @@ fun ProfileHeader(
     info: ProfileInfoUi,
     isFollowing: Boolean,
     onFollowClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onAvatarClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val kickGradient = remember {
@@ -97,6 +99,7 @@ fun ProfileHeader(
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .align(Alignment.BottomStart)
+                    .clickable { if (info.isLive) onAvatarClick() }
             ) {
                 // Cutout background to hide banner behind avatar
                 Box(
