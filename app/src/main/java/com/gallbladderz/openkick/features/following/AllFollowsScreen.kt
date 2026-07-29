@@ -52,7 +52,8 @@ import org.koin.androidx.compose.koinViewModel
 fun AllFollowsRoute(
     viewModel: FollowingViewModel = koinViewModel(),
     onBackClick: () -> Unit,
-    onStreamerClick: (String) -> Unit
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -60,7 +61,8 @@ fun AllFollowsRoute(
         state = state,
         onUnfollowStreamer = { viewModel.unfollowStreamer(it) },
         onBackClick = onBackClick,
-        onStreamerClick = onStreamerClick
+        onStreamClick = onStreamClick,
+        onProfileClick = onProfileClick
     )
 }
 
@@ -70,7 +72,8 @@ fun AllFollowsScreen(
     state: FollowingUiState,
     onUnfollowStreamer: (String) -> Unit,
     onBackClick: () -> Unit,
-    onStreamerClick: (String) -> Unit
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -122,7 +125,7 @@ fun AllFollowsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onStreamerClick(streamer.slug) },
+                                    .clickable { if (streamer.isLive) onStreamClick(streamer.slug) else onProfileClick(streamer.slug) },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
 

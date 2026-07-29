@@ -50,6 +50,7 @@ import org.koin.androidx.compose.koinViewModel
 fun StreamerProfileRoute(
     slug: String,
     onBackClick: () -> Unit,
+    onStreamClick: (String) -> Unit,
     onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
     onClipClick: (ClipUiModel) -> Unit,
     viewModel: StreamerProfileViewModel = koinViewModel()
@@ -73,6 +74,7 @@ fun StreamerProfileRoute(
             )
         },
         onBackClick = onBackClick,
+        onStreamClick = onStreamClick,
         onVideoClick = onVideoClick,
         onClipClick = onClipClick
     )
@@ -90,6 +92,7 @@ fun StreamerProfileScreen(
     onToggleFollow: () -> Unit,
     onLoadVideoPlaybackUrl: (String, (Result<String>) -> Unit) -> Unit,
     onBackClick: () -> Unit,
+    onStreamClick: (String) -> Unit,
     onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
     onClipClick: (ClipUiModel) -> Unit
 ) {
@@ -187,7 +190,8 @@ fun StreamerProfileScreen(
                                 }
                                 val shareIntent = Intent.createChooser(sendIntent, null)
                                 context.startActivity(shareIntent)
-                            }
+                                },
+                                onAvatarClick = { onStreamClick(uiState.info.slug) }
                         )
                         PrimaryTabRow(
                             selectedTabIndex = pagerState.currentPage,
