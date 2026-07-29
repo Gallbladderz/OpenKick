@@ -95,7 +95,7 @@ fun ProfileHeader(
                     )
             )
 
-            Box(
+           Box(
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .align(Alignment.BottomStart)
