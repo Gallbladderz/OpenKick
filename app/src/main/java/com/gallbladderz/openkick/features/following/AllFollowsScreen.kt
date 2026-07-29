@@ -136,13 +136,13 @@ fun AllFollowsScreen(
                                     modifier = Modifier
                                         .size(56.dp)
                                         .border(
-                                            width = if (streamer.isLive) 3.dp else 1.dp,
+                                            width = if (streamer.isLive) 4.dp else 1.dp,
                                             brush = if (streamer.isLive) kickGradient else SolidColor(
                                                 MaterialTheme.colorScheme.surfaceVariant
                                             ),
                                             shape = CircleShape
                                         )
-                                        .padding(4.dp)
+                                        .padding(if (streamer.isLive) 6.dp else 4.dp)
                                         .clip(CircleShape)
                                         .background(MaterialTheme.colorScheme.surfaceVariant)
                                 )

@@ -300,11 +300,11 @@ private fun StoryAvatarItem(streamer: FollowedStreamerUi, onClick: () -> Unit) {
             modifier = Modifier
                 .size(64.dp)
                 .border(
-                    width = if (streamer.isLive) 3.dp else 1.dp,
+                    width = if (streamer.isLive) 4.dp else 1.dp,
                     brush = if (streamer.isLive) kickGradient else SolidColor(MaterialTheme.colorScheme.surfaceVariant),
                     shape = CircleShape
                 )
-                .padding(4.dp)
+                .padding(if (streamer.isLive) 6.dp else 4.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
