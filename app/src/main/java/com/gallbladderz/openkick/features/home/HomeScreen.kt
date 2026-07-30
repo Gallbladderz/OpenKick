@@ -63,6 +63,7 @@ fun HomeRoute(
         isRefreshing = isRefreshing,
         onRefresh = { viewModel.refresh() },
         onLoadMoreStreams = { viewModel.loadMoreStreams() },
+        onLoadMoreClips = { viewModel.loadMoreClips() },
         onFetchHomeData = { viewModel.fetchHomeData() },
         onStreamClick = onStreamClick,
         onCategoryClick = onCategoryClick,
@@ -78,6 +79,7 @@ fun HomeScreen(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onLoadMoreStreams: () -> Unit,
+    onLoadMoreClips: () -> Unit,
     onFetchHomeData: () -> Unit,
     onStreamClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
@@ -162,18 +164,23 @@ fun HomeScreen(
                     is HomeUiState.Success -> {
                         val listState = rememberLazyListState()
 
-                        LaunchedEffect(listState) {
+                        val clipsFilter = stringResource(R.string.filter_clips)
+
+                        LaunchedEffect(listState, selectedFilter) {
                             snapshotFlow {
                                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
                             }.collect { lastVisible ->
                                 val totalItems = listState.layoutInfo.totalItemsCount
                                 if (lastVisible != null && lastVisible >= totalItems - 5) {
-                                    onLoadMoreStreams()
+                                    if (selectedFilter == clipsFilter) {
+                                        onLoadMoreClips()
+                                    } else {
+                                        onLoadMoreStreams()
+                                    }
                                 }
                             }
                         }
 
-                        val clipsFilter = stringResource(R.string.filter_clips)
                         val liveFilter = stringResource(R.string.live)
 
                         LazyColumn(

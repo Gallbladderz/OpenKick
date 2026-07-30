@@ -41,23 +41,26 @@ class CategoriesRepository(private val apiService: KickApiService) {
             }
         }
 
-    suspend fun fetchCategoryClips(slug: String): Result<List<ClipUiModel>> =
+    suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getCategoryClips(slug)
-                Result.success(response.clips.map { it.toUiModel() })
+                val response = apiService.getCategoryClips(slug, cursor = cursor)
+                val models = response.clips.map { it.toUiModel() }
+                val nextCursor = response.nextCursor ?: response.cursor
+                Result.success(Pair(models, if (nextCursor.isNullOrBlank()) null else nextCursor))
             } catch (e: Exception) {
                 Result.failure(e.toDomainError())
             }
         }
 
-    suspend fun fetchCategoryStreams(slug: String): Result<List<StreamUiModel>> =
+    suspend fun fetchCategoryStreams(slug: String, cursor: String? = null): Result<Pair<List<StreamUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getCategoryLivestreams(subcategorySlug = slug)
+                val response = apiService.getCategoryLivestreams(subcategorySlug = slug, cursor = cursor)
                 val streams =
                     response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
-                Result.success(streams)
+                val nextCursor = response.data?.pagination?.nextCursor
+                Result.success(Pair(streams, if (nextCursor.isNullOrBlank()) null else nextCursor))
             } catch (e: Exception) {
                 Result.failure(e.toDomainError())
             }
