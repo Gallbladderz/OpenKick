@@ -32,7 +32,7 @@ interface KickApiService {
         @Query("sort") sort: String = "view",
         @Query("time") time: String = "week",
         @Query("cursor") cursor: String? = null
-    ): ClipResponse
+    ): TopClipsResponse
 
     @GET("https://search.kick.com/api/v1/search/enriched")
     suspend fun searchChannels(
