@@ -43,21 +43,6 @@ data class ChannelV1Thumbnail(
 }
 
 @Serializable
-data class VideoDto(
-    val id: String? = null,
-    @SerialName("is_live") val isLive: Boolean = false,
-    @SerialName("session_title") val sessionTitle: String? = null,
-    val views: Int = 0,
-    val source: String? = null,
-    val duration: Long = 0L,
-    val thumbnail: VideoThumbnailDto? = null,
-    val video: VideoInnerDto? = null
-) {
-
-    val actualId: String get() = video?.uuid ?: id ?: ""
-}
-
-@Serializable
 data class VideoThumbnailDto(
     val src: String? = null
 )

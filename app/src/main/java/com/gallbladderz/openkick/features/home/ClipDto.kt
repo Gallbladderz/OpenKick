@@ -4,15 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ClipResponse(
-    val clips: List<ClipDto> = emptyList(),
-    @SerialName("next_cursor") val nextCursor: String? = null,
-    val cursor: String? = null
-) {
-    val actualCursor: String? get() = nextCursor ?: cursor
-}
-
-@Serializable
 data class ClipDto(
     val id: String,
     val title: String,

@@ -118,10 +118,7 @@ fun ContentSettingsScreen(
                         )
                     },
                     supportingContent = { Text(stringResource(R.string.blacklist_description)) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.clickable {
-
-                    }
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
             }
         }
