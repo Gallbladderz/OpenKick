@@ -201,4 +201,35 @@ class HomeViewModel(
             isStreamsLoading = false
         }
     }
+
+    fun loadMoreClips() {
+        if (isClipsLoading || isClipsEnd || _uiState.value !is HomeUiState.Success) {
+            return
+        }
+
+        isClipsLoading = true
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.fetchTopClips(cursor = clipsCursor)
+
+            if (result.isSuccess) {
+                val (newClips, nextCursor) = result.getOrThrow()
+                clipsCursor = nextCursor
+
+                if (newClips.isEmpty()) {
+                    isClipsEnd = true
+                } else {
+                    if (nextCursor.isNullOrBlank()) {
+                        isClipsEnd = true
+                    }
+                    val currentState = _uiState.value as HomeUiState.Success
+                    val merged = (currentState.clips + newClips).distinctBy { it.id }
+                    _uiState.value = currentState.copy(clips = merged)
+                }
+            } else {
+                isClipsEnd = true
+            }
+            isClipsLoading = false
+        }
+    }
 }

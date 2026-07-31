@@ -30,7 +30,8 @@ interface KickApiService {
     suspend fun getCategoryClips(
         @Path("slug") slug: String,
         @Query("sort") sort: String = "view",
-        @Query("time") time: String = "week"
+        @Query("time") time: String = "week",
+        @Query("cursor") cursor: String? = null
     ): ClipResponse
 
     @GET("https://search.kick.com/api/v1/search/enriched")
@@ -85,7 +86,8 @@ interface KickApiService {
     suspend fun getCategoryLivestreams(
         @Query("subcategory") subcategorySlug: String,
         @Query("limit") limit: Int = 20,
-        @Query("sort") sort: String = "viewer_count_desc"
+        @Query("sort") sort: String = "viewer_count_desc",
+        @Query("after") cursor: String? = null
     ): HomeLivestreamsResponse
 
     @GET("api/v1/video/{videoId}")
