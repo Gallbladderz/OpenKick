@@ -57,22 +57,6 @@ fun ChatList(chatMessages: List<ChatMessage>) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Немного увеличим порог "низа" чата, чтобы он не отваливался при быстрых спам-сообщениях
-    val isAtBottom by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex <= 3
-        }
-    }
-
-    // Логика автоскролла
-    LaunchedEffect(chatMessages.size) {
-        if (isAtBottom && chatMessages.isNotEmpty()) {
-            // ИСПОЛЬЗУЕМ МОМЕНТАЛЬНЫЙ СКРОЛЛ, а не анимированный.
-            // Иначе в быстрых чатах анимация не успевает за потоком и чат "отстает".
-            listState.scrollToItem(0)
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
@@ -82,35 +66,6 @@ fun ChatList(chatMessages: List<ChatMessage>) {
         ) {
             items(chatMessages, key = { it.id }) { message ->
                 ChatMessageItem(message)
-            }
-        }
-
-        // Плавающая кнопка возврата вниз
-        AnimatedVisibility(
-            visible = !isAtBottom,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                // Подняли кнопку выше, чтобы она не перекрывалась навигацией/нижним краем
-                .padding(end = 16.dp, bottom = 48.dp)
-        ) {
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        // А вот тут оставляем красивую анимацию по клику
-                        listState.animateScrollToItem(0)
-                    }
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f), CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Scroll to bottom",
-                    tint = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }

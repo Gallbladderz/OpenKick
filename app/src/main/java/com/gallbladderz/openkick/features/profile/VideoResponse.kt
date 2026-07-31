@@ -4,11 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class VideosListResponse(
-    val data: List<VideoItemDto> = emptyList()
-)
-
-@Serializable
 data class VideoItemDto(
     val id: Int? = null,
     val video: VideoInnerDto? = null,

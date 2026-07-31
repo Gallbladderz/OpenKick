@@ -182,9 +182,7 @@ class HomeViewModel(
 
                 val filteredNewStreams = filterBanned(newStreams)
 
-                if (filteredNewStreams.isEmpty() && newStreams.isNotEmpty()) {
-
-                } else if (newStreams.isEmpty()) {
+                if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {
                     if (nextCursor.isNullOrBlank()) {
