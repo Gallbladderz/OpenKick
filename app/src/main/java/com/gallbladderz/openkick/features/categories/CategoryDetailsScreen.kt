@@ -18,7 +18,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import android.content.Intent
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,6 +47,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,6 +80,8 @@ fun CategoryDetailsRoute(
         slug = slug,
         state = state,
         onLoadCategory = { viewModel.loadCategory(it) },
+        onLoadMoreStreams = { viewModel.loadMoreStreams() },
+        onLoadMoreClips = { viewModel.loadMoreClips() },
         onBackClick = onBackClick,
         onStreamClick = onStreamClick,
         onClipClick = onClipClick
@@ -89,6 +94,8 @@ fun CategoryDetailsScreen(
     slug: String,
     state: CategoryDetailsUiState,
     onLoadCategory: (String) -> Unit,
+    onLoadMoreStreams: () -> Unit,
+    onLoadMoreClips: () -> Unit,
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit = {}
@@ -272,7 +279,21 @@ fun CategoryDetailsScreen(
                                     )
                                 }
                             } else {
+                                val gridState = rememberLazyGridState()
+
+                                LaunchedEffect(gridState) {
+                                    snapshotFlow {
+                                        gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                                    }.collect { lastVisible ->
+                                        val totalItems = gridState.layoutInfo.totalItemsCount
+                                        if (lastVisible != null && lastVisible >= totalItems - 5) {
+                                            onLoadMoreStreams()
+                                        }
+                                    }
+                                }
+
                                 LazyVerticalGrid(
+                                    state = gridState,
                                     columns = GridCells.Adaptive(minSize = 150.dp),
                                     contentPadding = PaddingValues(16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -303,7 +324,21 @@ fun CategoryDetailsScreen(
                                     )
                                 }
                             } else {
+                                val listState = rememberLazyListState()
+
+                                LaunchedEffect(listState) {
+                                    snapshotFlow {
+                                        listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                                    }.collect { lastVisible ->
+                                        val totalItems = listState.layoutInfo.totalItemsCount
+                                        if (lastVisible != null && lastVisible >= totalItems - 5) {
+                                            onLoadMoreClips()
+                                        }
+                                    }
+                                }
+
                                 LazyColumn(
+                                    state = listState,
                                     contentPadding = PaddingValues(vertical = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
                                     modifier = Modifier.fillMaxSize()
