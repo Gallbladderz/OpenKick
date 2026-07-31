@@ -2,6 +2,8 @@ package com.gallbladderz.openkick.features.following
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.data.local.FollowType
+import com.gallbladderz.openkick.data.local.FollowedEntity
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -9,9 +11,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -48,21 +49,23 @@ class FollowingViewModel(
     private val followsRepository: FollowsRepository,
     private val followingRepository: FollowingRepository
 ) : ViewModel() {
-    private val cachedStreamers = mutableMapOf<String, FollowedStreamerUi>()
-    private val cachedCategories = mutableMapOf<String, FollowedCategoryUi>()
 
     private val _uiState = MutableStateFlow<FollowingUiState>(FollowingUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
-
 
     private val refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     init {
         observeFollows()
+        viewModelScope.launch {
+            refreshTrigger.collect {
+                syncWithApi()
+            }
+        }
+        syncWithApi()
     }
 
     fun unfollowStreamer(slug: String) {
@@ -71,70 +74,101 @@ class FollowingViewModel(
         }
     }
 
-
     fun refresh() {
         if (_isRefreshing.value) return
-        _isRefreshing.value = true
         refreshTrigger.tryEmit(Unit)
     }
 
     private fun observeFollows() {
         viewModelScope.launch(Dispatchers.IO) {
-            combine(
-                followsRepository.getFollowedCategoriesSlugs().distinctUntilChanged(),
-                followsRepository.getFollowedStreamersSlugs().distinctUntilChanged(),
-                refreshTrigger.onStart { emit(Unit) }
-            ) { categorySlugs, streamerSlugs, _ ->
-                Pair(categorySlugs, streamerSlugs)
-            }.collect { (categorySlugs, streamerSlugs) ->
+            followsRepository.getAllFollowedEntities().collectLatest { entities ->
+                val categories = entities.filter { it.type == FollowType.CATEGORY }.map {
+                    FollowedCategoryUi(
+                        slug = it.slug,
+                        name = it.categoryName,
+                        bannerUrl = it.bannerUrl,
+                        viewers = it.viewers
+                    )
+                }.sortedByDescending { it.viewers }
 
-                if (categorySlugs.isEmpty() && streamerSlugs.isEmpty()) {
-                    _uiState.update {
-                        FollowingUiState.Success(
-                            emptyList(),
-                            emptyList(),
-                            emptyList()
-                        )
-                    }
-                    _isRefreshing.value = false
-                    return@collect
+                val streamers = entities.filter { it.type == FollowType.STREAMER }.map {
+                    FollowedStreamerUi(
+                        slug = it.slug,
+                        username = it.username,
+                        avatarUrl = it.avatarUrl,
+                        isLive = it.isLive,
+                        streamTitle = it.streamTitle,
+                        viewers = it.viewers,
+                        categoryName = it.categoryName,
+                        streamThumbnailUrl = it.bannerUrl
+                    )
                 }
 
-                val categoriesDeferred = categorySlugs.map { slug ->
-                    async {
-                        followingRepository.fetchCategoryDetails(slug).getOrNull()?.also {
-                            cachedCategories[slug] = it
-                        } ?: cachedCategories[slug] ?: FollowedCategoryUi(slug, slug, "", 0)
-                    }
-                }
-
-                val streamersDeferred = streamerSlugs.map { slug ->
-                    async {
-                        followingRepository.fetchChannelDetails(slug).getOrNull()?.also {
-                            cachedStreamers[slug] = it
-                        } ?: cachedStreamers[slug] ?: FollowedStreamerUi(slug, slug, "", false)
-                    }
-                }
-
-                val fetchedCategories = categoriesDeferred.awaitAll()
-                val fetchedStreamers = streamersDeferred.awaitAll()
-
-                val liveStreamers =
-                    fetchedStreamers.filter { it.isLive }.sortedByDescending { it.viewers }
-                val offlineStreamers =
-                    fetchedStreamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
+                val liveStreamers = streamers.filter { it.isLive }.sortedByDescending { it.viewers }
+                val offlineStreamers = streamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
 
                 _uiState.update {
                     FollowingUiState.Success(
                         liveStreamers = liveStreamers,
                         offlineStreamers = offlineStreamers,
-                        categories = fetchedCategories.sortedByDescending { it.viewers }
+                        categories = categories
                     )
                 }
-
-
-                _isRefreshing.value = false
             }
+        }
+    }
+
+    private fun syncWithApi() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isRefreshing.value = true
+            val entities = followsRepository.getAllFollowedEntities().first()
+            val streamerSlugs = entities.filter { it.type == FollowType.STREAMER }.map { it.slug }
+            val categorySlugs = entities.filter { it.type == FollowType.CATEGORY }.map { it.slug }
+
+            val streamerJobs = streamerSlugs.map { slug ->
+                async {
+                    followingRepository.fetchChannelDetails(slug).getOrNull()?.let { ui ->
+                        followsRepository.saveFollowedEntity(
+                            FollowedEntity(
+                                slug = ui.slug,
+                                type = FollowType.STREAMER,
+                                isLive = ui.isLive,
+                                username = ui.username,
+                                avatarUrl = ui.avatarUrl,
+                                streamTitle = ui.streamTitle,
+                                viewers = ui.viewers,
+                                categoryName = ui.categoryName,
+                                bannerUrl = ui.streamThumbnailUrl
+                            )
+                        )
+                    }
+                }
+            }
+
+            val categoryJobs = categorySlugs.map { slug ->
+                async {
+                    followingRepository.fetchCategoryDetails(slug).getOrNull()?.let { ui ->
+                        followsRepository.saveFollowedEntity(
+                            FollowedEntity(
+                                slug = ui.slug,
+                                type = FollowType.CATEGORY,
+                                isLive = false,
+                                username = "",
+                                avatarUrl = "",
+                                streamTitle = "",
+                                viewers = ui.viewers,
+                                categoryName = ui.name,
+                                bannerUrl = ui.bannerUrl
+                            )
+                        )
+                    }
+                }
+            }
+
+            streamerJobs.awaitAll()
+            categoryJobs.awaitAll()
+
+            _isRefreshing.value = false
         }
     }
 }

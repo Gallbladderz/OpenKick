@@ -49,6 +49,8 @@ class OpenKickApp : Application(), ImageLoaderFactory {
 
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
+            .memoryCache { coil.memory.MemoryCache.Builder(this).maxSizePercent(0.25).build() }
+            .diskCache { coil.disk.DiskCache.Builder().directory(cacheDir.resolve("image_cache")).maxSizePercent(0.05).build() }
             .okHttpClient { get<OkHttpClient>() }
             .crossfade(true)
             .build()

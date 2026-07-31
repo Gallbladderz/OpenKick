@@ -8,6 +8,10 @@ import kotlinx.coroutines.withContext
 
 class FollowsRepository(private val dao: FollowsDao) {
 
+    fun getAllFollowedEntities(): Flow<List<FollowedEntity>> {
+        return dao.getAllFollows().flowOn(Dispatchers.IO)
+    }
+
     fun getFollowedCategoriesSlugs(): Flow<List<String>> {
         return dao.getAllFollows()
             .map { list -> list.filter { it.type == FollowType.CATEGORY }.map { it.slug } }
@@ -34,6 +38,11 @@ class FollowsRepository(private val dao: FollowsDao) {
 
     fun isStreamerFollowed(slug: String): Flow<Boolean> =
         dao.isFollowed(slug, FollowType.STREAMER).flowOn(Dispatchers.IO)
+
+    suspend fun saveFollowedEntity(entity: FollowedEntity) =
+        withContext(Dispatchers.IO) {
+            dao.insert(entity)
+        }
 
     suspend fun toggleStreamerFollow(slug: String, isCurrentlyFollowed: Boolean) =
         withContext(Dispatchers.IO) {

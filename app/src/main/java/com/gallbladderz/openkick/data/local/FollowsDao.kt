@@ -17,6 +17,9 @@ interface FollowsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(followedEntity: FollowedEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(followedEntities: List<FollowedEntity>)
+
     @Query("DELETE FROM follows WHERE slug = :slug AND type = :type")
     suspend fun delete(slug: String, type: FollowType)
 

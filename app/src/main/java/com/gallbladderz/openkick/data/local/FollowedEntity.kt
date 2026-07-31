@@ -7,7 +7,13 @@ import androidx.room.PrimaryKey
 data class FollowedEntity(
     @PrimaryKey val slug: String,
     val type: FollowType,
-    val isLive: Boolean = false
+    val isLive: Boolean = false,
+    val username: String = "",
+    val avatarUrl: String = "",
+    val streamTitle: String = "",
+    val viewers: Int = 0,
+    val categoryName: String = "",
+    val bannerUrl: String = ""
 )
 
 enum class FollowType {

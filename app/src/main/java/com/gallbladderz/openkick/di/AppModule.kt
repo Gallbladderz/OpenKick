@@ -82,7 +82,9 @@ val appModule = module {
             androidContext(),
             AppDatabase::class.java,
             "openkick_db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     single { get<AppDatabase>().followsDao() }
