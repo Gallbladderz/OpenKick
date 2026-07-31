@@ -1,7 +1,6 @@
 package com.gallbladderz.openkick.core.network
 
 import com.gallbladderz.openkick.features.categories.CategoryDetailsResponse
-import com.gallbladderz.openkick.features.home.ClipResponse
 import com.gallbladderz.openkick.features.home.HomeLivestreamsResponse
 import com.gallbladderz.openkick.features.home.TopClipsResponse
 import com.gallbladderz.openkick.features.profile.VideoItemDto

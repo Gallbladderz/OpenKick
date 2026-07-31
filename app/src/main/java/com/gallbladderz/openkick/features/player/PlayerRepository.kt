@@ -7,6 +7,7 @@ import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.ChannelLinkDto
 import com.gallbladderz.openkick.features.player.models.ChannelStreamInfoResponse
 import com.gallbladderz.openkick.features.player.models.StreamInfo
+import com.gallbladderz.openkick.features.player.models.toDomain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -61,15 +62,5 @@ fun ChannelStreamInfoResponse.toDomain(): StreamInfo? {
         chatroomId = chatroomId,
         categoryName = categoryName,
         categorySlug = categorySlug
-    )
-}
-
-fun ChannelLinkDto.toDomain(): ChannelLink {
-    return ChannelLink(
-        id = this.id,
-        description = this.description,
-        link = this.link,
-        title = this.title,
-        imageUrl = this.image?.url ?: ""
     )
 }

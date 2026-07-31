@@ -95,6 +95,7 @@ class ChatRepository(private val okHttpClient: OkHttpClient) {
                         _chatMessages.value = (listOf(newMessage) + _chatMessages.value).take(100)
                     }
                 } catch (e: Exception) {
+                    android.util.Log.e("ChatRepository", "WebSocket parsing error", e)
                 }
             }
         })

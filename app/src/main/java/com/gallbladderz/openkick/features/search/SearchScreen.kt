@@ -200,16 +200,16 @@ fun SearchTabsContent(
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (page) {
-                1 -> {
+                0 -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp), // Сделали отступы больше, как на главной
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(streams, key = { it.slug }) { stream ->
-                            SearchStreamCard(
-                                stream = stream,
-                                onClick = { onStreamClick(stream.slug) }
+                        items(channels) { channel ->
+                            SearchChannelCard(
+                                channel = channel,
+                                onClick = { onChannelClick(channel.username, channel.isLive) }
                             )
                         }
                     }
@@ -217,7 +217,7 @@ fun SearchTabsContent(
                 1 -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp), // Воздух между карточками
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(streams, key = { it.slug }) { stream ->
@@ -326,7 +326,7 @@ fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
                 text = stream.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface, // Явно задаем цвет из темы (белый в дарк моде)
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -334,7 +334,7 @@ fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
             Text(
                 text = stream.slug,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant, // Приглушенный цвет для юзернейма
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

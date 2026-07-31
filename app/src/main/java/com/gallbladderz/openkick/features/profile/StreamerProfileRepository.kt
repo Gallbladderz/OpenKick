@@ -7,6 +7,7 @@ import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.toUiModel
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.ChannelLinkDto
+import com.gallbladderz.openkick.features.player.models.toDomain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -124,16 +125,6 @@ fun ChannelV1Response.toDomain(slugFallback: String): ProfileInfoUi? {
     val isLive = this.livestream != null
 
     return ProfileInfoUi(channelId, slugFallback, username, bio, avatarUrl, bannerUrl, followers, isLive)
-}
-
-fun ChannelLinkDto.toDomain(): ChannelLink {
-    return ChannelLink(
-        id = this.id,
-        description = this.description,
-        link = this.link,
-        title = this.title,
-        imageUrl = this.image?.url ?: ""
-    )
 }
 
 fun VideoItemDto.toDomain(): VideoUiModel? {
