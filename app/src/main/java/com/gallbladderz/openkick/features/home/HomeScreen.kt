@@ -162,7 +162,7 @@ fun HomeScreen(
                         )
                     }
 
-                    is HomeUiState.Success -> {
+is HomeUiState.Success -> {
                         val clipsFilter = stringResource(R.string.filter_clips)
                         val liveFilter = stringResource(R.string.live)
                         val listState = remember(selectedFilter) { LazyListState() }

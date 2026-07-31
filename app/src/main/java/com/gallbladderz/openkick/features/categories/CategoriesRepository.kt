@@ -41,7 +41,7 @@ class CategoriesRepository(private val apiService: KickApiService) {
             }
         }
 
-    suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
+suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getCategoryClips(slug = slug, cursor = cursor)

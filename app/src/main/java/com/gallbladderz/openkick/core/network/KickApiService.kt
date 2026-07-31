@@ -26,7 +26,7 @@ interface KickApiService {
     ): CategoryDetailsResponse
 
 
-    @GET("api/v2/categories/{slug}/clips")
+@GET("api/v2/categories/{slug}/clips")
     suspend fun getCategoryClips(
         @Path("slug") slug: String,
         @Query("sort") sort: String = "view",
