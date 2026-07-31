@@ -246,6 +246,30 @@ fun CategoryDetailsScreen(
                     }
 
 
+                    val gridState = rememberLazyGridState()
+                    LaunchedEffect(gridState) {
+                        snapshotFlow {
+                            gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                        }.collect { lastVisible ->
+                            val totalItems = gridState.layoutInfo.totalItemsCount
+                            if (lastVisible != null && totalItems > 5 && lastVisible >= totalItems - 5) {
+                                onLoadMoreStreams()
+                            }
+                        }
+                    }
+
+                    val listState = rememberLazyListState()
+                    LaunchedEffect(listState) {
+                        snapshotFlow {
+                            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                        }.collect { lastVisible ->
+                            val totalItems = listState.layoutInfo.totalItemsCount
+                            if (lastVisible != null && totalItems > 5 && lastVisible >= totalItems - 5) {
+                                onLoadMoreClips()
+                            }
+                        }
+                    }
+
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface

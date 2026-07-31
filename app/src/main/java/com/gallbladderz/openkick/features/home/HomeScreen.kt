@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -161,17 +162,17 @@ fun HomeScreen(
                         )
                     }
 
-                    is HomeUiState.Success -> {
+is HomeUiState.Success -> {
                         val clipsFilter = stringResource(R.string.filter_clips)
                         val liveFilter = stringResource(R.string.live)
-                        val listState = rememberLazyListState()
+                        val listState = remember(selectedFilter) { LazyListState() }
 
                         LaunchedEffect(listState, selectedFilter) {
                             snapshotFlow {
                                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
                             }.collect { lastVisible ->
                                 val totalItems = listState.layoutInfo.totalItemsCount
-                                if (lastVisible != null && lastVisible >= totalItems - 5) {
+                                if (lastVisible != null && totalItems > 5 && lastVisible >= totalItems - 5) {
                                     if (selectedFilter == clipsFilter) {
                                         onLoadMoreClips()
                                     } else {

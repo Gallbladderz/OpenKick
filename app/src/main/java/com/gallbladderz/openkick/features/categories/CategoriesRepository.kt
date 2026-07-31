@@ -41,11 +41,11 @@ class CategoriesRepository(private val apiService: KickApiService) {
             }
         }
 
-    suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
+suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getCategoryClips(slug = slug, cursor = cursor)
-                val uiModels = response.clips.map { it.toUiModel() }
+                val uiModels = response.actualClips.map { it.toUiModel() }
                 val nextCursor = response.actualCursor
                 Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
             } catch (e: Exception) {
