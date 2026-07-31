@@ -78,11 +78,12 @@ data class KickThumbnailFallback(
 data class TopClipsResponse(
     val clips: List<ClipDto> = emptyList(),
     val data: List<ClipDto> = emptyList(),
-    @SerialName("next_cursor") val nextCursor: String? = null,
+    @SerialName("next_cursor") val nextCursorSnake: String? = null,
+    val nextCursor: String? = null,
     val cursor: String? = null,
     val pagination: PaginationDto? = null
 ) {
-
     val actualClips: List<ClipDto> get() = clips.ifEmpty { data }
-    val actualCursor: String? get() = nextCursor ?: cursor ?: pagination?.nextCursor
+
+    val actualCursor: String? get() = nextCursor ?: nextCursorSnake ?: cursor ?: pagination?.nextCursor
 }

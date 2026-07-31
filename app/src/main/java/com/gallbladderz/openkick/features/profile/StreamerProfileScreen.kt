@@ -67,6 +67,7 @@ fun StreamerProfileRoute(
         onLoadProfile = { viewModel.loadProfile(it) },
         onRefresh = { viewModel.refresh() },
         onToggleFollow = { viewModel.toggleFollow() },
+        onLoadMoreClips = { viewModel.loadMoreClips() },
         onLoadVideoPlaybackUrl = { videoId, onResult ->
             viewModel.loadVideoPlaybackUrl(
                 videoId,
@@ -90,12 +91,14 @@ fun StreamerProfileScreen(
     onLoadProfile: (String) -> Unit,
     onRefresh: () -> Unit,
     onToggleFollow: () -> Unit,
+    onLoadMoreClips: () -> Unit,
     onLoadVideoPlaybackUrl: (String, (Result<String>) -> Unit) -> Unit,
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit,
     onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
     onClipClick: (ClipUiModel) -> Unit
 ) {
+
     val tabs = listOf(
         stringResource(R.string.description),
         stringResource(R.string.vods),
@@ -239,7 +242,8 @@ fun StreamerProfileScreen(
                                 )
                                 2 -> ClipsTab(
                                     clips = uiState.clips,
-                                    onClipClick = onClipClick
+                                    onClipClick = onClipClick,
+                                    onLoadMore = onLoadMoreClips
                                 )
                             }
                         }

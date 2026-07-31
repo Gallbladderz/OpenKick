@@ -74,11 +74,12 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             }
         }
 
-    suspend fun fetchClips(slug: String): Result<List<ClipUiModel>> = withContext(Dispatchers.IO) {
+    suspend fun fetchClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.getChannelClips(slug)
+            val response = apiService.getChannelClips(slug, cursor)
             val clips = response.actualClips.map { it.toUiModel() }
-            Result.success(clips)
+            val nextCursor = response.actualCursor
+            Result.success(Pair(clips, if (nextCursor.isNullOrBlank()) null else nextCursor))
         } catch (e: Exception) {
             Result.failure(e.toDomainError())
         }

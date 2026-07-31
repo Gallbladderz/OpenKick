@@ -79,7 +79,8 @@ interface KickApiService {
 
     @GET("api/v2/channels/{slug}/clips")
     suspend fun getChannelClips(
-        @Path("slug") slug: String
+        @Path("slug") slug: String,
+        @Query("cursor") cursor: String? = null
     ): TopClipsResponse
 
     @GET("https://mobile.kick.com/api/v1/livestreams")

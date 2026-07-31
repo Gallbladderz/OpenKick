@@ -1,5 +1,6 @@
 package com.gallbladderz.openkick.features.categories
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +23,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import android.content.Intent
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -107,6 +107,31 @@ fun CategoryDetailsScreen(
 
     var isFollowed by remember { mutableStateOf(false) }
 
+    val gridState = rememberLazyGridState()
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(gridState) {
+        snapshotFlow {
+            gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.collect { lastVisible ->
+            val totalItems = gridState.layoutInfo.totalItemsCount
+            if (lastVisible != null && totalItems > 3 && lastVisible >= totalItems - 2) {
+                onLoadMoreStreams()
+            }
+        }
+    }
+
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.collect { lastVisible ->
+            val totalItems = listState.layoutInfo.totalItemsCount
+            if (lastVisible != null && totalItems > 3 && lastVisible >= totalItems - 2) {
+                onLoadMoreClips()
+            }
+        }
+    }
+
     LaunchedEffect(slug) {
         onLoadCategory(slug)
     }
@@ -167,8 +192,6 @@ fun CategoryDetailsScreen(
                 }
 
                 is CategoryDetailsUiState.Success -> {
-
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -245,31 +268,6 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-
-                    val gridState = rememberLazyGridState()
-                    LaunchedEffect(gridState) {
-                        snapshotFlow {
-                            gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                        }.collect { lastVisible ->
-                            val totalItems = gridState.layoutInfo.totalItemsCount
-                            if (lastVisible != null && totalItems > 5 && lastVisible >= totalItems - 5) {
-                                onLoadMoreStreams()
-                            }
-                        }
-                    }
-
-                    val listState = rememberLazyListState()
-                    LaunchedEffect(listState) {
-                        snapshotFlow {
-                            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                        }.collect { lastVisible ->
-                            val totalItems = listState.layoutInfo.totalItemsCount
-                            if (lastVisible != null && totalItems > 5 && lastVisible >= totalItems - 5) {
-                                onLoadMoreClips()
-                            }
-                        }
-                    }
-
                     PrimaryTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = MaterialTheme.colorScheme.surface
@@ -283,7 +281,6 @@ fun CategoryDetailsScreen(
                         }
                     }
 
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -291,7 +288,6 @@ fun CategoryDetailsScreen(
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
-
                             if (currentState.streams.isEmpty()) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -303,21 +299,8 @@ fun CategoryDetailsScreen(
                                     )
                                 }
                             } else {
-                                val gridState = rememberLazyGridState()
-
-                                LaunchedEffect(gridState) {
-                                    snapshotFlow {
-                                        gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                                    }.collect { lastVisible ->
-                                        val totalItems = gridState.layoutInfo.totalItemsCount
-                                        if (lastVisible != null && lastVisible >= totalItems - 5) {
-                                            onLoadMoreStreams()
-                                        }
-                                    }
-                                }
-
                                 LazyVerticalGrid(
-                                    state = gridState,
+                                    state = gridState, // <-- Прокинут стейт!
                                     columns = GridCells.Adaptive(minSize = 150.dp),
                                     contentPadding = PaddingValues(16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -336,7 +319,6 @@ fun CategoryDetailsScreen(
                                 }
                             }
                         } else {
-
                             if (currentState.clips.isEmpty()) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -348,21 +330,8 @@ fun CategoryDetailsScreen(
                                     )
                                 }
                             } else {
-                                val listState = rememberLazyListState()
-
-                                LaunchedEffect(listState) {
-                                    snapshotFlow {
-                                        listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                                    }.collect { lastVisible ->
-                                        val totalItems = listState.layoutInfo.totalItemsCount
-                                        if (lastVisible != null && lastVisible >= totalItems - 5) {
-                                            onLoadMoreClips()
-                                        }
-                                    }
-                                }
-
                                 LazyColumn(
-                                    state = listState,
+                                    state = listState, // <-- Прокинут стейт!
                                     contentPadding = PaddingValues(vertical = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
                                     modifier = Modifier.fillMaxSize()

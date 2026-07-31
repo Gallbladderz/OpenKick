@@ -172,7 +172,7 @@ is HomeUiState.Success -> {
                                 listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
                             }.collect { lastVisible ->
                                 val totalItems = listState.layoutInfo.totalItemsCount
-                                if (lastVisible != null && totalItems > 5 && lastVisible >= totalItems - 5) {
+                                if (lastVisible != null && totalItems > 3 && lastVisible >= totalItems - 2) {
                                     if (selectedFilter == clipsFilter) {
                                         onLoadMoreClips()
                                     } else {

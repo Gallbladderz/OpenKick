@@ -31,17 +31,21 @@ class StreamerProfileViewModel(
     private val followsRepository: FollowsRepository
 ) : ViewModel() {
 
+    private var clipsCursor: String? = null
+    private var isClipsLoading = false
+    private var isClipsEnd = false
+
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-
     private val _loadingVideoId = MutableStateFlow<String?>(null)
     val loadingVideoId = _loadingVideoId.asStateFlow()
 
     private var currentSlug: String? = null
+
 
     /**
      * Ленивая загрузка playback URL для VOD.
@@ -106,7 +110,11 @@ class StreamerProfileViewModel(
                 viewModelScope.async { followsRepository.isStreamerFollowed(profile.slug).first() }
 
             val videos = videosDeferred.await().getOrDefault(emptyList())
-            val clips = clipsDeferred.await().getOrDefault(emptyList())
+            val clipsResult = clipsDeferred.await().getOrNull()
+            val clips = clipsResult?.first ?: emptyList()
+            clipsCursor = clipsResult?.second
+            isClipsLoading = false
+            isClipsEnd = false
             val links = linksDeferred.await().getOrDefault(emptyList())
             val isFollowing = isFollowingDeferred.await()
 
@@ -145,6 +153,31 @@ class StreamerProfileViewModel(
                     currentState.copy(isFollowing = !currentlyFollowing)
                 }
             }
+        }
+    }
+    fun loadMoreClips() {
+        val currentState = _uiState.value as? ProfileUiState.Success ?: return
+        val slug = currentSlug ?: return
+
+        if (isClipsLoading || isClipsEnd) return
+        isClipsLoading = true
+
+        viewModelScope.launch {
+            val result = repository.fetchClips(slug, clipsCursor)
+            if (result.isSuccess) {
+                val (newClips, nextCursor) = result.getOrThrow()
+                clipsCursor = nextCursor
+                if (newClips.isEmpty()) {
+                    isClipsEnd = true
+                } else {
+                    if (nextCursor.isNullOrBlank()) isClipsEnd = true
+                    val merged = (currentState.clips + newClips).distinctBy { it.id }
+                    _uiState.update { currentState.copy(clips = merged) }
+                }
+            } else {
+                isClipsEnd = true
+            }
+            isClipsLoading = false
         }
     }
 }
