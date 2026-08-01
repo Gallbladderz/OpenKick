@@ -64,7 +64,7 @@ class StreamCheckWorker(
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Live streams",
+                context.getString(R.string.live_streams_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             )
             notificationManager.createNotificationChannel(channel)
@@ -79,7 +79,7 @@ class StreamCheckWorker(
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("🔴 $username is live!")
+            .setContentTitle(context.getString(R.string.user_is_live, username))
             .setContentText(title)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)

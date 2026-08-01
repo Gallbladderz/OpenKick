@@ -170,7 +170,7 @@ fun StreamerProfileScreen(
 
                 is ProfileUiState.Error -> {
                     Text(
-                        uiState.message,
+                        uiState.message.asString(),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -185,10 +185,12 @@ fun StreamerProfileScreen(
                             onShareClick = {
                                 val sendIntent: Intent = Intent().apply {
                                     action = Intent.ACTION_SEND
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "Смотри ${uiState.info.username} на Kick!\\nhttps://kick.com/${uiState.info.slug}"
-                                    )
+                                    val shareText = context.getString(
+                                        R.string.share_intent_text,
+                                        uiState.info.username,
+                                        uiState.info.slug
+                                    ).replace("\\n", "\n")
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
                                     type = "text/plain"
                                 }
                                 val shareIntent = Intent.createChooser(sendIntent, null)
@@ -233,7 +235,7 @@ fun StreamerProfileScreen(
                                             }.onFailure { error ->
                                                 Toast.makeText(
                                                     context,
-                                                    "Ошибка: ${error.message}",
+                                                    context.getString(R.string.error_prefix_msg, error.message),
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                             }

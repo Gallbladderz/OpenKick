@@ -63,7 +63,7 @@ fun QualitySelectionSheet(
             ) {
                 items(qualities, key = { it.name }) { quality ->
                     val isSelected =
-                        selectedQuality == quality || (selectedQuality == null && quality.name == "Auto")
+                        selectedQuality == quality || (selectedQuality == null && quality.name == stringResource(R.string.auto_quality))
 
                     val bgColor =
                         if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent

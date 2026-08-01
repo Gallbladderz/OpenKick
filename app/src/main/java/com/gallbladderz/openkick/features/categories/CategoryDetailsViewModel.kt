@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface CategoryDetailsUiState {
     data object Loading : CategoryDetailsUiState
@@ -21,7 +23,7 @@ sealed interface CategoryDetailsUiState {
         val streams: List<StreamUiModel>
     ) : CategoryDetailsUiState
 
-    data class Error(val message: String) : CategoryDetailsUiState
+    data class Error(val message: UiText) : CategoryDetailsUiState
 }
 
 class CategoryDetailsViewModel(
@@ -51,7 +53,7 @@ class CategoryDetailsViewModel(
 
         viewModelScope.launch {
             if (currentSlug.isBlank()) {
-                _uiState.update { CategoryDetailsUiState.Error("Error: empty slug!") }
+                _uiState.update { CategoryDetailsUiState.Error(UiText.StringResource(R.string.error_empty_slug)) }
                 return@launch
             }
 
@@ -67,7 +69,7 @@ class CategoryDetailsViewModel(
                 if (detailsResult.isFailure) {
                     _uiState.update {
                         CategoryDetailsUiState.Error(
-                            detailsResult.exceptionOrNull()?.message ?: "Unknown error"
+                            detailsResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.unknown_error)
                         )
                     }
                     return@launch
@@ -94,7 +96,7 @@ class CategoryDetailsViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update { CategoryDetailsUiState.Error("Network error: ${e.message}") }
+                _uiState.update { CategoryDetailsUiState.Error(UiText.StringResource(R.string.network_error_msg, e.message ?: "")) }
             }
         }
     }

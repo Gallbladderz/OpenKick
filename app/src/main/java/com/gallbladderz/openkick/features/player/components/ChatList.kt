@@ -1,6 +1,7 @@
 package com.gallbladderz.openkick.features.player.components
 
 import android.widget.Toast
+import com.gallbladderz.openkick.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -144,7 +145,7 @@ fun ChatMessageItem(message: ChatMessage) {
             .fillMaxWidth()
             .clickable {
                 clipboardManager.setText(AnnotatedString(message.content))
-                Toast.makeText(context, "Скопировано", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
             }
             .padding(horizontal = 12.dp, vertical = 3.dp),
         lineHeight = 20.sp

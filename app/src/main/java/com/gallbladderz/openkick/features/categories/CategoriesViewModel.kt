@@ -12,11 +12,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface CategoriesUiState {
     data object Loading : CategoriesUiState
     data class Success(val categories: List<CategoryUiModel>) : CategoriesUiState
-    data class Error(val message: String) : CategoriesUiState
+    data class Error(val message: UiText) : CategoriesUiState
 }
 
 class CategoriesViewModel(
@@ -58,7 +60,7 @@ class CategoriesViewModel(
             repository.fetchCategories(currentPage).collect { result ->
                 result.onSuccess { categories ->
                     if (categories.isEmpty()) {
-                        _uiState.update { CategoriesUiState.Error("Could not find games") }
+                        _uiState.update { CategoriesUiState.Error(UiText.StringResource(R.string.could_not_find_games)) }
                         isLastPage = true
                     } else {
 
@@ -68,7 +70,7 @@ class CategoriesViewModel(
                 }.onFailure { exception ->
                     _uiState.update {
                         CategoriesUiState.Error(
-                            exception.message ?: "Network error"
+                            exception.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.network_error)
                         )
                     }
                 }

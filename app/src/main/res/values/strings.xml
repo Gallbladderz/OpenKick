@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">OpenKick</string>
     <string name="back">Back</string>
@@ -147,4 +147,27 @@
     <string name="english_lang">English</string>
     <string name="battery_opt_disabled">Optimization disabled. Background works stably.</string>
     <string name="battery_opt_enable">Tap "Disable" to prevent the system from killing notifications.</string>
+    <string name="system_default">System Default</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
+    <string name="catppuccin_mocha">Catppuccin Mocha</string>
+    <string name="catppuccin_latte">Catppuccin Latte</string>
+    <string name="dynamic_colors">Dynamic Colors</string>
+    <string name="use_material_you">Use Material You</string>
+    <string name="extracts_colors_wallpaper">Extracts colors from your wallpaper</string>
+    <string name="tab_channels">Channels</string>
+    <string name="tab_streams">Streams</string>
+    <string name="tab_categories">Categories</string>
+    <string name="clip_views_duration">%1$s views • %2$s</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="live_streams_channel_name">Live streams</string>
+    <string name="user_is_live">🔴 %1$s is live!</string>
+    <string name="service_running_bg">%1$s is running in the background</string>
+    <string name="monitoring_streams">Monitoring streams for instant push notifications</string>
+    <string name="background_work">Background Work</string>
+    <string name="maintain_connection_desc">Maintains connection to receive notifications</string>
+    <string name="auto_quality">Auto</string>
+    <string name="base_theme">Base Theme</string>
+    <string name="share_intent_text">Watch %1$s on Kick!\nhttps://kick.com/%2$s</string>
+    <string name="error_prefix_msg">Error: %1$s</string>
 </resources>

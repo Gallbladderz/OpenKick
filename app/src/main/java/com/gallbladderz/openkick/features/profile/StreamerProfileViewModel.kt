@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface ProfileUiState {
     data object Loading : ProfileUiState
@@ -23,7 +25,7 @@ sealed interface ProfileUiState {
         val isFollowing: Boolean
     ) : ProfileUiState
 
-    data class Error(val message: String) : ProfileUiState
+    data class Error(val message: UiText) : ProfileUiState
 }
 
 class StreamerProfileViewModel(
@@ -132,8 +134,8 @@ class StreamerProfileViewModel(
                 _uiState.update {
                     ProfileUiState.Error(
                         profileResult.exceptionOrNull()
-                            ?.let { if (it is DomainError) it.message else "Load error" }
-                            ?: "Load error"
+                            ?.let { if (it is DomainError) UiText.DynamicString(it.message ?: "") else UiText.StringResource(R.string.load_error) }
+                            ?: UiText.StringResource(R.string.load_error)
                     )
                 }
             }

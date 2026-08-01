@@ -187,7 +187,7 @@ fun CategoryDetailsScreen(
 
                 is CategoryDetailsUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(currentState.message, color = MaterialTheme.colorScheme.error)
+                        Text(currentState.message.asString(), color = MaterialTheme.colorScheme.error)
                     }
                 }
 

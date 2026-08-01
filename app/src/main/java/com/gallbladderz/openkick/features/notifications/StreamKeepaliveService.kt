@@ -33,8 +33,8 @@ class StreamKeepaliveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("OpenKick работает в фоне")
-            .setContentText("Мониторим стримы для моментальных пушей")
+            .setContentTitle(getString(R.string.service_running_bg, "OpenKick"))
+            .setContentText(getString(R.string.monitoring_streams))
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(
                 PendingIntent.getActivity(
@@ -81,10 +81,10 @@ class StreamKeepaliveService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Фоновая работа",
+                getString(R.string.background_work),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Поддерживает соединение для получения уведомлений"
+                description = getString(R.string.maintain_connection_desc)
             }
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)

@@ -92,7 +92,7 @@ fun ThemeSettingsScreen(
         ) {
             item {
                 Text(
-                    text = "Base Theme",
+                    text = stringResource(R.string.base_theme),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -101,15 +101,16 @@ fun ThemeSettingsScreen(
             }
 
             val themes = listOf(
-                AppTheme.SYSTEM to "System Default",
-                AppTheme.LIGHT to "Light",
-                AppTheme.DARK to "Dark",
-                AppTheme.CATPPUCCIN_MOCHA to "Catppuccin Mocha",
-                AppTheme.CATPPUCCIN_LATTE to "Catppuccin Latte"
+                AppTheme.SYSTEM to R.string.system_default,
+                AppTheme.LIGHT to R.string.light,
+                AppTheme.DARK to R.string.dark,
+                AppTheme.CATPPUCCIN_MOCHA to R.string.catppuccin_mocha,
+                AppTheme.CATPPUCCIN_LATTE to R.string.catppuccin_latte
             )
 
-            themes.forEach { (theme, label) ->
+            themes.forEach { (theme, labelRes) ->
                 item {
+                    val label = stringResource(labelRes)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -135,7 +136,7 @@ fun ThemeSettingsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     Text(
-                        text = "Dynamic Colors",
+                        text = stringResource(R.string.dynamic_colors),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -154,11 +155,11 @@ fun ThemeSettingsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Use Material You",
+                                text = stringResource(R.string.use_material_you),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = "Extracts colors from your wallpaper",
+                                text = stringResource(R.string.extracts_colors_wallpaper),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
