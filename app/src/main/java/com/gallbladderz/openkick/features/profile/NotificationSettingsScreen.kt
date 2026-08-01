@@ -44,7 +44,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.notifications.StreamKeepaliveService
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,7 +56,6 @@ fun NotificationSettingsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
-    val backgroundKeepalive by viewModel.backgroundKeepalive.collectAsStateWithLifecycle()
 
     val powerManager = remember {
         context.getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -125,55 +123,6 @@ fun NotificationSettingsScreen(
                             checked = notificationsEnabled,
                             onCheckedChange = {
                                 viewModel.toggleNotifications(it)
-                            }
-                        )
-                    },
-                    colors = ListItemDefaults.colors(
-                        containerColor = Color.Transparent
-                    )
-                )
-            }
-
-            item {
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            "Фоновое соединение",
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            "Держать процесс в фоне для моментальных уведомлений. Может жрать батарею как не в себя."
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = backgroundKeepalive,
-                            enabled = notificationsEnabled,
-                            onCheckedChange = { isEnabled ->
-                                viewModel.toggleBackgroundKeepalive(isEnabled)
-
-                                val intent = Intent(
-                                    context,
-                                    StreamKeepaliveService::class.java
-                                )
-
-                                if (isEnabled) {
-                                    ContextCompat.startForegroundService(
-                                        context,
-                                        intent
-                                    )
-                                } else {
-                                    context.stopService(intent)
-                                }
                             }
                         )
                     },

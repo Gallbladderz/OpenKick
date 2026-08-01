@@ -48,11 +48,6 @@
 
         </provider>
 
-        <service
-            android:name=".features.notifications.StreamKeepaliveService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false" />
-
     </application>
 
 </manifest>

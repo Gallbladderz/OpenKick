@@ -93,8 +93,7 @@ fun PlayerRoute(
         player = viewModel.playerManager.player,
         onLoadStreamInfo = { viewModel.loadStreamInfo(it) },
         onLoadChannelLinks = { viewModel.loadChannelLinks(it) },
-        onPause = { viewModel.pause() },
-        onPlay = { viewModel.play() },
+        onPlayerManagerInitialize = { viewModel.playerManager.initializePlayer() },
         onPlayerManagerRelease = { viewModel.playerManager.release() },
         onPlayerManagerPause = { viewModel.playerManager.pause() },
         onPlayerManagerResume = { viewModel.playerManager.resume() },
@@ -118,11 +117,10 @@ fun PlayerScreen(
     playbackState: Int,
     availableQualities: List<VideoQuality>,
     selectedQuality: VideoQuality?,
-    player: Player,
+    player: Player?,
     onLoadStreamInfo: (String) -> Unit,
     onLoadChannelLinks: (String) -> Unit,
-    onPause: () -> Unit,
-    onPlay: () -> Unit,
+    onPlayerManagerInitialize: () -> Unit,
     onPlayerManagerRelease: () -> Unit,
     onPlayerManagerPause: () -> Unit,
     onPlayerManagerResume: () -> Unit,
@@ -194,9 +192,13 @@ fun PlayerScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_PAUSE -> onPause()
-                Lifecycle.Event.ON_RESUME -> onPlay()
-                Lifecycle.Event.ON_DESTROY -> onPlayerManagerRelease()
+                Lifecycle.Event.ON_START -> {
+                    onPlayerManagerInitialize()
+                    onLoadStreamInfo(streamerName)
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    onPlayerManagerRelease()
+                }
                 else -> {}
             }
         }
@@ -207,7 +209,6 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(streamerName) {
-        onLoadStreamInfo(streamerName)
         onLoadChannelLinks(streamerName)
     }
 
@@ -246,10 +247,19 @@ fun PlayerScreen(
                 }
 
                 is PlayerUiState.Playing -> {
-                    KickStreamPlayer(
-                        player = player,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    if (player != null) {
+                        KickStreamPlayer(
+                            player = player,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF7CFC00),
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
 
                     androidx.compose.animation.AnimatedVisibility(
                         visible = showControls,

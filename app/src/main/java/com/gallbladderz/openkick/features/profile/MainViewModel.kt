@@ -131,23 +131,9 @@ class MainViewModel(
                 initialValue = true
             )
 
-    val backgroundKeepalive: StateFlow<Boolean> =
-        settingsRepository.backgroundKeepaliveFlow
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = false
-            )
-
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setNotificationsEnabled(enabled)
-        }
-    }
-
-    fun toggleBackgroundKeepalive(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.setBackgroundKeepalive(enabled)
         }
     }
 }
