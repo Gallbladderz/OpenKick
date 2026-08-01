@@ -26,11 +26,14 @@ data class VideoQuality(
 
 @UnstableApi
 class PlayerManager(
-    private val context: Context,
+    context: Context,
     private val dataSourceFactory: DataSource.Factory
 ) {
 
-    val player: ExoPlayer = ExoPlayer.Builder(context).build()
+    private val appContext = context.applicationContext
+
+    var player: ExoPlayer? = null
+        private set
 
 
     private val _isPlaying = MutableStateFlow(false)
@@ -47,60 +50,67 @@ class PlayerManager(
     private val _selectedQuality = MutableStateFlow<VideoQuality?>(null)
     val selectedQuality = _selectedQuality.asStateFlow()
 
-    init {
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            _isPlaying.value = isPlaying
+        }
 
-        player.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                _isPlaying.value = isPlaying
-            }
+        override fun onPlaybackStateChanged(state: Int) {
+            _playbackState.value = state
+        }
 
-            override fun onPlaybackStateChanged(state: Int) {
-                _playbackState.value = state
-            }
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            _playWhenReady.value = playWhenReady
+        }
 
-            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                _playWhenReady.value = playWhenReady
-            }
+        override fun onTracksChanged(tracks: Tracks) {
+            val parsedQualities = mutableListOf<VideoQuality>()
 
-            override fun onTracksChanged(tracks: Tracks) {
-                val parsedQualities = mutableListOf<VideoQuality>()
-
-                for (group in tracks.groups) {
-                    if (group.type == C.TRACK_TYPE_VIDEO) {
-                        for (i in 0 until group.length) {
-                            val format = group.getTrackFormat(i)
-                            if (format.height != Format.NO_VALUE) {
-                                val fps = if (format.frameRate > 0) format.frameRate.toInt()
-                                    .toString() else ""
-                                val name = "${format.height}p${if (fps == "60") "60" else ""}"
-                                parsedQualities.add(VideoQuality(name, group.mediaTrackGroup, i))
-                            }
+            for (group in tracks.groups) {
+                if (group.type == C.TRACK_TYPE_VIDEO) {
+                    for (i in 0 until group.length) {
+                        val format = group.getTrackFormat(i)
+                        if (format.height != Format.NO_VALUE) {
+                            val fps = if (format.frameRate > 0) format.frameRate.toInt()
+                                .toString() else ""
+                            val name = "${format.height}p${if (fps == "60") "60" else ""}"
+                            parsedQualities.add(VideoQuality(name, group.mediaTrackGroup, i))
                         }
                     }
                 }
-
-                val sortedQualities = parsedQualities
-                    .distinctBy { it.name }
-                    .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
-
-                _availableQualities.value = listOf(
-                    VideoQuality(context.getString(R.string.auto_quality), null, null),
-                    VideoQuality(
-                        context.getString(R.string.audio_only),
-                        null,
-                        null,
-                        isAudioOnly = true
-                    )
-                ) + sortedQualities
             }
-        })
+
+            val sortedQualities = parsedQualities
+                .distinctBy { it.name }
+                .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
+
+            _availableQualities.value = listOf(
+                VideoQuality(appContext.getString(R.string.auto_quality), null, null),
+                VideoQuality(
+                    appContext.getString(R.string.audio_only),
+                    null,
+                    null,
+                    isAudioOnly = true
+                )
+            ) + sortedQualities
+        }
+    }
+
+    fun initializePlayer() {
+        if (player == null) {
+            player = ExoPlayer.Builder(appContext).build().apply {
+                addListener(playerListener)
+            }
+        }
     }
 
 
     fun setQuality(quality: VideoQuality) {
+        val currentPlayer = player ?: return
+
         _selectedQuality.value = quality
 
-        val builder = player.trackSelectionParameters.buildUpon()
+        val builder = currentPlayer.trackSelectionParameters.buildUpon()
 
         if (quality.isAudioOnly) {
 
@@ -124,27 +134,32 @@ class PlayerManager(
             }
         }
 
-        player.trackSelectionParameters = builder.build()
+        currentPlayer.trackSelectionParameters = builder.build()
 
 
-        player.play()
+        currentPlayer.play()
     }
 
 
     fun play(videoUrl: String) {
+        val currentPlayer = player ?: return
         val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
             .createMediaSource(MediaItem.fromUri(videoUrl))
-        player.setMediaSource(mediaSource)
-        player.prepare()
-        player.playWhenReady = true
+        currentPlayer.setMediaSource(mediaSource)
+        currentPlayer.prepare()
+        currentPlayer.playWhenReady = true
     }
 
 
-    fun pause() = player.pause()
+    fun pause() = player?.pause()
 
-    fun resume() = player.play()
+    fun resume() = player?.play()
 
     fun release() {
-        player.release()
+        player?.removeListener(playerListener)
+        player?.release()
+        player = null
+        _isPlaying.value = false
+        _playbackState.value = Player.STATE_IDLE
     }
 }

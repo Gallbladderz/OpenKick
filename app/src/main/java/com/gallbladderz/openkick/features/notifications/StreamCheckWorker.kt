@@ -32,6 +32,9 @@ class StreamCheckWorker(
 
         for (entity in followedStreamers) {
             val result = followingRepository.fetchChannelDetails(entity.slug)
+
+            kotlinx.coroutines.delay(1500)
+
             if (result.isFailure) continue
             val details = result.getOrNull() ?: continue
 

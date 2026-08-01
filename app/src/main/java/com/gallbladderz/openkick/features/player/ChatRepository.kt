@@ -98,11 +98,19 @@ class ChatRepository(private val okHttpClient: OkHttpClient) {
                     android.util.Log.e("ChatRepository", "WebSocket parsing error", e)
                 }
             }
+
+            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                android.util.Log.d("ChatRepository", "WebSocket closed: $code, $reason")
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                android.util.Log.e("ChatRepository", "WebSocket failure", t)
+            }
         })
     }
 
     fun disconnect() {
-        webSocket?.cancel()
+        webSocket?.close(1000, "Normal closure")
         webSocket = null
         _chatMessages.value = emptyList()
     }
