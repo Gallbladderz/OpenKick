@@ -84,7 +84,7 @@ fun OpenKickTheme(
         AppTheme.DARK, AppTheme.CATPPUCCIN_FRAPPE, AppTheme.CATPPUCCIN_MACCHIATO, AppTheme.CATPPUCCIN_MOCHA -> true
     }
 
-    val colorScheme = when {
+val colorScheme = when {
         appTheme == AppTheme.CATPPUCCIN_LATTE -> {
             val accentColor = getAccentColor(appAccent, false)
             CatppuccinMaterial.Latte().colorScheme().copy(

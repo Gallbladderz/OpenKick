@@ -192,9 +192,7 @@ fun ThemeSettingsScreen(
                     }
                 }
             }
-
-
-            if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
+if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
