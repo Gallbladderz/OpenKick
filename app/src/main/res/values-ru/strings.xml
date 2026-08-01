@@ -22,6 +22,7 @@
     <string name="selected_desc">Выбрано</string>
     <string name="thumbnail_desc">Превью</string>
     <string name="category_banner_desc">Баннер категории</string>
+    <string name="category_no_streams">В этой категории сейчас никто не стримит</string>
     <string name="english_lang">English</string>
     <string name="battery_opt_disabled">Оптимизация отключена. Фон работает стабильно.</string>
     <string name="battery_opt_enable">Нажмите «Отключить», чтобы система не убивала уведомления.</string>
@@ -43,7 +44,7 @@
     <string name="profile">Профиль</string>
 
     <string name="search">Поиск</string>
-    <string name="search_placeholder">Найти стримера...</string>
+    <string name="search_placeholder">Поиск каналов, стримов...</string>
     <string name="search_idle">Введите никнейм для поиска</string>
     <string name="loading_api">Грузим API Kick...</string>
     <string name="error_prefix">Ошибка: %s</string>

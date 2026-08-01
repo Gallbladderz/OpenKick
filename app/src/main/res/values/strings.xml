@@ -18,7 +18,7 @@
     <string name="profile">Profile</string>
 
     <string name="search">Search</string>
-    <string name="search_placeholder">Search streamer...</string>
+    <string name="search_placeholder">Search channels, streams...</string>
     <string name="search_idle">Enter a nickname to search</string>
     <string name="loading_api">Loading Kick API...</string>
     <string name="error_prefix">Error: %s</string>
@@ -146,6 +146,7 @@
     <string name="selected_desc">Selected</string>
     <string name="thumbnail_desc">Thumbnail</string>
     <string name="category_banner_desc">Category Banner</string>
+    <string name="category_no_streams">No one is streaming in this category right now</string>
     <string name="english_lang">English</string>
     <string name="battery_opt_disabled">Optimization disabled. Background works stably.</string>
     <string name="battery_opt_enable">Tap "Disable" to prevent the system from killing notifications.</string>

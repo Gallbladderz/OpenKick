@@ -223,7 +223,7 @@ fun CategoryDetailsScreen(
                                     modifier = Modifier
                                         .size(8.dp)
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.error)
+                                        .background(if (currentState.viewers == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
@@ -291,7 +291,17 @@ fun CategoryDetailsScreen(
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         if (selectedTabIndex == 0) {
-                            if (currentState.streams.isEmpty()) {
+                            if (currentState.viewers == 0) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        stringResource(R.string.category_no_streams),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else if (currentState.streams.isEmpty()) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
