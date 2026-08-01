@@ -15,7 +15,9 @@ val Context.dataStore by preferencesDataStore(name = "kick_settings")
 class SettingsRepository(private val context: Context) {
 
     companion object {
-        private val HIDE_CATEGORIES_KEY = booleanPreferencesKey("hide_categories")
+        private val HIDE_SLOTS_KEY = booleanPreferencesKey("hide_slots")
+        private val HIDE_POOLS_KEY = booleanPreferencesKey("hide_pools")
+        private val HIDE_CRYPTO_KEY = booleanPreferencesKey("hide_crypto")
         private val FOLLOWED_CHANNELS = stringSetPreferencesKey("followed_channels")
         private val SELECTED_LANGUAGES = stringSetPreferencesKey("selected_languages")
         private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
@@ -86,13 +88,33 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val hideCategoriesFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[HIDE_CATEGORIES_KEY] ?: false
+    val hideSlotsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HIDE_SLOTS_KEY] ?: false
     }
 
-    suspend fun setHideCategories(hide: Boolean) {
+    suspend fun setHideSlots(hide: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[HIDE_CATEGORIES_KEY] = hide
+            preferences[HIDE_SLOTS_KEY] = hide
+        }
+    }
+
+    val hidePoolsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HIDE_POOLS_KEY] ?: false
+    }
+
+    suspend fun setHidePools(hide: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[HIDE_POOLS_KEY] = hide
+        }
+    }
+
+    val hideCryptoFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HIDE_CRYPTO_KEY] ?: false
+    }
+
+    suspend fun setHideCrypto(hide: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[HIDE_CRYPTO_KEY] = hide
         }
     }
 

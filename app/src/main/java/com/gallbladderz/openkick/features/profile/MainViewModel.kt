@@ -15,8 +15,24 @@ class MainViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    val hideCategories: StateFlow<Boolean> =
-        settingsRepository.hideCategoriesFlow
+    val hideSlots: StateFlow<Boolean> =
+        settingsRepository.hideSlotsFlow
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = false
+            )
+
+    val hidePools: StateFlow<Boolean> =
+        settingsRepository.hidePoolsFlow
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = false
+            )
+
+    val hideCrypto: StateFlow<Boolean> =
+        settingsRepository.hideCryptoFlow
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -77,9 +93,21 @@ class MainViewModel(
         }
     }
 
-    fun toggleCategories(hide: Boolean) {
+    fun toggleSlots(hide: Boolean) {
         viewModelScope.launch {
-            settingsRepository.setHideCategories(hide)
+            settingsRepository.setHideSlots(hide)
+        }
+    }
+
+    fun togglePools(hide: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHidePools(hide)
+        }
+    }
+
+    fun toggleCrypto(hide: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHideCrypto(hide)
         }
     }
 
