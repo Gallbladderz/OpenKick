@@ -342,7 +342,7 @@ private fun ClipInfoPanel(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${formatClipViews(views)} views • $durationFormatted",
+                        text = stringResource(R.string.clip_views_duration, formatClipViews(views), durationFormatted),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

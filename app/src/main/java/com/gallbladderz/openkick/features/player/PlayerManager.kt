@@ -84,7 +84,7 @@ class PlayerManager(
                     .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
 
                 _availableQualities.value = listOf(
-                    VideoQuality("Auto", null, null),
+                    VideoQuality(context.getString(R.string.auto_quality), null, null),
                     VideoQuality(
                         context.getString(R.string.audio_only),
                         null,

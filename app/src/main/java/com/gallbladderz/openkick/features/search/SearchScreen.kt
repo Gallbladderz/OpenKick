@@ -154,7 +154,7 @@ fun SearchScreen(
 
                 is SearchUiState.Error -> {
                     Text(
-                        text = uiState.message,
+                        text = uiState.message.asString(),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -176,7 +176,11 @@ fun SearchTabsContent(
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     val coroutineScope = rememberCoroutineScope()
-    val titles = listOf("Channels", "Streams", "Categories")
+    val titles = listOf(
+        stringResource(R.string.tab_channels),
+        stringResource(R.string.tab_streams),
+        stringResource(R.string.tab_categories)
+    )
 
     Column(modifier = Modifier.fillMaxSize()) {
         PrimaryTabRow(

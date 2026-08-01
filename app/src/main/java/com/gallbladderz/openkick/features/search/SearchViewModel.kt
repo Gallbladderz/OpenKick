@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface SearchUiState {
     data object Idle : SearchUiState
@@ -16,7 +18,7 @@ sealed interface SearchUiState {
         val streams: List<SearchStreamUiModel>,
         val categories: List<SearchCategoryUiModel>
     ) : SearchUiState
-    data class Error(val message: String) : SearchUiState
+    data class Error(val message: UiText) : SearchUiState
 }
 
 class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
@@ -39,7 +41,7 @@ class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
                 result.onSuccess { data ->
                     _uiState.update { SearchUiState.Success(data.channels, data.streams, data.categories) }
                 }.onFailure { exception ->
-                    _uiState.update { SearchUiState.Error(exception.message ?: "Ошибка сети") }
+                    _uiState.update { SearchUiState.Error(exception.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.network_error)) }
                 }
             }
         }

@@ -131,7 +131,7 @@ fun ProfileHeader(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "LIVE",
+                            text = stringResource(R.string.live).uppercase(),
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Black

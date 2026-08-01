@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="banner_desc">Баннер</string>
     <string name="share_profile_desc">Поделиться профилем</string>
@@ -146,4 +146,27 @@
     <string name="username_is_live">🔴 %1$s в эфире!</string>
     <string name="video_quality">Качество</string>
     <string name="audio_only">Только аудио</string>
+    <string name="system_default">Системная</string>
+    <string name="light">Светлая</string>
+    <string name="dark">Темная</string>
+    <string name="catppuccin_mocha">Catppuccin Mocha</string>
+    <string name="catppuccin_latte">Catppuccin Latte</string>
+    <string name="dynamic_colors">Динамические цвета</string>
+    <string name="use_material_you">Использовать Material You</string>
+    <string name="extracts_colors_wallpaper">Берет цвета из обоев</string>
+    <string name="tab_channels">Каналы</string>
+    <string name="tab_streams">Стримы</string>
+    <string name="tab_categories">Категории</string>
+    <string name="clip_views_duration">%1$s просмотров • %2$s</string>
+    <string name="copied_to_clipboard">Скопировано</string>
+    <string name="live_streams_channel_name">Прямые трансляции</string>
+    <string name="user_is_live">🔴 %1$s в эфире!</string>
+    <string name="service_running_bg">%1$s работает в фоне</string>
+    <string name="monitoring_streams">Мониторим стримы для моментальных пушей</string>
+    <string name="background_work">Фоновая работа</string>
+    <string name="maintain_connection_desc">Поддерживает соединение для получения уведомлений</string>
+    <string name="auto_quality">Авто</string>
+    <string name="base_theme">Базовая тема</string>
+    <string name="share_intent_text">Смотри %1$s на Kick!\nhttps://kick.com/%2$s</string>
+    <string name="error_prefix_msg">Ошибка: %1$s</string>
 </resources>

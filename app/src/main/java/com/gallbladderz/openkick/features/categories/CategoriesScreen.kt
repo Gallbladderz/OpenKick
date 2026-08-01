@@ -127,7 +127,7 @@ fun CategoriesScreen(
 
             is CategoriesUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(uiState.message, color = MaterialTheme.colorScheme.error)
+                    Text(uiState.message.asString(), color = MaterialTheme.colorScheme.error)
                 }
             }
         }

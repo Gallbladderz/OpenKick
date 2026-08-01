@@ -8,6 +8,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface HomeUiState {
     data object Loading : HomeUiState
@@ -16,7 +18,7 @@ sealed interface HomeUiState {
         val clips: List<ClipUiModel>
     ) : HomeUiState
 
-    data class Error(val message: String) : HomeUiState
+    data class Error(val message: UiText) : HomeUiState
 }
 
 class HomeViewModel(
@@ -110,7 +112,7 @@ class HomeViewModel(
                 if (streamsResult.isFailure && clipsResult.isFailure) {
                     val ex = streamsResult.exceptionOrNull() ?: clipsResult.exceptionOrNull()
                     _uiState.value =
-                        HomeUiState.Error(ex?.message ?: "Total failure, nothing loaded")
+                        HomeUiState.Error(ex?.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.total_failure))
                 } else {
 
                     val filteredStreams = filterBanned(streamsList)
@@ -120,7 +122,7 @@ class HomeViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Unexpected error")
+                _uiState.value = HomeUiState.Error(e.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.unexpected_error))
             }
         }
     }
