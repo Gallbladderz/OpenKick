@@ -19,7 +19,7 @@
 
     <string name="search">Search</string>
     <string name="search_placeholder">Search channels, streams...</string>
-    <string name="search_idle">Enter a nickname to search</string>
+    <string name="search_idle">Enter a query to search</string>
     <string name="loading_api">Loading Kick API...</string>
     <string name="error_prefix">Error: %s</string>
     <string name="retry">Retry</string>

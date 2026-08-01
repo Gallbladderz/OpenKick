@@ -2,6 +2,7 @@ package com.gallbladderz.openkick.features.player.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,11 +10,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,9 +31,6 @@ import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-
 @Composable
 fun StreamerInfoCard(
     streamerName: String,
@@ -42,9 +43,11 @@ fun StreamerInfoCard(
     onAvatarClick: () -> Unit,
     onCategoryClick: () -> Unit
 ) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
@@ -111,8 +114,23 @@ fun StreamerInfoCard(
                     )
                 }
             }
-            FilledTonalButton(onClick = onToggleFollow) {
-                Text(if (isFollowed) stringResource(R.string.unfollow) else stringResource(R.string.follow))
+            Button(
+                onClick = onToggleFollow,
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isFollowed) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                    contentColor = if (isFollowed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(
+                        R.string.follow_action
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelMedium
+                )
             }
         }
     }

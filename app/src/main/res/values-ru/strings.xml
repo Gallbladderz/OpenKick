@@ -45,7 +45,7 @@
 
     <string name="search">Поиск</string>
     <string name="search_placeholder">Поиск каналов, стримов...</string>
-    <string name="search_idle">Введите никнейм для поиска</string>
+    <string name="search_idle">Введите запрос для поиска</string>
     <string name="loading_api">Грузим API Kick...</string>
     <string name="error_prefix">Ошибка: %s</string>
     <string name="retry">Повторить</string>
