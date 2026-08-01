@@ -4,6 +4,8 @@ import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,17 +13,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,17 +41,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.ui.graphics.Color
-import com.shifthackz.catppuccin.palette.Catppuccin
-import com.gallbladderz.openkick.core.datastore.AppTheme
 import com.gallbladderz.openkick.core.datastore.AppAccent
+import com.gallbladderz.openkick.core.datastore.AppTheme
+import com.shifthackz.catppuccin.palette.Catppuccin
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -78,6 +77,8 @@ fun ThemeSettingsScreen(
     onUpdateDynamicColors: (Boolean) -> Unit,
     onBackClick: () -> Unit
 ) {
+    val isDynamicColorsActive = useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val disabledAlpha = 0.38f
 
     Scaffold(
         topBar = {
@@ -105,6 +106,7 @@ fun ThemeSettingsScreen(
                 .padding(paddingValues),
             contentPadding = PaddingValues(16.dp)
         ) {
+
             item {
                 Text(
                     text = stringResource(R.string.base_theme),
@@ -138,7 +140,8 @@ fun ThemeSettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = label,
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -150,7 +153,7 @@ fun ThemeSettingsScreen(
                 Text(
                     text = "Catppuccin",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = if (isDynamicColorsActive) disabledAlpha else 1f),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -160,7 +163,10 @@ fun ThemeSettingsScreen(
                 @OptIn(ExperimentalLayoutApi::class)
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        8.dp,
+                        Alignment.CenterHorizontally
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val catppuccinThemes = listOf(
@@ -175,6 +181,7 @@ fun ThemeSettingsScreen(
                         FilterChip(
                             selected = appTheme == theme,
                             onClick = { onUpdateTheme(theme) },
+                            enabled = !isDynamicColorsActive,
                             label = { Text(label) },
                             leadingIcon = {
                                 Surface(
@@ -192,14 +199,15 @@ fun ThemeSettingsScreen(
                     }
                 }
             }
-if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
+
+            if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
                         text = "Accent Color",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = if (isDynamicColorsActive) disabledAlpha else 1f),
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -209,12 +217,14 @@ if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRA
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            8.dp,
+                            Alignment.CenterHorizontally
+                        ),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val isDark = appTheme != AppTheme.CATPPUCCIN_LATTE
                         val palette = if (isDark) Catppuccin.Mocha else Catppuccin.Latte
-
                         val accents = listOf(
                             AppAccent.ROSEWATER to ("Rosewater" to palette.Rosewater),
                             AppAccent.FLAMINGO to ("Flamingo" to palette.Flamingo),
@@ -237,6 +247,7 @@ if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRA
                             FilterChip(
                                 selected = appAccent == accent,
                                 onClick = { onUpdateAccent(accent) },
+                                enabled = !isDynamicColorsActive,
                                 label = { Text(label) },
                                 leadingIcon = {
                                     Surface(

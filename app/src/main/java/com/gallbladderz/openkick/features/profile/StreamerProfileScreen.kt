@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,13 +25,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -44,6 +42,7 @@ import com.gallbladderz.openkick.features.profile.components.ClipsTab
 import com.gallbladderz.openkick.features.profile.components.DescriptionTab
 import com.gallbladderz.openkick.features.profile.components.ProfileHeader
 import com.gallbladderz.openkick.features.profile.components.VideosTab
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -195,8 +194,8 @@ fun StreamerProfileScreen(
                                 }
                                 val shareIntent = Intent.createChooser(sendIntent, null)
                                 context.startActivity(shareIntent)
-                                },
-                                onAvatarClick = { onStreamClick(uiState.info.slug) }
+                            },
+                            onAvatarClick = { onStreamClick(uiState.info.slug) }
                         )
                         PrimaryTabRow(
                             selectedTabIndex = pagerState.currentPage,
@@ -235,13 +234,17 @@ fun StreamerProfileScreen(
                                             }.onFailure { error ->
                                                 Toast.makeText(
                                                     context,
-                                                    context.getString(R.string.error_prefix_msg, error.message),
+                                                    context.getString(
+                                                        R.string.error_prefix_msg,
+                                                        error.message
+                                                    ),
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                             }
                                         }
                                     }
                                 )
+
                                 2 -> ClipsTab(
                                     clips = uiState.clips,
                                     onClipClick = onClipClick,

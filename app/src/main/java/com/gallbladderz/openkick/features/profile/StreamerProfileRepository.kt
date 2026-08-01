@@ -6,7 +6,6 @@ import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.toUiModel
 import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.features.player.models.ChannelLinkDto
 import com.gallbladderz.openkick.features.player.models.toDomain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -75,7 +74,10 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             }
         }
 
-    suspend fun fetchClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> = withContext(Dispatchers.IO) {
+    suspend fun fetchClips(
+        slug: String,
+        cursor: String? = null
+    ): Result<Pair<List<ClipUiModel>, String?>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getChannelClips(slug, cursor)
             val clips = response.actualClips.map { it.toUiModel() }
@@ -124,7 +126,16 @@ fun ChannelV1Response.toDomain(slugFallback: String): ProfileInfoUi? {
     }
     val isLive = this.livestream != null
 
-    return ProfileInfoUi(channelId, slugFallback, username, bio, avatarUrl, bannerUrl, followers, isLive)
+    return ProfileInfoUi(
+        channelId,
+        slugFallback,
+        username,
+        bio,
+        avatarUrl,
+        bannerUrl,
+        followers,
+        isLive
+    )
 }
 
 fun VideoItemDto.toDomain(): VideoUiModel? {

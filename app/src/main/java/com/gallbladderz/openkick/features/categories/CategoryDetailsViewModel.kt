@@ -2,6 +2,8 @@ package com.gallbladderz.openkick.features.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.StreamUiModel
 import kotlinx.coroutines.async
@@ -9,8 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface CategoryDetailsUiState {
     data object Loading : CategoryDetailsUiState
@@ -69,7 +69,8 @@ class CategoryDetailsViewModel(
                 if (detailsResult.isFailure) {
                     _uiState.update {
                         CategoryDetailsUiState.Error(
-                            detailsResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.unknown_error)
+                            detailsResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                                ?: UiText.StringResource(R.string.unknown_error)
                         )
                     }
                     return@launch
@@ -96,7 +97,14 @@ class CategoryDetailsViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update { CategoryDetailsUiState.Error(UiText.StringResource(R.string.network_error_msg, e.message ?: "")) }
+                _uiState.update {
+                    CategoryDetailsUiState.Error(
+                        UiText.StringResource(
+                            R.string.network_error_msg,
+                            e.message ?: ""
+                        )
+                    )
+                }
             }
         }
     }

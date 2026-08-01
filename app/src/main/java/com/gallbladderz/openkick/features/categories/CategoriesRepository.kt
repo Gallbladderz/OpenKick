@@ -41,7 +41,10 @@ class CategoriesRepository(private val apiService: KickApiService) {
             }
         }
 
-suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pair<List<ClipUiModel>, String?>> =
+    suspend fun fetchCategoryClips(
+        slug: String,
+        cursor: String? = null
+    ): Result<Pair<List<ClipUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getCategoryClips(slug = slug, cursor = cursor)
@@ -53,10 +56,14 @@ suspend fun fetchCategoryClips(slug: String, cursor: String? = null): Result<Pai
             }
         }
 
-    suspend fun fetchCategoryStreams(slug: String, cursor: String? = null): Result<Pair<List<StreamUiModel>, String?>> =
+    suspend fun fetchCategoryStreams(
+        slug: String,
+        cursor: String? = null
+    ): Result<Pair<List<StreamUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getCategoryLivestreams(subcategorySlug = slug, cursor = cursor)
+                val response =
+                    apiService.getCategoryLivestreams(subcategorySlug = slug, cursor = cursor)
                 val streams =
                     response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
                 val nextCursor = response.data?.pagination?.nextCursor

@@ -1,5 +1,9 @@
 package com.gallbladderz.openkick.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -39,10 +43,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -154,7 +154,11 @@ fun OpenKickNavHost() {
                             com.gallbladderz.openkick.features.following.FollowingRoute(
                                 onManageClick = { navController.navigate(AllFollowsRoute) },
                                 onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
-                                onProfileClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) },
+                                onProfileClick = { slug ->
+                                    navController.navigate(
+                                        StreamerProfileRoute(slug)
+                                    )
+                                },
                                 onCategoryClick = { slug ->
                                     navController.navigate(
                                         CategoryDetailsRoute(slug)

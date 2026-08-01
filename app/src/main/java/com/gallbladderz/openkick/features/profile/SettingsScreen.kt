@@ -109,20 +109,30 @@ fun SettingsScreen(
         }
 
         item {
-            val themeDesc = when (appTheme) {
-                AppTheme.SYSTEM -> "Системная"
-                AppTheme.LIGHT -> "Светлая"
-                AppTheme.DARK -> "Темная"
-                AppTheme.CATPPUCCIN_LATTE -> "Catppuccin Latte"
-                AppTheme.CATPPUCCIN_FRAPPE -> "Catppuccin Frappe"
-                AppTheme.CATPPUCCIN_MACCHIATO -> "Catppuccin Macchiato"
-                AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
+            val isDynamicColorsActive = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors
+
+            val supportingText = if (isDynamicColorsActive) {
+                val baseState = when (appTheme) {
+                    AppTheme.LIGHT, AppTheme.CATPPUCCIN_LATTE -> stringResource(R.string.light)
+                    AppTheme.DARK, AppTheme.CATPPUCCIN_FRAPPE, AppTheme.CATPPUCCIN_MACCHIATO, AppTheme.CATPPUCCIN_MOCHA -> stringResource(R.string.dark)
+                    else -> stringResource(R.string.system_default)
+                }
+                "Material You ($baseState)"
+            } else {
+                when (appTheme) {
+                    AppTheme.SYSTEM -> stringResource(R.string.system_default)
+                    AppTheme.LIGHT -> stringResource(R.string.light)
+                    AppTheme.DARK -> stringResource(R.string.dark)
+                    AppTheme.CATPPUCCIN_LATTE -> "Catppuccin Latte"
+                    AppTheme.CATPPUCCIN_FRAPPE -> "Catppuccin Frappe"
+                    AppTheme.CATPPUCCIN_MACCHIATO -> "Catppuccin Macchiato"
+                    AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
+                }
             }
-            val dynamicDesc =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""
+
             SettingsListItem(
                 headline = stringResource(R.string.theme_settings),
-                supporting = "$themeDesc$dynamicDesc",
+                supporting = supportingText,
                 icon = Icons.Default.Edit,
                 onClick = onThemeSettingsClick
             )

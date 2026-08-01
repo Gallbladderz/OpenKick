@@ -11,8 +11,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -105,7 +105,8 @@ class FollowingViewModel(
                 }
 
                 val liveStreamers = streamers.filter { it.isLive }.sortedByDescending { it.viewers }
-                val offlineStreamers = streamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
+                val offlineStreamers =
+                    streamers.filter { !it.isLive }.sortedBy { it.username.lowercase() }
 
                 _uiState.update {
                     FollowingUiState.Success(

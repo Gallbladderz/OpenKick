@@ -3,8 +3,8 @@ package com.gallbladderz.openkick.features.profile
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gallbladderz.openkick.core.datastore.AppTheme
 import com.gallbladderz.openkick.core.datastore.AppAccent
+import com.gallbladderz.openkick.core.datastore.AppTheme
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

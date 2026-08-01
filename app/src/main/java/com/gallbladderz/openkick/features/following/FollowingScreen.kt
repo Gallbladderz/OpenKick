@@ -195,7 +195,11 @@ fun FollowingScreen(
                                         items(allStreamers, key = { it.slug }) { streamer ->
                                             StoryAvatarItem(
                                                 streamer = streamer,
-                                        onClick = { if (streamer.isLive) onStreamClick(streamer.slug) else onProfileClick(streamer.slug) }
+                                                onClick = {
+                                                    if (streamer.isLive) onStreamClick(
+                                                        streamer.slug
+                                                    ) else onProfileClick(streamer.slug)
+                                                }
                                             )
                                         }
                                     }
@@ -405,9 +409,10 @@ private fun LiveStreamCard(
 @Composable
 private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Unit) {
     val context = LocalContext.current
-    Column(modifier = Modifier
-        .width(100.dp)
-        .clickable { onClick() }) {
+    Column(
+        modifier = Modifier
+            .width(100.dp)
+            .clickable { onClick() }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()

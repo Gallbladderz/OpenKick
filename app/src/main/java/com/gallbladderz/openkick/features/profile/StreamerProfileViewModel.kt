@@ -48,11 +48,6 @@ class StreamerProfileViewModel(
 
     private var currentSlug: String? = null
 
-
-    /**
-     * Ленивая загрузка playback URL для VOD.
-     * Вызывается при клике на видео в VideosTab.
-     */
     fun loadVideoPlaybackUrl(videoId: String, onResult: (Result<String>) -> Unit) {
         if (videoId.isBlank()) {
             onResult(Result.failure(IllegalArgumentException("Empty video ID")))

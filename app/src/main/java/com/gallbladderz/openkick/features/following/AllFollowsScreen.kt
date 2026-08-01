@@ -125,7 +125,11 @@ fun AllFollowsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { if (streamer.isLive) onStreamClick(streamer.slug) else onProfileClick(streamer.slug) },
+                                    .clickable {
+                                        if (streamer.isLive) onStreamClick(streamer.slug) else onProfileClick(
+                                            streamer.slug
+                                        )
+                                    },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
 

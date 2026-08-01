@@ -15,10 +15,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.gallbladderz.openkick.core.datastore.AppAccent
+import com.gallbladderz.openkick.core.datastore.AppTheme
 import com.shifthackz.catppuccin.compose.CatppuccinMaterial
 import com.shifthackz.catppuccin.compose.colorScheme
-import com.gallbladderz.openkick.core.datastore.AppTheme
-import com.gallbladderz.openkick.core.datastore.AppAccent
 import com.shifthackz.catppuccin.palette.Catppuccin
 
 fun getAccentColor(accent: AppAccent, isDark: Boolean): Color {
@@ -84,7 +84,12 @@ fun OpenKickTheme(
         AppTheme.DARK, AppTheme.CATPPUCCIN_FRAPPE, AppTheme.CATPPUCCIN_MACCHIATO, AppTheme.CATPPUCCIN_MOCHA -> true
     }
 
-val colorScheme = when {
+    val colorScheme = when {
+        useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+
         appTheme == AppTheme.CATPPUCCIN_LATTE -> {
             val accentColor = getAccentColor(appAccent, false)
             CatppuccinMaterial.Latte().colorScheme().copy(
@@ -94,6 +99,7 @@ val colorScheme = when {
                 secondaryContainer = accentColor.copy(alpha = 0.25f)
             )
         }
+
         appTheme == AppTheme.CATPPUCCIN_FRAPPE -> {
             val accentColor = getAccentColor(appAccent, true)
             CatppuccinMaterial.Frappe().colorScheme().copy(
@@ -103,6 +109,7 @@ val colorScheme = when {
                 secondaryContainer = accentColor.copy(alpha = 0.25f)
             )
         }
+
         appTheme == AppTheme.CATPPUCCIN_MACCHIATO -> {
             val accentColor = getAccentColor(appAccent, true)
             CatppuccinMaterial.Macchiato().colorScheme().copy(
@@ -112,6 +119,7 @@ val colorScheme = when {
                 secondaryContainer = accentColor.copy(alpha = 0.25f)
             )
         }
+
         appTheme == AppTheme.CATPPUCCIN_MOCHA -> {
             val accentColor = getAccentColor(appAccent, true)
             CatppuccinMaterial.Mocha().colorScheme().copy(
@@ -121,13 +129,11 @@ val colorScheme = when {
                 secondaryContainer = accentColor.copy(alpha = 0.25f)
             )
         }
-        useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+
         darkTheme -> KickDarkColorScheme
         else -> KickLightColorScheme
     }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

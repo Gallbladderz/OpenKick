@@ -2,6 +2,8 @@ package com.gallbladderz.openkick.features.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.UiText
 import com.gallbladderz.openkick.data.local.FollowsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,8 +14,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.core.ui.UiText
 
 sealed interface CategoriesUiState {
     data object Loading : CategoriesUiState
@@ -70,7 +70,8 @@ class CategoriesViewModel(
                 }.onFailure { exception ->
                     _uiState.update {
                         CategoriesUiState.Error(
-                            exception.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(R.string.network_error)
+                            exception.message?.let { UiText.DynamicString(it) }
+                                ?: UiText.StringResource(R.string.network_error)
                         )
                     }
                 }
