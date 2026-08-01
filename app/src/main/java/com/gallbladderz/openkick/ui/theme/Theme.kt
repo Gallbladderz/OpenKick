@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.shifthackz.catppuccin.compose.CatppuccinMaterial
+import com.shifthackz.catppuccin.compose.colorScheme
 import com.gallbladderz.openkick.core.datastore.AppTheme
 
 private val KickDarkColorScheme = darkColorScheme(
@@ -46,32 +48,6 @@ private val KickLightColorScheme = lightColorScheme(
     error = KickError,
     onError = Color.White
 )
-private val CatppuccinMochaColorScheme = darkColorScheme(
-    primary = CatppuccinMochaPrimary,
-    onPrimary = CatppuccinMochaOnPrimary,
-    background = CatppuccinMochaBackground,
-    onBackground = CatppuccinMochaText,
-    surface = CatppuccinMochaSurface,
-    onSurface = CatppuccinMochaText,
-    surfaceVariant = CatppuccinMochaSurface,
-    onSurfaceVariant = CatppuccinMochaText,
-    error = KickError,
-    onError = Color.White
-)
-
-private val CatppuccinLatteColorScheme = lightColorScheme(
-    primary = CatppuccinLattePrimary,
-    onPrimary = CatppuccinLatteOnPrimary,
-    background = CatppuccinLatteBackground,
-    onBackground = CatppuccinLatteText,
-    surface = CatppuccinLatteSurface,
-    onSurface = CatppuccinLatteText,
-    surfaceVariant = CatppuccinLatteSurface,
-    onSurfaceVariant = CatppuccinLatteText,
-    error = KickError,
-    onError = Color.White
-)
-
 @Composable
 fun OpenKickTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
@@ -80,18 +56,19 @@ fun OpenKickTheme(
 ) {
     val darkTheme = when (appTheme) {
         AppTheme.SYSTEM -> isSystemInDarkTheme()
-        AppTheme.DARK, AppTheme.CATPPUCCIN_MOCHA -> true
         AppTheme.LIGHT, AppTheme.CATPPUCCIN_LATTE -> false
+        AppTheme.DARK, AppTheme.CATPPUCCIN_FRAPPE, AppTheme.CATPPUCCIN_MACCHIATO, AppTheme.CATPPUCCIN_MOCHA -> true
     }
 
     val colorScheme = when {
-        appTheme == AppTheme.CATPPUCCIN_MOCHA -> CatppuccinMochaColorScheme
-        appTheme == AppTheme.CATPPUCCIN_LATTE -> CatppuccinLatteColorScheme
+        appTheme == AppTheme.CATPPUCCIN_LATTE -> CatppuccinMaterial.Latte().colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_FRAPPE -> CatppuccinMaterial.Frappe().colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_MACCHIATO -> CatppuccinMaterial.Macchiato().colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_MOCHA -> CatppuccinMaterial.Mocha().colorScheme()
         useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> KickDarkColorScheme
         else -> KickLightColorScheme
     }

@@ -113,8 +113,10 @@ fun SettingsScreen(
                 AppTheme.SYSTEM -> "Системная"
                 AppTheme.LIGHT -> "Светлая"
                 AppTheme.DARK -> "Темная"
-                AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
                 AppTheme.CATPPUCCIN_LATTE -> "Catppuccin Latte"
+                AppTheme.CATPPUCCIN_FRAPPE -> "Catppuccin Frappe"
+                AppTheme.CATPPUCCIN_MACCHIATO -> "Catppuccin Macchiato"
+                AppTheme.CATPPUCCIN_MOCHA -> "Catppuccin Mocha"
             }
             val dynamicDesc =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicColors) " + Material You" else ""

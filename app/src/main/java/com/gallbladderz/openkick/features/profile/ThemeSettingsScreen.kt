@@ -34,6 +34,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
+import com.shifthackz.catppuccin.palette.Catppuccin
 import com.gallbladderz.openkick.core.datastore.AppTheme
 import org.koin.androidx.compose.koinViewModel
 
@@ -100,15 +109,13 @@ fun ThemeSettingsScreen(
                 )
             }
 
-            val themes = listOf(
+            val baseThemes = listOf(
                 AppTheme.SYSTEM to R.string.system_default,
                 AppTheme.LIGHT to R.string.light,
-                AppTheme.DARK to R.string.dark,
-                AppTheme.CATPPUCCIN_MOCHA to R.string.catppuccin_mocha,
-                AppTheme.CATPPUCCIN_LATTE to R.string.catppuccin_latte
+                AppTheme.DARK to R.string.dark
             )
 
-            themes.forEach { (theme, labelRes) ->
+            baseThemes.forEach { (theme, labelRes) ->
                 item {
                     val label = stringResource(labelRes)
                     Row(
@@ -126,6 +133,55 @@ fun ThemeSettingsScreen(
                         Text(
                             text = label,
                             style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                Text(
+                    text = "Catppuccin",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            item {
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val catppuccinThemes = listOf(
+                        AppTheme.CATPPUCCIN_LATTE to ("Latte" to Catppuccin.Latte.Base),
+                        AppTheme.CATPPUCCIN_FRAPPE to ("Frappe" to Catppuccin.Frappe.Base),
+                        AppTheme.CATPPUCCIN_MACCHIATO to ("Macchiato" to Catppuccin.Macchiato.Base),
+                        AppTheme.CATPPUCCIN_MOCHA to ("Mocha" to Catppuccin.Mocha.Base)
+                    )
+
+                    catppuccinThemes.forEach { (theme, info) ->
+                        val (label, color) = info
+                        FilterChip(
+                            selected = appTheme == theme,
+                            onClick = { onUpdateTheme(theme) },
+                            label = { Text(label) },
+                            leadingIcon = {
+                                Surface(
+                                    modifier = Modifier.size(16.dp),
+                                    shape = CircleShape,
+                                    color = color,
+                                    content = {}
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         )
                     }
                 }
