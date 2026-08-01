@@ -39,6 +39,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -69,7 +73,27 @@ fun OpenKickNavHost() {
 
     NavHost(
         navController = navController,
-        startDestination = MainTabsRoute
+        startDestination = MainTabsRoute,
+        enterTransition = {
+            fadeIn(animationSpec = tween(300)) + slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)
+            )
+        },
+        exitTransition = {
+            fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)
+            )
+        },
+        popEnterTransition = {
+            fadeIn(animationSpec = tween(300)) + slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)
+            )
+        },
+        popExitTransition = {
+            fadeOut(animationSpec = tween(300)) + slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)
+            )
+        }
     ) {
 
         composable<MainTabsRoute> {
