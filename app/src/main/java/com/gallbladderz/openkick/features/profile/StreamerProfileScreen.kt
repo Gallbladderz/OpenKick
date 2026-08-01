@@ -11,6 +11,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -146,6 +147,29 @@ fun StreamerProfileScreen(
                         )
                     }
                 },
+                actions = {
+                    if (state is ProfileUiState.Success) {
+                        IconButton(onClick = {
+                            val sendIntent: Intent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                val shareText = context.getString(
+                                    R.string.share_intent_text,
+                                    state.info.username,
+                                    state.info.slug
+                                ).replace("\\n", "\n")
+                                putExtra(Intent.EXTRA_TEXT, shareText)
+                                type = "text/plain"
+                            }
+                            val shareIntent = Intent.createChooser(sendIntent, null)
+                            context.startActivity(shareIntent)
+                        }) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = stringResource(R.string.share_profile_desc)
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
@@ -181,20 +205,6 @@ fun StreamerProfileScreen(
                             info = uiState.info,
                             isFollowing = uiState.isFollowing,
                             onFollowClick = { onToggleFollow() },
-                            onShareClick = {
-                                val sendIntent: Intent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    val shareText = context.getString(
-                                        R.string.share_intent_text,
-                                        uiState.info.username,
-                                        uiState.info.slug
-                                    ).replace("\\n", "\n")
-                                    putExtra(Intent.EXTRA_TEXT, shareText)
-                                    type = "text/plain"
-                                }
-                                val shareIntent = Intent.createChooser(sendIntent, null)
-                                context.startActivity(shareIntent)
-                            },
                             onAvatarClick = { onStreamClick(uiState.info.slug) }
                         )
                         PrimaryTabRow(

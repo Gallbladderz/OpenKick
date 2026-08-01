@@ -52,7 +52,6 @@ fun ProfileHeader(
     info: ProfileInfoUi,
     isFollowing: Boolean,
     onFollowClick: () -> Unit,
-    onShareClick: () -> Unit,
     onAvatarClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -189,17 +188,7 @@ fun ProfileHeader(
                 )
             }
 
-            FilledTonalIconButton(
-                onClick = onShareClick,
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = stringResource(R.string.share_profile_desc),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+
         }
 
         Spacer(modifier = Modifier.height(8.dp))

@@ -35,11 +35,17 @@ fun ContentSettingsRoute(
     onBackClick: () -> Unit,
     viewModel: MainViewModel = koinViewModel()
 ) {
-    val hideCategories by viewModel.hideCategories.collectAsStateWithLifecycle()
+    val hideSlots by viewModel.hideSlots.collectAsStateWithLifecycle()
+    val hidePools by viewModel.hidePools.collectAsStateWithLifecycle()
+    val hideCrypto by viewModel.hideCrypto.collectAsStateWithLifecycle()
 
     ContentSettingsScreen(
-        hideCategories = hideCategories,
-        onToggleCategories = { viewModel.toggleCategories(it) },
+        hideSlots = hideSlots,
+        hidePools = hidePools,
+        hideCrypto = hideCrypto,
+        onToggleSlots = { viewModel.toggleSlots(it) },
+        onTogglePools = { viewModel.togglePools(it) },
+        onToggleCrypto = { viewModel.toggleCrypto(it) },
         onBackClick = onBackClick
     )
 }
@@ -47,8 +53,12 @@ fun ContentSettingsRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentSettingsScreen(
-    hideCategories: Boolean,
-    onToggleCategories: (Boolean) -> Unit,
+    hideSlots: Boolean,
+    hidePools: Boolean,
+    hideCrypto: Boolean,
+    onToggleSlots: (Boolean) -> Unit,
+    onTogglePools: (Boolean) -> Unit,
+    onToggleCrypto: (Boolean) -> Unit,
     onBackClick: () -> Unit
 ) {
 
@@ -86,15 +96,15 @@ fun ContentSettingsScreen(
                 ListItem(
                     headlineContent = {
                         Text(
-                            stringResource(R.string.hide_nsfw_categories),
+                            stringResource(R.string.hide_slots_title),
                             fontWeight = FontWeight.Bold
                         )
                     },
-                    supportingContent = { Text(stringResource(R.string.hide_nsfw_description)) },
+                    supportingContent = { Text(stringResource(R.string.hide_slots_desc)) },
                     trailingContent = {
                         Switch(
-                            checked = hideCategories,
-                            onCheckedChange = { onToggleCategories(it) }
+                            checked = hideSlots,
+                            onCheckedChange = { onToggleSlots(it) }
                         )
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
@@ -102,9 +112,21 @@ fun ContentSettingsScreen(
             }
 
             item {
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            stringResource(R.string.hide_pools_title),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    supportingContent = { Text(stringResource(R.string.hide_pools_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = hidePools,
+                            onCheckedChange = { onTogglePools(it) }
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
             }
 
@@ -112,11 +134,17 @@ fun ContentSettingsScreen(
                 ListItem(
                     headlineContent = {
                         Text(
-                            stringResource(R.string.blacklist_title),
+                            stringResource(R.string.hide_crypto_title),
                             fontWeight = FontWeight.Bold
                         )
                     },
-                    supportingContent = { Text(stringResource(R.string.blacklist_description)) },
+                    supportingContent = { Text(stringResource(R.string.hide_crypto_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = hideCrypto,
+                            onCheckedChange = { onToggleCrypto(it) }
+                        )
+                    },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
             }

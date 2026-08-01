@@ -133,10 +133,12 @@
     <string name="done_desc">Done</string>
     <string name="disable">Disable</string>
     <string name="content_settings_title">Content</string>
-    <string name="hide_nsfw_categories">Hide NSFW categories</string>
-    <string name="hide_nsfw_description">Hides slots, casino, and Hot Tubs from the feed.</string>
-    <string name="blacklist_title">Blacklist</string>
-    <string name="blacklist_description">Blocked streamers (WIP)</string>
+    <string name="hide_slots_title">Slots &amp; Casino</string>
+    <string name="hide_slots_desc">Hides slots and casino streams from the feed.</string>
+    <string name="hide_pools_title">Pools &amp; Hot Tubs</string>
+    <string name="hide_pools_desc">Hides pools, hot tubs, and bikinis streams from the feed.</string>
+    <string name="hide_crypto_title">Crypto &amp; Trading</string>
+    <string name="hide_crypto_desc">Hides crypto and trading streams from the feed.</string>
     <string name="share_desc">Share</string>
     <string name="settings_desc">Settings</string>
     <string name="play_pause_desc">Play/Pause</string>

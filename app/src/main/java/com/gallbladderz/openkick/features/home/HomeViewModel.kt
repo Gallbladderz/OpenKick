@@ -21,6 +21,13 @@ sealed interface HomeUiState {
     data class Error(val message: UiText) : HomeUiState
 }
 
+private data class CombinedState(
+    val langs: Set<String>,
+    val hideSlots: Boolean,
+    val hidePools: Boolean,
+    val hideCrypto: Boolean
+)
+
 class HomeViewModel(
     private val repository: HomeRepository,
     private val settingsRepository: SettingsRepository
@@ -41,18 +48,18 @@ class HomeViewModel(
     private var isClipsEnd = false
 
     private var currentLanguages: Set<String>? = null
-    private var currentHideCategories: Boolean = false
+    private var currentHideSlots: Boolean = false
+    private var currentHidePools: Boolean = false
+    private var currentHideCrypto: Boolean = false
 
 
     private fun filterBanned(streams: List<StreamUiModel>): List<StreamUiModel> {
-        if (!currentHideCategories) return streams
+        if (!currentHideSlots && !currentHidePools && !currentHideCrypto) return streams
 
-
-        val bannedSlugs = setOf(
-            "slots",
-            "pools-hot-tubs-bikinis",
-            "crypto-and-trading"
-        )
+        val bannedSlugs = mutableSetOf<String>()
+        if (currentHideSlots) bannedSlugs.add("slots")
+        if (currentHidePools) bannedSlugs.add("pools-hot-tubs-bikinis")
+        if (currentHideCrypto) bannedSlugs.add("crypto-and-trading")
 
         return streams.filter { stream ->
             stream.categorySlug.lowercase() !in bannedSlugs
@@ -65,17 +72,23 @@ class HomeViewModel(
 
             kotlinx.coroutines.flow.combine(
                 settingsRepository.selectedLanguagesFlow,
-                settingsRepository.hideCategoriesFlow
-            ) { langs, hide ->
-                Pair(langs, hide)
-            }.collect { (langs, hide) ->
-                val langsChanged = currentLanguages != langs
-                val hideChanged = currentHideCategories != hide
+                settingsRepository.hideSlotsFlow,
+                settingsRepository.hidePoolsFlow,
+                settingsRepository.hideCryptoFlow
+            ) { langs, hideSlots, hidePools, hideCrypto ->
+                CombinedState(langs, hideSlots, hidePools, hideCrypto)
+            }.collect { state ->
+                val langsChanged = currentLanguages != state.langs
+                val hideSlotsChanged = currentHideSlots != state.hideSlots
+                val hidePoolsChanged = currentHidePools != state.hidePools
+                val hideCryptoChanged = currentHideCrypto != state.hideCrypto
 
 
-                if (langsChanged || hideChanged || currentLanguages == null) {
-                    currentLanguages = langs
-                    currentHideCategories = hide
+                if (langsChanged || hideSlotsChanged || hidePoolsChanged || hideCryptoChanged || currentLanguages == null) {
+                    currentLanguages = state.langs
+                    currentHideSlots = state.hideSlots
+                    currentHidePools = state.hidePools
+                    currentHideCrypto = state.hideCrypto
                     fetchHomeData()
                 }
             }
