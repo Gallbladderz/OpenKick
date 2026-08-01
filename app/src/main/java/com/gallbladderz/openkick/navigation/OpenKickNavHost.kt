@@ -230,6 +230,7 @@ fun OpenKickNavHost() {
 
         composable<SearchRoute> {
             SearchScreen(
+                onBackClick = { navController.popBackStack() },
                 onChannelClick = { streamerName, isLive ->
                     if (isLive) {
 
