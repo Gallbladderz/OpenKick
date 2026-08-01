@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.core.datastore.AppTheme
+import com.gallbladderz.openkick.core.datastore.AppAccent
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +54,20 @@ class MainViewModel(
     fun updateAppTheme(theme: AppTheme) {
         viewModelScope.launch {
             settingsRepository.setAppTheme(theme)
+        }
+    }
+
+    val appAccent: StateFlow<AppAccent> =
+        settingsRepository.appAccentFlow
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = AppAccent.MAUVE
+            )
+
+    fun updateAppAccent(accent: AppAccent) {
+        viewModelScope.launch {
+            settingsRepository.setAppAccent(accent)
         }
     }
 

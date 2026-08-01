@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
 import com.shifthackz.catppuccin.palette.Catppuccin
 import com.gallbladderz.openkick.core.datastore.AppTheme
+import com.gallbladderz.openkick.core.datastore.AppAccent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -52,10 +53,13 @@ fun ThemeSettingsRoute(
     mainViewModel: MainViewModel = koinViewModel()
 ) {
     val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
+    val appAccent by mainViewModel.appAccent.collectAsStateWithLifecycle()
     val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
 
     ThemeSettingsScreen(
         appTheme = appTheme,
+        appAccent = appAccent,
+        onUpdateAccent = { mainViewModel.updateAppAccent(it) },
         useDynamicColors = useDynamicColors,
         onUpdateTheme = { mainViewModel.updateAppTheme(it) },
         onUpdateDynamicColors = { mainViewModel.updateUseDynamicColors(it) },
@@ -67,6 +71,8 @@ fun ThemeSettingsRoute(
 @Composable
 fun ThemeSettingsScreen(
     appTheme: AppTheme,
+    appAccent: AppAccent,
+    onUpdateAccent: (AppAccent) -> Unit,
     useDynamicColors: Boolean,
     onUpdateTheme: (AppTheme) -> Unit,
     onUpdateDynamicColors: (Boolean) -> Unit,
@@ -183,6 +189,70 @@ fun ThemeSettingsScreen(
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         )
+                    }
+                }
+            }
+
+if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    Text(
+                        text = "Accent Color",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+
+                item {
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val isDark = appTheme != AppTheme.CATPPUCCIN_LATTE
+                        val palette = if (isDark) Catppuccin.Mocha else Catppuccin.Latte
+
+                        val accents = listOf(
+                            AppAccent.ROSEWATER to ("Rosewater" to palette.Rosewater),
+                            AppAccent.FLAMINGO to ("Flamingo" to palette.Flamingo),
+                            AppAccent.PINK to ("Pink" to palette.Pink),
+                            AppAccent.MAUVE to ("Mauve" to palette.Mauve),
+                            AppAccent.RED to ("Red" to palette.Red),
+                            AppAccent.MAROON to ("Maroon" to palette.Maroon),
+                            AppAccent.PEACH to ("Peach" to palette.Peach),
+                            AppAccent.YELLOW to ("Yellow" to palette.Yellow),
+                            AppAccent.GREEN to ("Green" to palette.Green),
+                            AppAccent.TEAL to ("Teal" to palette.Teal),
+                            AppAccent.SKY to ("Sky" to palette.Sky),
+                            AppAccent.SAPPHIRE to ("Sapphire" to palette.Sapphire),
+                            AppAccent.BLUE to ("Blue" to palette.Blue),
+                            AppAccent.LAVENDER to ("Lavender" to palette.Lavender)
+                        )
+
+                        accents.forEach { (accent, info) ->
+                            val (label, color) = info
+                            FilterChip(
+                                selected = appAccent == accent,
+                                onClick = { onUpdateAccent(accent) },
+                                label = { Text(label) },
+                                leadingIcon = {
+                                    Surface(
+                                        modifier = Modifier.size(16.dp),
+                                        shape = CircleShape,
+                                        color = color,
+                                        content = {}
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            )
+                        }
                     }
                 }
             }

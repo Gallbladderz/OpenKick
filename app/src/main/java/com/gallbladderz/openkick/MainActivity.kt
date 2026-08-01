@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             val appTheme by mainViewModel.appTheme.collectAsStateWithLifecycle()
+            val appAccent by mainViewModel.appAccent.collectAsStateWithLifecycle()
             val useDynamicColors by mainViewModel.useDynamicColors.collectAsStateWithLifecycle()
 
             val permissionLauncher = rememberLauncherForActivityResult(
@@ -56,7 +57,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            OpenKickTheme(appTheme = appTheme, useDynamicColors = useDynamicColors) {
+            OpenKickTheme(appTheme = appTheme, appAccent = appAccent, useDynamicColors = useDynamicColors) {
                 OpenKickNavHost()
             }
         }
