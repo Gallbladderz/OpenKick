@@ -21,6 +21,7 @@ class SettingsRepository(private val context: Context) {
         private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val BACKGROUND_KEEPALIVE = booleanPreferencesKey("background_keepalive")
         private val APP_THEME = stringPreferencesKey("app_theme")
+        private val APP_ACCENT = stringPreferencesKey("app_accent")
         private val USE_DYNAMIC_COLORS = booleanPreferencesKey("use_dynamic_colors")
     }
 
@@ -36,6 +37,21 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAppTheme(theme: AppTheme) {
         context.dataStore.edit { preferences ->
             preferences[APP_THEME] = theme.name
+        }
+    }
+
+    val appAccentFlow: Flow<AppAccent> = context.dataStore.data.map { preferences ->
+        val accentName = preferences[APP_ACCENT] ?: AppAccent.MAUVE.name
+        try {
+            AppAccent.valueOf(accentName)
+        } catch (e: IllegalArgumentException) {
+            AppAccent.MAUVE
+        }
+    }
+
+    suspend fun setAppAccent(accent: AppAccent) {
+        context.dataStore.edit { preferences ->
+            preferences[APP_ACCENT] = accent.name
         }
     }
 

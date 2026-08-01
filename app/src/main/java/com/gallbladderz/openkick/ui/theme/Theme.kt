@@ -18,6 +18,28 @@ import androidx.core.view.WindowCompat
 import com.shifthackz.catppuccin.compose.CatppuccinMaterial
 import com.shifthackz.catppuccin.compose.colorScheme
 import com.gallbladderz.openkick.core.datastore.AppTheme
+import com.gallbladderz.openkick.core.datastore.AppAccent
+import com.shifthackz.catppuccin.palette.Catppuccin
+
+fun getAccentColor(accent: AppAccent, isDark: Boolean): Color {
+    val palette = if (isDark) Catppuccin.Mocha else Catppuccin.Latte
+    return when (accent) {
+        AppAccent.ROSEWATER -> palette.Rosewater
+        AppAccent.FLAMINGO -> palette.Flamingo
+        AppAccent.PINK -> palette.Pink
+        AppAccent.MAUVE -> palette.Mauve
+        AppAccent.RED -> palette.Red
+        AppAccent.MAROON -> palette.Maroon
+        AppAccent.PEACH -> palette.Peach
+        AppAccent.YELLOW -> palette.Yellow
+        AppAccent.GREEN -> palette.Green
+        AppAccent.TEAL -> palette.Teal
+        AppAccent.SKY -> palette.Sky
+        AppAccent.SAPPHIRE -> palette.Sapphire
+        AppAccent.BLUE -> palette.Blue
+        AppAccent.LAVENDER -> palette.Lavender
+    }
+}
 
 private val KickDarkColorScheme = darkColorScheme(
     primary = KickGreen,
@@ -48,9 +70,11 @@ private val KickLightColorScheme = lightColorScheme(
     error = KickError,
     onError = Color.White
 )
+
 @Composable
 fun OpenKickTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
+    appAccent: AppAccent = AppAccent.MAUVE,
     useDynamicColors: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -61,10 +85,10 @@ fun OpenKickTheme(
     }
 
     val colorScheme = when {
-        appTheme == AppTheme.CATPPUCCIN_LATTE -> CatppuccinMaterial.Latte().colorScheme()
-        appTheme == AppTheme.CATPPUCCIN_FRAPPE -> CatppuccinMaterial.Frappe().colorScheme()
-        appTheme == AppTheme.CATPPUCCIN_MACCHIATO -> CatppuccinMaterial.Macchiato().colorScheme()
-        appTheme == AppTheme.CATPPUCCIN_MOCHA -> CatppuccinMaterial.Mocha().colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_LATTE -> CatppuccinMaterial.Latte(primary = getAccentColor(appAccent, false)).colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_FRAPPE -> CatppuccinMaterial.Frappe(primary = getAccentColor(appAccent, true)).colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_MACCHIATO -> CatppuccinMaterial.Macchiato(primary = getAccentColor(appAccent, true)).colorScheme()
+        appTheme == AppTheme.CATPPUCCIN_MOCHA -> CatppuccinMaterial.Mocha(primary = getAccentColor(appAccent, true)).colorScheme()
         useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
