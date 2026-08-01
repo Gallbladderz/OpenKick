@@ -128,7 +128,7 @@ fun ThemeSettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onUpdateTheme(theme) }
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
@@ -145,8 +145,8 @@ fun ThemeSettingsScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text(
                     text = "Catppuccin",
                     style = MaterialTheme.typography.titleMedium,
@@ -160,7 +160,7 @@ fun ThemeSettingsScreen(
                 @OptIn(ExperimentalLayoutApi::class)
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val catppuccinThemes = listOf(
@@ -193,10 +193,11 @@ fun ThemeSettingsScreen(
                 }
             }
 
-if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
+
+            if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRAPPE || appTheme == AppTheme.CATPPUCCIN_MACCHIATO || appTheme == AppTheme.CATPPUCCIN_MOCHA) {
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
                         text = "Accent Color",
                         style = MaterialTheme.typography.titleMedium,
@@ -210,7 +211,7 @@ if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRA
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val isDark = appTheme != AppTheme.CATPPUCCIN_LATTE
@@ -259,8 +260,8 @@ if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRA
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
                         text = stringResource(R.string.dynamic_colors),
                         style = MaterialTheme.typography.titleMedium,
@@ -275,7 +276,7 @@ if (appTheme == AppTheme.CATPPUCCIN_LATTE || appTheme == AppTheme.CATPPUCCIN_FRA
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onUpdateDynamicColors(!useDynamicColors) }
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
