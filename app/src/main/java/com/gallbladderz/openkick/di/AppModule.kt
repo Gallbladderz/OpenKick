@@ -104,7 +104,7 @@ val appModule = module {
             )
     }
 
-    factory { PlayerManager(androidContext(), get()) }
+    single { PlayerManager(androidContext(), get()) }
 
     viewModel { PlayerViewModel(get(), get(), get(), get()) }
     viewModel { ClipPlayerViewModel(get()) }

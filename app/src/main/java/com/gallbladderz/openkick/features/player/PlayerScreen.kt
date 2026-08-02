@@ -1,6 +1,12 @@
 @file:Suppress("DEPRECATION")
 
 package com.gallbladderz.openkick.features.player
+import android.app.PictureInPictureParams
+import android.content.Intent
+import android.os.Build
+import androidx.core.util.Consumer
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.DisposableEffect
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -26,7 +32,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -143,6 +149,32 @@ fun PlayerScreen(
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
+    var isInPipMode by remember { mutableStateOf(false) }
+
+    DisposableEffect(context) {
+        val activity = context.findActivity() as? ComponentActivity
+        val pipListener = Consumer<androidx.core.app.PictureInPictureModeChangedInfo> { info ->
+            isInPipMode = info.isInPictureInPictureMode
+        }
+        activity?.addOnPictureInPictureModeChangedListener(pipListener)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val params = PictureInPictureParams.Builder()
+                .setAutoEnterEnabled(true)
+                .build()
+            activity?.setPictureInPictureParams(params)
+        }
+
+        onDispose {
+            activity?.removeOnPictureInPictureModeChangedListener(pipListener)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val intent = Intent(context, PlaybackService::class.java)
+        context.startService(intent)
+    }
+
     val tabs = listOf(
         stringResource(R.string.chat_tab),
         stringResource(R.string.description)
@@ -215,11 +247,15 @@ fun PlayerScreen(
     val rootModifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)
-        .let { if (!isFullscreen) it.statusBarsPadding() else it }
+        .let { if (!isFullscreen && !isInPipMode) it.statusBarsPadding() else it }
 
     Column(modifier = rootModifier) {
         Box(
-            modifier = if (isFullscreen) {
+            modifier = if (isInPipMode) {
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            } else if (isFullscreen) {
                 Modifier
                     .fillMaxSize()
                     .background(Color.Black)
@@ -262,7 +298,7 @@ fun PlayerScreen(
                     }
 
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = showControls,
+                        visible = showControls && !isInPipMode,
                         enter = androidx.compose.animation.fadeIn(),
                         exit = androidx.compose.animation.fadeOut(),
                         modifier = Modifier.fillMaxSize()
@@ -313,7 +349,7 @@ fun PlayerScreen(
             }
         }
 
-        if (!isFullscreen) {
+        if (!isFullscreen && !isInPipMode) {
             if (state is PlayerUiState.Playing) {
                 val playingState = state as PlayerUiState.Playing
                 StreamerInfoCard(

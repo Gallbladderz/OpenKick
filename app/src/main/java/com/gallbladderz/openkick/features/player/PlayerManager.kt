@@ -141,10 +141,10 @@ class PlayerManager(
     }
 
 
-    fun play(videoUrl: String) {
+    fun play(videoUrl: String, title: String, streamerName: String, avatarUrl: String) {
         val currentPlayer = player ?: return
         val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(MediaItem.fromUri(videoUrl))
+            .createMediaSource(MediaItem.Builder().setUri(videoUrl).setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(title).setArtist(streamerName).setArtworkUri(android.net.Uri.parse(avatarUrl)).build()).build())
         currentPlayer.setMediaSource(mediaSource)
         currentPlayer.prepare()
         currentPlayer.playWhenReady = true
