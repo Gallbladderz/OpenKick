@@ -84,7 +84,7 @@ class PlayerViewModel(
                         if (currentPlaybackUrl != streamInfo.playbackUrl) {
                             currentPlaybackUrl = streamInfo.playbackUrl
 
-                            playerManager.play(streamInfo.playbackUrl)
+                            playerManager.play(streamInfo.playbackUrl, streamInfo.title, streamerName, streamInfo.avatarUrl)
 
                             streamInfo.chatroomId?.let { chatroomId ->
                                 chatRepository.connectToChat(chatroomId)
