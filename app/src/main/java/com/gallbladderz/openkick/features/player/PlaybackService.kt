@@ -29,7 +29,13 @@ class PlaybackService : MediaSessionService() {
                     .build()
 
                 val availablePlayerCommands = androidx.media3.common.Player.Commands.Builder()
-                    .add(Player.COMMAND_PLAY_PAUSE)
+                    .addAllCommands()
+                    .remove(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                    .remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                    .remove(Player.COMMAND_SEEK_TO_NEXT)
+                    .remove(Player.COMMAND_SEEK_TO_PREVIOUS)
+                    .remove(Player.COMMAND_SEEK_FORWARD)
+                    .remove(Player.COMMAND_SEEK_BACK)
                     .build()
 
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session)

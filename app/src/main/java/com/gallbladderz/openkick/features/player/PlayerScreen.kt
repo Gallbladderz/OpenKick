@@ -1,6 +1,12 @@
 @file:Suppress("DEPRECATION")
 
 package com.gallbladderz.openkick.features.player
+import android.app.PendingIntent
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.graphics.drawable.Icon
+import androidx.core.content.ContextCompat
 import android.app.PictureInPictureParams
 import android.content.Intent
 import android.os.Build
@@ -155,15 +161,14 @@ fun PlayerScreen(
         val activity = context.findActivity() as? ComponentActivity
         val pipListener = Consumer<androidx.core.app.PictureInPictureModeChangedInfo> { info ->
             isInPipMode = info.isInPictureInPictureMode
+            if (!info.isInPictureInPictureMode) {
+                isFullscreen = false
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         }
         activity?.addOnPictureInPictureModeChangedListener(pipListener)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val params = PictureInPictureParams.Builder()
-                .setAutoEnterEnabled(true)
-                .build()
-            activity?.setPictureInPictureParams(params)
-        }
+
 
         onDispose {
             activity?.removeOnPictureInPictureModeChangedListener(pipListener)
@@ -173,6 +178,58 @@ fun PlayerScreen(
     LaunchedEffect(Unit) {
         val intent = Intent(context, PlaybackService::class.java)
         context.startService(intent)
+    }
+
+    val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO"
+
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: android.content.Context?, intent: Intent?) {
+                if (intent?.action == ACTION_BACKGROUND_AUDIO) {
+                    val activity = context.findActivity() as? ComponentActivity
+                    activity?.moveTaskToBack(true)
+                }
+            }
+        }
+
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            IntentFilter(ACTION_BACKGROUND_AUDIO),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    LaunchedEffect(state, playWhenReady) {
+        val activity = context.findActivity() as? ComponentActivity
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val backgroundAudioIntent = Intent(ACTION_BACKGROUND_AUDIO)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                backgroundAudioIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val remoteAction = RemoteAction(
+                Icon.createWithResource(context, R.drawable.ic_headphones),
+                "Background Audio",
+                "Play audio in background",
+                pendingIntent
+            )
+
+            val paramsBuilder = PictureInPictureParams.Builder()
+                .setActions(listOf(remoteAction))
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                paramsBuilder.setAutoEnterEnabled(state is PlayerUiState.Playing && playWhenReady)
+            }
+            activity?.setPictureInPictureParams(paramsBuilder.build())
+        }
     }
 
     val tabs = listOf(
@@ -229,7 +286,7 @@ fun PlayerScreen(
                     onLoadStreamInfo(streamerName)
                 }
                 Lifecycle.Event.ON_STOP -> {
-                    onPlayerManagerRelease()
+                    // Do not release for background playback
                 }
                 else -> {}
             }
