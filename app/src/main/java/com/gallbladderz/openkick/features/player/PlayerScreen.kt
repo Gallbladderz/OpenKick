@@ -153,8 +153,7 @@ fun PlayerScreen(
         mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
     }
 
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
+var selectedTabIndex by remember { mutableIntStateOf(0) }
     var isInPipMode by remember { mutableStateOf(false) }
 
     DisposableEffect(context) {
@@ -168,8 +167,6 @@ fun PlayerScreen(
         }
         activity?.addOnPictureInPictureModeChangedListener(pipListener)
 
-
-
         onDispose {
             activity?.removeOnPictureInPictureModeChangedListener(pipListener)
         }
@@ -179,15 +176,14 @@ fun PlayerScreen(
         val intent = Intent(context, PlaybackService::class.java)
         context.startService(intent)
     }
-
-    val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO"
+val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO"
 
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: android.content.Context?, intent: Intent?) {
                 if (intent?.action == ACTION_BACKGROUND_AUDIO) {
                     val activity = context.findActivity() as? ComponentActivity
-                    activity?.moveTaskToBack(true)
+                    activity?.moveTaskToBack(true) // Сворачиваем прилу, оставляя звук
                 }
             }
         }
@@ -286,7 +282,6 @@ fun PlayerScreen(
                     onLoadStreamInfo(streamerName)
                 }
                 Lifecycle.Event.ON_STOP -> {
-                    // Do not release for background playback
                 }
                 else -> {}
             }
