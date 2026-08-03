@@ -24,6 +24,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -64,7 +66,7 @@ private enum class MainTab(
 ) {
     HOME(R.string.home, Icons.Outlined.Home, Icons.Filled.Home),
     FOLLOWERS(R.string.followers, Icons.Outlined.FavoriteBorder, Icons.Filled.Favorite),
-    PROFILE(R.string.profile, Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
+    SETTINGS(R.string.settings_tab, Icons.Outlined.Settings, Icons.Filled.Settings)
 }
 
 @Composable
@@ -167,7 +169,7 @@ fun OpenKickNavHost() {
                             )
                         }
 
-                        MainTab.PROFILE -> {
+                        MainTab.SETTINGS -> {
                             com.gallbladderz.openkick.features.profile.SettingsRoute(
                                 onLanguageSettingsClick = {
                                     navController.navigate(LanguageSettingsRoute)
