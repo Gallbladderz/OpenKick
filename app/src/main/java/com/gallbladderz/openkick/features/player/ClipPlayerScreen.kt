@@ -1,7 +1,11 @@
+@file:Suppress("DEPRECATION")
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 package com.gallbladderz.openkick.features.player
-import com.gallbladderz.openkick.features.player.VideoQuality
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -42,26 +46,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
+import com.gallbladderz.openkick.core.ui.utils.findActivity
 import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
 import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
+import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
-@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun ClipPlayerRoute(
     videoUrl: String,
@@ -112,6 +125,8 @@ fun ClipPlayerScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val configuration = LocalConfiguration.current
+
     val resolvedAvatarUrl = streamerAvatarUrl.replace("\\/", "/").ifBlank { fetchedAvatarUrl ?: "" }
 
     val exoPlayer = remember {
@@ -128,6 +143,29 @@ fun ClipPlayerScreen(
     var duration by remember { mutableLongStateOf(0L) }
     var showControls by remember { mutableStateOf(true) }
 
+    var isFullscreen by remember { mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) }
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    var availableQualities by remember { mutableStateOf<List<VideoQuality>>(emptyList()) }
+    var selectedQuality by remember { mutableStateOf<VideoQuality?>(null) }
+
+    fun setQuality(quality: VideoQuality) {
+        selectedQuality = quality
+        val builder = exoPlayer.trackSelectionParameters.buildUpon()
+        if (quality.isAudioOnly) {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+            builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+        } else {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
+            if (quality.trackGroup == null || quality.trackIndex == null) {
+                builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+            } else {
+                builder.setOverrideForType(
+                    TrackSelectionOverride(quality.trackGroup, listOf(quality.trackIndex))
+                )
+            }
+        }
+        exoPlayer.trackSelectionParameters = builder.build()
+    }
 
     LaunchedEffect(isPlaying, playbackState) {
         while (isPlaying && playbackState == Player.STATE_READY) {
@@ -136,7 +174,6 @@ fun ClipPlayerScreen(
             delay(500)
         }
     }
-
 
     LaunchedEffect(showControls, isPlaying) {
         if (showControls && isPlaying) {
@@ -154,6 +191,31 @@ fun ClipPlayerScreen(
         }
     }
 
+    LaunchedEffect(configuration.orientation) {
+        isFullscreen = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    }
+
+    LaunchedEffect(isFullscreen) {
+        val activity = context.findActivity() ?: return@LaunchedEffect
+        val window = activity.window
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+
+        if (isFullscreen) {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            insetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
+            delay(500)
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    BackHandler(enabled = isFullscreen) {
+        isFullscreen = false
+    }
 
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -166,6 +228,30 @@ fun ClipPlayerScreen(
                 if (state == Player.STATE_READY) {
                     duration = exoPlayer.duration.coerceAtLeast(0L)
                 }
+            }
+
+            override fun onTracksChanged(tracks: Tracks) {
+                val parsedQualities = mutableListOf<VideoQuality>()
+                for (group in tracks.groups) {
+                    if (group.type == C.TRACK_TYPE_VIDEO) {
+                        for (i in 0 until group.length) {
+                            val format = group.getTrackFormat(i)
+                            if (format.height != Format.NO_VALUE) {
+                                val fps = if (format.frameRate > 0) format.frameRate.toInt().toString() else ""
+                                val name = "${format.height}p${if (fps == "60") "60" else ""}"
+                                parsedQualities.add(VideoQuality(name, group.mediaTrackGroup, i))
+                            }
+                        }
+                    }
+                }
+                val sortedQualities = parsedQualities
+                    .distinctBy { it.name }
+                    .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
+
+                availableQualities = listOf(
+                    VideoQuality(context.getString(R.string.auto_quality), null, null),
+                    VideoQuality(context.getString(R.string.audio_only), null, null, isAudioOnly = true)
+                ) + sortedQualities
             }
         }
         exoPlayer.addListener(listener)
@@ -181,28 +267,37 @@ fun ClipPlayerScreen(
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             exoPlayer.release()
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding()
-    ) {
+    val rootModifier = Modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)
+        .let { if (!isFullscreen) it.statusBarsPadding() else it }
+
+    Column(modifier = rootModifier) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .background(Color.Black)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { showControls = !showControls }
+            modifier = if (isFullscreen) {
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showControls = !showControls }
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .background(Color.Black)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showControls = !showControls }
+            }
         ) {
             KickStreamPlayer(
                 player = exoPlayer,
@@ -219,7 +314,7 @@ fun ClipPlayerScreen(
                     CustomPlayerControls(
                         playWhenReady = isPlaying,
                         playbackState = playbackState,
-                        isFullscreen = false,
+                        isFullscreen = isFullscreen,
                         isLive = false,
                         currentPosition = currentPosition,
                         duration = duration,
@@ -230,13 +325,15 @@ fun ClipPlayerScreen(
                         onPlayPause = {
                             if (isPlaying) exoPlayer.pause() else exoPlayer.play()
                         },
-                        onFullscreen = { },
-                        onSettings = { },
+                        onFullscreen = { isFullscreen = !isFullscreen },
+                        onSettings = { showSettingsSheet = true },
                         modifier = Modifier.fillMaxSize()
                     )
 
                     IconButton(
-                        onClick = onBackClick,
+                        onClick = {
+                            if (isFullscreen) isFullscreen = false else onBackClick()
+                        },
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(8.dp)
@@ -252,27 +349,41 @@ fun ClipPlayerScreen(
             }
         }
 
-        ClipInfoPanel(
-            title = title,
-            streamerName = streamerName,
-            streamerAvatarUrl = resolvedAvatarUrl,
-            views = views,
-            durationFormatted = durationFormatted,
-            isFollowed = isFollowed,
-            onToggleFollow = { onToggleFollow() },
-            onShareClick = {
-                val shareText = buildString {
-                    append(title.ifBlank { context.getString(R.string.untitled) })
-                    append('\n')
-                    append(videoUrl)
-                }
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                }
-                context.startActivity(Intent.createChooser(intent, null))
+        if (!isFullscreen) {
+            ClipInfoPanel(
+                title = title,
+                streamerName = streamerName,
+                streamerAvatarUrl = resolvedAvatarUrl,
+                views = views,
+                durationFormatted = durationFormatted,
+                isFollowed = isFollowed,
+                onToggleFollow = { onToggleFollow() },
+                onShareClick = {
+                    val shareText = buildString {
+                        append(title.ifBlank { context.getString(R.string.untitled) })
+                        append('\n')
+                        append(videoUrl)
+                    }
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+                    context.startActivity(Intent.createChooser(intent, null))
+                },
+                onStreamerClick = { onStreamerClick(streamerName) }
+            )
+        }
+    }
+
+    if (showSettingsSheet) {
+        QualitySelectionSheet(
+            qualities = availableQualities,
+            selectedQuality = selectedQuality,
+            onQualitySelect = { quality ->
+                setQuality(quality)
+                showSettingsSheet = false
             },
-            onStreamerClick = { onStreamerClick(streamerName) }
+            onDismiss = { showSettingsSheet = false }
         )
     }
 }
@@ -305,7 +416,6 @@ private fun ClipInfoPanel(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
-
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
@@ -334,7 +444,6 @@ private fun ClipInfoPanel(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
@@ -343,7 +452,11 @@ private fun ClipInfoPanel(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = stringResource(R.string.clip_views_duration, formatClipViews(views), durationFormatted),
+                        text = stringResource(
+                            R.string.clip_views_duration,
+                            formatClipViews(views),
+                            durationFormatted
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -365,7 +478,6 @@ private fun ClipInfoPanel(
                         contentDescription = stringResource(R.string.share_desc)
                     )
                 }
-
                 FilledTonalButton(
                     onClick = onToggleFollow,
                     enabled = canOpenStreamer
