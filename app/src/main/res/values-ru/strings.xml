@@ -177,4 +177,5 @@
     <string name="recommended">Рекомендованные</string>
     <string name="viewers_high_to_low">Зрители: по убыванию</string>
     <string name="apply">Применить</string>
+    <string name="settings_tab">Настройки</string>
 </resources>

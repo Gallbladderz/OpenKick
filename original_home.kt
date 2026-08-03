@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,14 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,26 +120,6 @@ fun HomeScreen(
 
     val pullRefreshState = rememberPullToRefreshState()
 
-    val density = LocalDensity.current
-    val filterRowHeight = 48.dp
-    val filterRowHeightPx = with(density) { filterRowHeight.roundToPx().toFloat() }
-    var filterRowOffsetHeightPx by remember { mutableFloatStateOf(0f) }
-
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val delta = available.y
-                val previousOffset = filterRowOffsetHeightPx
-                val newOffset = (previousOffset + delta).coerceIn(-filterRowHeightPx, 0f)
-                filterRowOffsetHeightPx = newOffset
-
-                // Consume the scroll delta only if we are animating the header
-                val consumed = newOffset - previousOffset
-                return Offset(0f, consumed)
-            }
-        }
-    }
-
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
             onRefresh()
@@ -192,20 +163,13 @@ fun HomeScreen(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(with(density) { (filterRowHeightPx + filterRowOffsetHeightPx).toDp() })
-                .clipToBounds()
-        ) {
-            HomeFilterChipsRow(
-                selectedFilter = selectedFilter,
-                onFilterSelected = { selectedFilter = it },
-                isGridMode = isGridMode,
-                onGridModeChange = { onGridModeChange(it) },
-                onFilterClick = onFilterClick
-            )
-        }
+        HomeFilterChipsRow(
+            selectedFilter = selectedFilter,
+            onFilterSelected = { selectedFilter = it },
+            isGridMode = isGridMode,
+            onGridModeChange = { onGridModeChange(it) },
+            onFilterClick = onFilterClick
+        )
 
 
         Box(
@@ -213,7 +177,6 @@ fun HomeScreen(
                 .weight(1f)
                 .fillMaxWidth()
                 .clipToBounds()
-                .nestedScroll(nestedScrollConnection)
                 .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
             if (selectedFilter == stringResource(R.string.filter_categories)) {
@@ -230,8 +193,7 @@ fun HomeScreen(
 is HomeUiState.Success -> {
                         val clipsFilter = stringResource(R.string.filter_clips)
                         val liveFilter = stringResource(R.string.live)
-                        val listState = rememberSaveable(selectedFilter, saver = LazyListState.Saver) { LazyListState() }
-                        val gridState = rememberSaveable(selectedFilter, saver = LazyGridState.Saver) { LazyGridState() }
+                        val listState = remember(selectedFilter) { LazyListState() }
 
                         LaunchedEffect(listState, selectedFilter) {
                             snapshotFlow {
