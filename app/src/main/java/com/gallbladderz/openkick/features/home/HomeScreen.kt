@@ -62,6 +62,7 @@ fun HomeRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val sort by viewModel.sort.collectAsStateWithLifecycle()
+    val isGridMode by viewModel.isGridMode.collectAsStateWithLifecycle()
     val langs by viewModel.selectedFilterLanguages.collectAsStateWithLifecycle()
 
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -78,7 +79,9 @@ fun HomeRoute(
         onCategoryClick = onCategoryClick,
         onClipClick = onClipClick,
         onSearchClick = onSearchClick,
-        onFilterClick = { showFilterSheet = true }
+        onFilterClick = { showFilterSheet = true },
+        isGridMode = isGridMode,
+        onGridModeChange = { viewModel.setGridMode(it) }
     )
 
     if (showFilterSheet) {
@@ -108,11 +111,12 @@ fun HomeScreen(
     onCategoryClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit = {},
     onSearchClick: () -> Unit,
-    onFilterClick: () -> Unit = {}
+    onFilterClick: () -> Unit = {},
+    isGridMode: Boolean,
+    onGridModeChange: (Boolean) -> Unit
 ) {
     val defaultFilter = stringResource(R.string.filter_all)
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
-    var isGridMode by remember { mutableStateOf(false) }
 
     val pullRefreshState = rememberPullToRefreshState()
 
@@ -163,7 +167,7 @@ fun HomeScreen(
             selectedFilter = selectedFilter,
             onFilterSelected = { selectedFilter = it },
             isGridMode = isGridMode,
-            onGridModeChange = { isGridMode = it },
+            onGridModeChange = { onGridModeChange(it) },
             onFilterClick = onFilterClick
         )
 

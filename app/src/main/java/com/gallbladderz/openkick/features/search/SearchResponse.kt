@@ -29,6 +29,9 @@ data class SearchChannelDto(
 data class SearchCategoryDto(
     val name: String = "",
     val slug: String = "",
+    @SerialName("viewer_count")
+    val viewerCount: Int = 0,
+    val tags: List<String> = emptyList(),
     val thumbnail: KickThumbnailFallback? = null
 )
 
@@ -37,6 +40,9 @@ data class SearchLivestreamDto(
     val slug: String = "",
     val title: String = "",
     val session_title: String? = null,
+    @SerialName("viewer_count")
+    val viewerCount: Int = 0,
+    val category: SearchCategoryDto? = null,
     val channel: SearchChannelDto? = null,
     val thumbnail: KickThumbnailFallback? = null
 )
