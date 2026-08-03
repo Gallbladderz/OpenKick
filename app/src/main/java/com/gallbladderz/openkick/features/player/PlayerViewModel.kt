@@ -121,6 +121,6 @@ class PlayerViewModel(
     override fun onCleared() {
         super.onCleared()
         chatRepository.disconnect()
-        // playerManager.release()
+        playerManager.release()
     }
 }

@@ -1,4 +1,5 @@
 @file:Suppress("DEPRECATION")
+@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 
 package com.gallbladderz.openkick.features.player
 import android.app.PendingIntent
@@ -73,6 +74,9 @@ import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.ChatMessage
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import android.content.ComponentName
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 
 @Composable
 fun PlayerRoute(
@@ -172,9 +176,23 @@ var selectedTabIndex by remember { mutableIntStateOf(0) }
         }
     }
 
+    DisposableEffect(context) {
+        onDispose {
+            val activity = context.findActivity() as? ComponentActivity
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                activity?.setPictureInPictureParams(
+                    PictureInPictureParams.Builder().setAutoEnterEnabled(false).build()
+                )
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
-        val intent = Intent(context, PlaybackService::class.java)
-        context.startService(intent)
+        val sessionToken = SessionToken(
+            context,
+            ComponentName(context, PlaybackService::class.java)
+        )
+        MediaController.Builder(context, sessionToken).buildAsync()
     }
 val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO"
 
@@ -183,7 +201,7 @@ val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO
             override fun onReceive(ctx: android.content.Context?, intent: Intent?) {
                 if (intent?.action == ACTION_BACKGROUND_AUDIO) {
                     val activity = context.findActivity() as? ComponentActivity
-                    activity?.moveTaskToBack(true) // Сворачиваем прилу, оставляя звук
+                    activity?.moveTaskToBack(true)
                 }
             }
         }
@@ -192,7 +210,7 @@ val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO
             context,
             receiver,
             IntentFilter(ACTION_BACKGROUND_AUDIO),
-            ContextCompat.RECEIVER_NOT_EXPORTED
+            ContextCompat.RECEIVER_EXPORTED
         )
 
         onDispose {
@@ -243,7 +261,9 @@ val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO
 
 
     LaunchedEffect(configuration.orientation) {
-        isFullscreen = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        if (!isInPipMode) {
+            isFullscreen = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        }
     }
 
 
