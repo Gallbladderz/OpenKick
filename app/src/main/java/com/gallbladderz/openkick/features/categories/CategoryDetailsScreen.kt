@@ -47,6 +47,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -131,8 +134,8 @@ fun CategoryDetailsScreen(
 
     var isFollowed by remember { mutableStateOf(false) }
 
-    val gridState = rememberLazyGridState()
-    val listState = rememberLazyListState()
+    val gridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
 
     LaunchedEffect(gridState) {
         snapshotFlow {
