@@ -41,6 +41,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -131,7 +132,7 @@ fun CategoryDetailsScreen(
 
     var isFollowed by remember { mutableStateOf(false) }
 
-    val gridState = rememberLazyGridState()
+    val gridState = rememberSaveable(saver = androidx.compose.foundation.lazy.grid.LazyGridState.Saver) { androidx.compose.foundation.lazy.grid.LazyGridState() }
     val listState = rememberLazyListState()
 
     LaunchedEffect(gridState) {

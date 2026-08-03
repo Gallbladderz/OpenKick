@@ -1,5 +1,11 @@
 package com.gallbladderz.openkick.features.home
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -120,6 +126,21 @@ fun HomeScreen(
 
     val pullRefreshState = rememberPullToRefreshState()
 
+    val density = LocalDensity.current
+    val filterChipsMaxHeightPx = with(density) { 56.dp.toPx() }
+    var filterChipsHeightOffset by remember { mutableFloatStateOf(0f) }
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                val newOffset = filterChipsHeightOffset + delta
+                filterChipsHeightOffset = newOffset.coerceIn(-filterChipsMaxHeightPx, 0f)
+                return Offset.Zero
+            }
+        }
+    }
+
     if (pullRefreshState.isRefreshing) {
         LaunchedEffect(true) {
             onRefresh()
@@ -163,13 +184,21 @@ fun HomeScreen(
             }
         }
 
-        HomeFilterChipsRow(
-            selectedFilter = selectedFilter,
-            onFilterSelected = { selectedFilter = it },
-            isGridMode = isGridMode,
-            onGridModeChange = { onGridModeChange(it) },
-            onFilterClick = onFilterClick
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(with(density) { (filterChipsMaxHeightPx + filterChipsHeightOffset).toDp() })
+                .clipToBounds(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            HomeFilterChipsRow(
+                selectedFilter = selectedFilter,
+                onFilterSelected = { selectedFilter = it },
+                isGridMode = isGridMode,
+                onGridModeChange = { onGridModeChange(it) },
+                onFilterClick = onFilterClick
+            )
+        }
 
 
         Box(
@@ -177,6 +206,7 @@ fun HomeScreen(
                 .weight(1f)
                 .fillMaxWidth()
                 .clipToBounds()
+                .nestedScroll(nestedScrollConnection)
                 .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
             if (selectedFilter == stringResource(R.string.filter_categories)) {
@@ -193,7 +223,7 @@ fun HomeScreen(
 is HomeUiState.Success -> {
                         val clipsFilter = stringResource(R.string.filter_clips)
                         val liveFilter = stringResource(R.string.live)
-                        val listState = remember(selectedFilter) { LazyListState() }
+                        val listState = rememberSaveable(selectedFilter, saver = LazyListState.Saver) { LazyListState() }
 
                         LaunchedEffect(listState, selectedFilter) {
                             snapshotFlow {
