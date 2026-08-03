@@ -41,6 +41,20 @@ class CategoryDetailsViewModel(
     private var isClipsEnd = false
     private var currentSlug: String = ""
 
+    private val _sort = MutableStateFlow("viewer_count_desc")
+    val sort = _sort.asStateFlow()
+
+    private val _selectedFilterLanguages = MutableStateFlow<Set<String>>(emptySet())
+    val selectedFilterLanguages = _selectedFilterLanguages.asStateFlow()
+
+    fun updateFiltersAndRefresh(newSort: String, newLangs: Set<String>) {
+        _sort.value = newSort
+        _selectedFilterLanguages.value = newLangs
+        if (currentSlug.isNotBlank()) {
+            loadCategory(currentSlug)
+        }
+    }
+
     fun loadCategory(slug: String) {
         currentSlug = slug.trim().lowercase()
         _uiState.update { CategoryDetailsUiState.Loading }
@@ -60,7 +74,13 @@ class CategoryDetailsViewModel(
             try {
                 val detailsDeferred = async { repository.fetchCategoryDetails(currentSlug) }
                 val clipsDeferred = async { repository.fetchCategoryClips(currentSlug) }
-                val streamsDeferred = async { repository.fetchCategoryStreams(currentSlug) }
+                val streamsDeferred = async {
+                    repository.fetchCategoryStreams(
+                        slug = currentSlug,
+                        sort = _sort.value,
+                        languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
+                    )
+                }
 
                 val detailsResult = detailsDeferred.await()
                 val clipsResult = clipsDeferred.await()
@@ -114,7 +134,12 @@ class CategoryDetailsViewModel(
 
         isStreamsLoading = true
         viewModelScope.launch {
-            val result = repository.fetchCategoryStreams(currentSlug, streamsCursor)
+            val result = repository.fetchCategoryStreams(
+                slug = currentSlug,
+                cursor = streamsCursor,
+                sort = _sort.value,
+                languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
+            )
             if (result.isSuccess) {
                 val (newStreams, nextCursor) = result.getOrThrow()
                 streamsCursor = nextCursor

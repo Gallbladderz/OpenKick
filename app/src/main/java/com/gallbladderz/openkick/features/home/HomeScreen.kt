@@ -43,11 +43,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.features.home.components.HeroStreamPager
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.gallbladderz.openkick.features.home.components.HomeFilterChipsRow
 import com.gallbladderz.openkick.features.home.components.StreamCard
 import com.gallbladderz.openkick.ui.components.ClipCard
+import com.gallbladderz.openkick.ui.components.StreamFilterBottomSheet
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeRoute(
     viewModel: HomeViewModel = koinViewModel(),
@@ -58,6 +61,11 @@ fun HomeRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val sort by viewModel.sort.collectAsStateWithLifecycle()
+    val langs by viewModel.selectedFilterLanguages.collectAsStateWithLifecycle()
+
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     HomeScreen(
         state = state,
@@ -69,8 +77,22 @@ fun HomeRoute(
         onStreamClick = onStreamClick,
         onCategoryClick = onCategoryClick,
         onClipClick = onClipClick,
-        onSearchClick = onSearchClick
+        onSearchClick = onSearchClick,
+        onFilterClick = { showFilterSheet = true }
     )
+
+    if (showFilterSheet) {
+        StreamFilterBottomSheet(
+            sheetState = sheetState,
+            currentSort = sort,
+            currentLanguages = langs,
+            onDismissRequest = { showFilterSheet = false },
+            onApply = { newSort, newLangs ->
+                viewModel.updateFiltersAndRefresh(newSort, newLangs)
+                showFilterSheet = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,7 +107,8 @@ fun HomeScreen(
     onStreamClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit = {},
-    onSearchClick: () -> Unit = {}
+    onSearchClick: () -> Unit,
+    onFilterClick: () -> Unit = {}
 ) {
     val defaultFilter = stringResource(R.string.filter_all)
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
@@ -140,7 +163,8 @@ fun HomeScreen(
             selectedFilter = selectedFilter,
             onFilterSelected = { selectedFilter = it },
             isGridMode = isGridMode,
-            onGridModeChange = { isGridMode = it }
+            onGridModeChange = { isGridMode = it },
+            onFilterClick = onFilterClick
         )
 
 

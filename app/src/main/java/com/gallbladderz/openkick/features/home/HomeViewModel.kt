@@ -52,6 +52,18 @@ class HomeViewModel(
     private var currentHidePools: Boolean = false
     private var currentHideCrypto: Boolean = false
 
+    private val _sort = MutableStateFlow("viewer_count_desc")
+    val sort = _sort.asStateFlow()
+
+    private val _selectedFilterLanguages = MutableStateFlow<Set<String>>(emptySet())
+    val selectedFilterLanguages = _selectedFilterLanguages.asStateFlow()
+
+    fun updateFiltersAndRefresh(newSort: String, newLangs: Set<String>) {
+        _sort.value = newSort
+        _selectedFilterLanguages.value = newLangs
+        fetchHomeData()
+    }
+
 
     private fun filterBanned(streams: List<StreamUiModel>): List<StreamUiModel> {
         if (!currentHideSlots && !currentHidePools && !currentHideCrypto) return streams
@@ -86,6 +98,9 @@ class HomeViewModel(
 
                 if (langsChanged || hideSlotsChanged || hidePoolsChanged || hideCryptoChanged || currentLanguages == null) {
                     currentLanguages = state.langs
+                    if (_selectedFilterLanguages.value.isEmpty()) {
+                        _selectedFilterLanguages.value = state.langs
+                    }
                     currentHideSlots = state.hideSlots
                     currentHidePools = state.hidePools
                     currentHideCrypto = state.hideCrypto
@@ -96,7 +111,7 @@ class HomeViewModel(
     }
 
     fun fetchHomeData() {
-        val langs = currentLanguages ?: return
+        val langs = _selectedFilterLanguages.value
 
         _uiState.value = HomeUiState.Loading
         streamsCursor = null
@@ -107,7 +122,7 @@ class HomeViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val streamsDeferred = async {
-                    repository.fetchLivestreams(cursor = null, languages = langs)
+                    repository.fetchLivestreams(cursor = null, sort = _sort.value, languages = langs)
                 }
                 val clipsDeferred = async { repository.fetchTopClips(null) }
 
@@ -141,7 +156,7 @@ class HomeViewModel(
     }
 
     fun refresh() {
-        val langs = currentLanguages ?: return
+        val langs = _selectedFilterLanguages.value
         if (_isRefreshing.value) return
 
         _isRefreshing.value = true
@@ -149,7 +164,7 @@ class HomeViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val streamsDeferred = async {
-                    repository.fetchLivestreams(cursor = null, languages = langs)
+                    repository.fetchLivestreams(cursor = null, sort = _sort.value, languages = langs)
                 }
                 val clipsDeferred = async { repository.fetchTopClips(null) }
 
@@ -179,7 +194,7 @@ class HomeViewModel(
     }
 
     fun loadMoreStreams() {
-        val langs = currentLanguages ?: return
+        val langs = _selectedFilterLanguages.value
 
         if (isStreamsLoading || isStreamsEnd || _uiState.value !is HomeUiState.Success) {
             return
@@ -188,7 +203,7 @@ class HomeViewModel(
         isStreamsLoading = true
 
         viewModelScope.launch(Dispatchers.IO) {
-            val result = repository.fetchLivestreams(cursor = streamsCursor, languages = langs)
+            val result = repository.fetchLivestreams(cursor = streamsCursor, sort = _sort.value, languages = langs)
 
             if (result.isSuccess) {
                 val (newStreams, nextCursor) = result.getOrThrow()

@@ -87,7 +87,8 @@ interface KickApiService {
         @Query("subcategory") subcategorySlug: String,
         @Query("limit") limit: Int = 20,
         @Query("sort") sort: String = "viewer_count_desc",
-        @Query("after") cursor: String? = null
+        @Query("after") cursor: String? = null,
+        @Query("language") languages: List<String>? = null
     ): HomeLivestreamsResponse
 
     @GET("api/v1/video/{videoId}")
