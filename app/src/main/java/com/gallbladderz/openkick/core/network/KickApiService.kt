@@ -84,7 +84,7 @@ interface KickApiService {
 
     @GET("https://mobile.kick.com/api/v1/livestreams")
     suspend fun getCategoryLivestreams(
-        @Query("subcategory") subcategorySlug: String,
+        @Query("category_id") categoryId: Int,
         @Query("limit") limit: Int = 20,
         @Query("sort") sort: String = "viewer_count_desc",
         @Query("after") cursor: String? = null,

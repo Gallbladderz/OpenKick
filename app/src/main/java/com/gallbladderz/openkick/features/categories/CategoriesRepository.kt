@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 data class CategoryDetailsUiModel(
+    val id: Int,
     val name: String,
     val viewers: Int,
     val tags: List<String>,
@@ -57,17 +58,20 @@ class CategoriesRepository(private val apiService: KickApiService) {
         }
 
     suspend fun fetchCategoryStreams(
-        slug: String,
+        categoryId: Int,
         cursor: String? = null,
         sort: String = "viewer_count_desc",
         languages: List<String>? = null
     ): Result<Pair<List<StreamUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
-                val response =
-                    apiService.getCategoryLivestreams(subcategorySlug = slug, cursor = cursor, sort = sort, languages = languages)
-                val streams =
-                    response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
+                val response = apiService.getCategoryLivestreams(
+                    categoryId = categoryId,
+                    cursor = cursor,
+                    sort = sort,
+                    languages = languages
+                )
+                val streams = response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
                 val nextCursor = response.data?.pagination?.nextCursor
                 Result.success(Pair(streams, if (nextCursor.isNullOrBlank()) null else nextCursor))
             } catch (e: Exception) {
@@ -101,6 +105,7 @@ fun CategoryDetailsResponse.toDomain(): CategoryDetailsUiModel {
     }
 
     return CategoryDetailsUiModel(
+        id = this.id ?: 0,
         name = this.name,
         viewers = this.viewers,
         tags = this.tags,

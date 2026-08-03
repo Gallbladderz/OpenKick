@@ -33,6 +33,7 @@ class CategoryDetailsViewModel(
     private val _uiState = MutableStateFlow<CategoryDetailsUiState>(CategoryDetailsUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    private var currentCategoryId: Int? = null
     private var streamsCursor: String? = null
     private var clipsCursor: String? = null
     private var isStreamsLoading = false
@@ -64,6 +65,7 @@ class CategoryDetailsViewModel(
         isClipsLoading = false
         isStreamsEnd = false
         isClipsEnd = false
+        currentCategoryId = null
 
         viewModelScope.launch {
             if (currentSlug.isBlank()) {
@@ -72,20 +74,7 @@ class CategoryDetailsViewModel(
             }
 
             try {
-                val detailsDeferred = async { repository.fetchCategoryDetails(currentSlug) }
-                val clipsDeferred = async { repository.fetchCategoryClips(currentSlug) }
-                val streamsDeferred = async {
-                    repository.fetchCategoryStreams(
-                        slug = currentSlug,
-                        sort = _sort.value,
-                        languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
-                    )
-                }
-
-                val detailsResult = detailsDeferred.await()
-                val clipsResult = clipsDeferred.await()
-                val streamsResult = streamsDeferred.await()
-
+                val detailsResult = repository.fetchCategoryDetails(currentSlug)
                 if (detailsResult.isFailure) {
                     _uiState.update {
                         CategoryDetailsUiState.Error(
@@ -97,14 +86,25 @@ class CategoryDetailsViewModel(
                 }
 
                 val details = detailsResult.getOrNull()!!
+                currentCategoryId = details.id
 
-                val clipsPair = clipsResult.getOrNull()
-                val parsedClips = clipsPair?.first ?: emptyList()
-                clipsCursor = clipsPair?.second
+                val clipsDeferred = async { repository.fetchCategoryClips(currentSlug) }
+                val streamsDeferred = async {
+                    repository.fetchCategoryStreams(
+                        categoryId = details.id,
+                        sort = _sort.value,
+                        languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
+                    )
+                }
 
-                val streamsPair = streamsResult.getOrNull()
-                val parsedStreams = streamsPair?.first ?: emptyList()
-                streamsCursor = streamsPair?.second
+                val clipsResult = clipsDeferred.await()
+                val streamsResult = streamsDeferred.await()
+
+                val parsedClips = clipsResult.getOrNull()?.first ?: emptyList()
+                clipsCursor = clipsResult.getOrNull()?.second
+
+                val parsedStreams = streamsResult.getOrNull()?.first ?: emptyList()
+                streamsCursor = streamsResult.getOrNull()?.second
 
                 _uiState.update {
                     CategoryDetailsUiState.Success(
@@ -131,11 +131,12 @@ class CategoryDetailsViewModel(
 
     fun loadMoreStreams() {
         if (isStreamsLoading || isStreamsEnd || _uiState.value !is CategoryDetailsUiState.Success) return
+        val categoryId = currentCategoryId ?: return
 
         isStreamsLoading = true
         viewModelScope.launch {
             val result = repository.fetchCategoryStreams(
-                slug = currentSlug,
+                categoryId = categoryId,
                 cursor = streamsCursor,
                 sort = _sort.value,
                 languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
@@ -143,7 +144,6 @@ class CategoryDetailsViewModel(
             if (result.isSuccess) {
                 val (newStreams, nextCursor) = result.getOrThrow()
                 streamsCursor = nextCursor
-
                 if (newStreams.isEmpty()) {
                     isStreamsEnd = true
                 } else {

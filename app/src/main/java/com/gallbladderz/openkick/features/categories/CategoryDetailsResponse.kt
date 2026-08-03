@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CategoryDetailsResponse(
+    val id: Int? = null,
     val name: String = "Category",
     val viewers: Int = 0,
     val tags: List<String> = emptyList(),
