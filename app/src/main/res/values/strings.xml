@@ -173,4 +173,9 @@
     <string name="base_theme">Base Theme</string>
     <string name="share_intent_text">Watch %1$s on Kick!\nhttps://kick.com/%2$s</string>
     <string name="error_prefix_msg">Error: %1$s</string>
+    <string name="filter_sort">Filter &amp; Sort</string>
+    <string name="sort_by">Sort by</string>
+    <string name="recommended">Recommended</string>
+    <string name="viewers_high_to_low">Viewers: High to Low</string>
+    <string name="apply">Apply</string>
 </resources>

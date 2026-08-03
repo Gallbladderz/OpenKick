@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,10 +63,13 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.features.home.ClipUiModel
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.gallbladderz.openkick.features.home.components.StreamCard
 import com.gallbladderz.openkick.ui.components.ClipCard
+import com.gallbladderz.openkick.ui.components.StreamFilterBottomSheet
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryDetailsRoute(
     slug: String,
@@ -75,6 +79,11 @@ fun CategoryDetailsRoute(
     onClipClick: (ClipUiModel) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val sort by viewModel.sort.collectAsStateWithLifecycle()
+    val langs by viewModel.selectedFilterLanguages.collectAsStateWithLifecycle()
+
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     CategoryDetailsScreen(
         slug = slug,
@@ -84,8 +93,22 @@ fun CategoryDetailsRoute(
         onLoadMoreClips = { viewModel.loadMoreClips() },
         onBackClick = onBackClick,
         onStreamClick = onStreamClick,
-        onClipClick = onClipClick
+        onClipClick = onClipClick,
+        onFilterClick = { showFilterSheet = true }
     )
+
+    if (showFilterSheet) {
+        StreamFilterBottomSheet(
+            sheetState = sheetState,
+            currentSort = sort,
+            currentLanguages = langs,
+            onDismissRequest = { showFilterSheet = false },
+            onApply = { newSort, newLangs ->
+                viewModel.updateFiltersAndRefresh(newSort, newLangs)
+                showFilterSheet = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +121,8 @@ fun CategoryDetailsScreen(
     onLoadMoreClips: () -> Unit,
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit = {},
-    onClipClick: (ClipUiModel) -> Unit = {}
+    onClipClick: (ClipUiModel) -> Unit,
+    onFilterClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -157,6 +181,12 @@ fun CategoryDetailsScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onFilterClick) {
+                        Icon(
+                            Icons.Default.FilterList,
+                            contentDescription = stringResource(R.string.filter_sort)
+                        )
+                    }
                     IconButton(onClick = {
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"

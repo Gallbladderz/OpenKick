@@ -13,7 +13,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -39,7 +42,8 @@ fun HomeFilterChipsRow(
     selectedFilter: String,
     onFilterSelected: (String) -> Unit,
     isGridMode: Boolean,
-    onGridModeChange: (Boolean) -> Unit
+    onGridModeChange: (Boolean) -> Unit,
+    onFilterClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -85,12 +89,24 @@ fun HomeFilterChipsRow(
         }
 
         if (selectedFilter == stringResource(R.string.filter_all)) {
-            Box(
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(48.dp),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.padding(end = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(
+                    onClick = onFilterClick,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = stringResource(R.string.filter_sort),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
                     onClick = { onGridModeChange(!isGridMode) },
                     modifier = Modifier

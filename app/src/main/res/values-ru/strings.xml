@@ -172,4 +172,9 @@
     <string name="base_theme">Базовая тема</string>
     <string name="share_intent_text">Смотри %1$s на Kick!\nhttps://kick.com/%2$s</string>
     <string name="error_prefix_msg">Ошибка: %1$s</string>
+    <string name="filter_sort">Фильтр и Сортировка</string>
+    <string name="sort_by">Сортировать по</string>
+    <string name="recommended">Рекомендованные</string>
+    <string name="viewers_high_to_low">Зрители: по убыванию</string>
+    <string name="apply">Применить</string>
 </resources>

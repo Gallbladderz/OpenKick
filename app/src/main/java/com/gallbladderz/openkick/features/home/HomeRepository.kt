@@ -9,11 +9,13 @@ class HomeRepository(private val apiService: KickApiService) {
 
     suspend fun fetchLivestreams(
         cursor: String? = null,
+        sort: String = "viewer_count_desc",
         languages: Set<String> = emptySet()
     ): Result<Pair<List<StreamUiModel>, String?>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getHomeLivestreams(
                 cursor = cursor,
+                sort = sort,
                 languages = if (languages.isEmpty()) null else languages.toList()
             )
 

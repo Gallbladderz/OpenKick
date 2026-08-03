@@ -58,12 +58,14 @@ class CategoriesRepository(private val apiService: KickApiService) {
 
     suspend fun fetchCategoryStreams(
         slug: String,
-        cursor: String? = null
+        cursor: String? = null,
+        sort: String = "viewer_count_desc",
+        languages: List<String>? = null
     ): Result<Pair<List<StreamUiModel>, String?>> =
         withContext(Dispatchers.IO) {
             try {
                 val response =
-                    apiService.getCategoryLivestreams(subcategorySlug = slug, cursor = cursor)
+                    apiService.getCategoryLivestreams(subcategorySlug = slug, cursor = cursor, sort = sort, languages = languages)
                 val streams =
                     response.data?.livestreams?.mapNotNull { it.toDomain() } ?: emptyList()
                 val nextCursor = response.data?.pagination?.nextCursor
