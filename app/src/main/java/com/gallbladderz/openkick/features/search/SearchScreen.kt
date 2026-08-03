@@ -1,5 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.gallbladderz.openkick.features.search
+import com.gallbladderz.openkick.features.categories.CategoryCard
+import com.gallbladderz.openkick.features.categories.CategoryUiModel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +24,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -242,23 +248,51 @@ fun SearchTabsContent(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(streams, key = { it.slug }) { stream ->
-                            SearchStreamCard(
-                                stream = stream,
-                                onClick = { onStreamClick(stream.slug) }
-                            )
+                        val streamRows = streams.chunked(2)
+                        itemsIndexed(streamRows) { _, rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                SearchStreamCard(
+                                    stream = rowItems[0],
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onStreamClick(rowItems[0].slug) }
+                                )
+                                if (rowItems.size > 1) {
+                                    SearchStreamCard(
+                                        stream = rowItems[1],
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { onStreamClick(rowItems[1].slug) }
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
                     }
                 }
                 2 -> {
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 110.dp),
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(categories, key = { it.slug }) { category ->
-                            SearchCategoryRow(
-                                category = category,
+                        gridItems(categories, key = { it.slug }) { category ->
+                            val categoryModel = CategoryUiModel(
+                                id = category.slug.hashCode().toString(),
+                                name = category.name,
+                                slug = category.slug,
+                                bannerUrl = category.thumbnailUrl,
+                                viewers = category.viewers,
+                                tags = category.tags
+                            )
+                            CategoryCard(
+                                category = categoryModel,
+                                isFollowed = false,
+                                onToggleFollow = { },
                                 onClick = { onCategoryClick(category.slug) }
                             )
                         }
@@ -323,30 +357,34 @@ fun SearchChannelCard(channel: SearchUiModel, onClick: () -> Unit) {
 }
 
 @Composable
-fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
+fun SearchStreamCard(stream: SearchStreamUiModel, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val context = LocalContext.current
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(stream.thumbnailUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-        )
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(stream.thumbnailUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
             Text(
                 text = stream.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -355,11 +393,39 @@ fun SearchStreamCard(stream: SearchStreamUiModel, onClick: () -> Unit) {
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = stream.slug,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (stream.categoryName.isNotBlank() || stream.viewers > 0) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (stream.viewers > 0) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = com.gallbladderz.openkick.features.categories.formatViewers(stream.viewers),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = stream.categoryName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }

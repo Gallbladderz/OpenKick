@@ -24,6 +24,28 @@ class SettingsRepository(private val context: Context) {
         private val APP_THEME = stringPreferencesKey("app_theme")
         private val APP_ACCENT = stringPreferencesKey("app_accent")
         private val USE_DYNAMIC_COLORS = booleanPreferencesKey("use_dynamic_colors")
+        private val HOME_GRID_MODE = booleanPreferencesKey("home_grid_mode")
+        private val HOME_STREAM_SORT = stringPreferencesKey("home_stream_sort")
+    }
+
+    val homeGridModeFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HOME_GRID_MODE] ?: false
+    }
+
+    suspend fun setHomeGridMode(isGridMode: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[HOME_GRID_MODE] = isGridMode
+        }
+    }
+
+    val homeStreamSortFlow: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[HOME_STREAM_SORT] ?: "viewer_count_desc"
+    }
+
+    suspend fun setHomeStreamSort(sort: String) {
+        context.dataStore.edit { preferences ->
+            preferences[HOME_STREAM_SORT] = sort
+        }
     }
 
     val appThemeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->

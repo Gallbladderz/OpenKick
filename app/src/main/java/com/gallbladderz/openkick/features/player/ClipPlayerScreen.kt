@@ -1,4 +1,5 @@
 package com.gallbladderz.openkick.features.player
+import com.gallbladderz.openkick.features.player.VideoQuality
 
 import android.content.Intent
 import androidx.compose.animation.fadeIn

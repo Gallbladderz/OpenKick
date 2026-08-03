@@ -47,6 +47,8 @@ fun SearchLivestreamDto.toDomain(): SearchStreamUiModel {
     return SearchStreamUiModel(
         slug = resolvedSlug,
         title = resolvedTitle,
+        viewers = this.viewerCount,
+        categoryName = this.category?.name ?: "",
         thumbnailUrl = this.thumbnail?.finalUrl?.replace("\\/", "/") ?: ""
     )
 }
@@ -55,6 +57,8 @@ fun SearchCategoryDto.toDomain(): SearchCategoryUiModel {
     return SearchCategoryUiModel(
         name = this.name,
         slug = this.slug,
+        viewers = this.viewerCount,
+        tags = this.tags,
         thumbnailUrl = this.thumbnail?.finalUrl?.replace("\\/", "/") ?: ""
     )
 }

@@ -55,13 +55,25 @@ class HomeViewModel(
     private val _sort = MutableStateFlow("viewer_count_desc")
     val sort = _sort.asStateFlow()
 
+    private val _isGridMode = MutableStateFlow(false)
+    val isGridMode = _isGridMode.asStateFlow()
+
     private val _selectedFilterLanguages = MutableStateFlow<Set<String>>(emptySet())
     val selectedFilterLanguages = _selectedFilterLanguages.asStateFlow()
 
     fun updateFiltersAndRefresh(newSort: String, newLangs: Set<String>) {
         _sort.value = newSort
         _selectedFilterLanguages.value = newLangs
+        viewModelScope.launch {
+            settingsRepository.setHomeStreamSort(newSort)
+        }
         fetchHomeData()
+    }
+
+    fun setGridMode(isGrid: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHomeGridMode(isGrid)
+        }
     }
 
 
@@ -80,6 +92,16 @@ class HomeViewModel(
 
 
     init {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.homeGridModeFlow.collect {
+                _isGridMode.value = it
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.homeStreamSortFlow.collect {
+                _sort.value = it
+            }
+        }
         viewModelScope.launch(Dispatchers.IO) {
 
             kotlinx.coroutines.flow.combine(
