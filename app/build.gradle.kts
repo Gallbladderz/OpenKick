@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp)
+alias(libs.plugins.ksp)
     id("com.mikepenz.aboutlibraries.plugin")
 }
 
@@ -84,6 +84,6 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.github.ShiftHackZ.Catppuccin-Android-Library:compose:0.1.2")
-    implementation("com.github.ShiftHackZ.Catppuccin-Android-Library:palette:0.1.2")
+implementation("com.github.ShiftHackZ.Catppuccin-Android-Library:palette:0.1.2")
     implementation("com.mikepenz:aboutlibraries-compose:11.1.4")
 }

@@ -39,7 +39,6 @@ object LicensesRoute
 
 @Serializable
 data class CategoryDetailsRoute(val slug: String)
-
 @Serializable
 data class PlayerRoute(val streamerName: String)
 

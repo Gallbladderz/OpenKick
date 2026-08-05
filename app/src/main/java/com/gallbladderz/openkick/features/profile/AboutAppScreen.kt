@@ -89,7 +89,7 @@ fun AboutAppScreen(
                     .padding(vertical = 16.dp)
             )
 
-            SettingsGroupHeader(stringResource(R.string.links))
+SettingsGroupHeader(stringResource(R.string.links))
 
             ListItem(
                 headlineContent = { Text(stringResource(R.string.open_source_licenses)) },
