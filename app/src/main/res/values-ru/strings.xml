@@ -178,4 +178,10 @@
     <string name="viewers_high_to_low">Зрители: по убыванию</string>
     <string name="apply">Применить</string>
     <string name="settings_tab">Настройки</string>
+    <string name="version">Версия %1$s</string>
+    <string name="links">Ссылки</string>
+    <string name="open_source_licenses">Лицензии открытого ПО</string>
+    <string name="github">GitHub</string>
+    <string name="donate">Пожертвовать</string>
+    <string name="copied">Скопировано</string>
 </resources>

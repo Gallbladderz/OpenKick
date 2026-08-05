@@ -182,6 +182,9 @@ fun OpenKickNavHost() {
                                 },
                                 onThemeSettingsClick = {
                                     navController.navigate(ThemeSettingsRoute)
+                                },
+                                onAboutAppClick = {
+                                    navController.navigate(AboutAppRoute)
                                 }
                             )
                         }
@@ -318,6 +321,12 @@ fun OpenKickNavHost() {
 
         composable<ThemeSettingsRoute> {
             com.gallbladderz.openkick.features.profile.ThemeSettingsRoute(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable<AboutAppRoute> {
+            com.gallbladderz.openkick.features.profile.AboutAppRoute(
                 onBackClick = { navController.popBackStack() }
             )
         }

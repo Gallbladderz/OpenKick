@@ -41,6 +41,7 @@ fun SettingsRoute(
     onNotificationSettingsClick: () -> Unit,
     onContentSettingsClick: () -> Unit,
     onThemeSettingsClick: () -> Unit,
+    onAboutAppClick: () -> Unit,
     mainViewModel: MainViewModel = koinViewModel()
 ) {
     val selectedLanguages by mainViewModel.selectedLanguages.collectAsStateWithLifecycle()
@@ -54,7 +55,8 @@ fun SettingsRoute(
         onLanguageSettingsClick = onLanguageSettingsClick,
         onNotificationSettingsClick = onNotificationSettingsClick,
         onContentSettingsClick = onContentSettingsClick,
-        onThemeSettingsClick = onThemeSettingsClick
+        onThemeSettingsClick = onThemeSettingsClick,
+        onAboutAppClick = onAboutAppClick
     )
 }
 
@@ -67,7 +69,8 @@ fun SettingsScreen(
     onLanguageSettingsClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
     onContentSettingsClick: () -> Unit,
-    onThemeSettingsClick: () -> Unit
+    onThemeSettingsClick: () -> Unit,
+    onAboutAppClick: () -> Unit
 ) {
 
     val availableLanguages = mapOf(
@@ -179,9 +182,9 @@ fun SettingsScreen(
         item {
             SettingsListItem(
                 headline = stringResource(R.string.about_app),
-                supporting = stringResource(R.string.version_info_app),
+                supporting = null,
                 icon = Icons.Default.Info,
-                onClick = { /* TODO */ }
+                onClick = onAboutAppClick
             )
         }
     }
@@ -205,13 +208,13 @@ fun SettingsGroupHeader(title: String) {
 @Composable
 fun SettingsListItem(
     headline: String,
-    supporting: String,
+    supporting: String?,
     icon: ImageVector,
     onClick: () -> Unit
 ) {
     ListItem(
         headlineContent = { Text(headline) },
-        supportingContent = { Text(supporting) },
+        supportingContent = if (supporting != null) { { Text(supporting) } } else null,
         leadingContent = {
             Icon(
                 imageVector = icon,

@@ -32,6 +32,9 @@ object ContentSettingsRoute
 object AllFollowsRoute
 
 @Serializable
+object AboutAppRoute
+
+@Serializable
 data class CategoryDetailsRoute(val slug: String)
 
 @Serializable
