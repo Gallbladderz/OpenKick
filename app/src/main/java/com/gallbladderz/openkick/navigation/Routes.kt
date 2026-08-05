@@ -35,8 +35,10 @@ object AllFollowsRoute
 object AboutAppRoute
 
 @Serializable
-data class CategoryDetailsRoute(val slug: String)
+object LicensesRoute
 
+@Serializable
+data class CategoryDetailsRoute(val slug: String)
 @Serializable
 data class PlayerRoute(val streamerName: String)
 
