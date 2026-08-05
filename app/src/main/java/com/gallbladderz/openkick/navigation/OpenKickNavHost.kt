@@ -327,6 +327,13 @@ fun OpenKickNavHost() {
 
         composable<AboutAppRoute> {
             com.gallbladderz.openkick.features.profile.AboutAppRoute(
+                onBackClick = { navController.popBackStack() },
+                onLicensesClick = { navController.navigate(LicensesRoute) }
+            )
+        }
+
+        composable<LicensesRoute> {
+            com.gallbladderz.openkick.features.profile.LicensesRoute(
                 onBackClick = { navController.popBackStack() }
             )
         }

@@ -35,6 +35,9 @@ object AllFollowsRoute
 object AboutAppRoute
 
 @Serializable
+object LicensesRoute
+
+@Serializable
 data class CategoryDetailsRoute(val slug: String)
 
 @Serializable

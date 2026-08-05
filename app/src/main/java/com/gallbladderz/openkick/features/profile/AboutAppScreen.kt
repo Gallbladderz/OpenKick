@@ -33,15 +33,20 @@ import com.gallbladderz.openkick.R
 
 @Composable
 fun AboutAppRoute(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onLicensesClick: () -> Unit
 ) {
-    AboutAppScreen(onBackClick = onBackClick)
+    AboutAppScreen(
+        onBackClick = onBackClick,
+        onLicensesClick = onLicensesClick
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutAppScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onLicensesClick: () -> Unit
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -88,9 +93,7 @@ fun AboutAppScreen(
 
             ListItem(
                 headlineContent = { Text(stringResource(R.string.open_source_licenses)) },
-                modifier = Modifier.clickable {
-                    context.startActivity(Intent(context, com.google.android.gms.oss.licenses.OssLicensesMenuActivity::class.java))
-                }
+                modifier = Modifier.clickable(onClick = onLicensesClick)
             )
 
             ListItem(
