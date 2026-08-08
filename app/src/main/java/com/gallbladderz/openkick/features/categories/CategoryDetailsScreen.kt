@@ -167,7 +167,7 @@ fun CategoryDetailsScreen(
                 title = {
                     Text(
                         text = if (state is CategoryDetailsUiState.Success)
-                            (state as CategoryDetailsUiState.Success).name
+                            state.name
                         else stringResource(R.string.loading),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium

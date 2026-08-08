@@ -133,7 +133,7 @@ fun StreamerProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (state is ProfileUiState.Success) (state as ProfileUiState.Success).info.username else stringResource(
+                        text = if (state is ProfileUiState.Success) state.info.username else stringResource(
                             R.string.profile_title
                         ),
                         fontWeight = FontWeight.Bold

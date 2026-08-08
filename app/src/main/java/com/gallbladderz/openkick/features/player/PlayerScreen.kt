@@ -110,7 +110,6 @@ fun PlayerRoute(
         onLoadStreamInfo = { viewModel.loadStreamInfo(it) },
         onLoadChannelLinks = { viewModel.loadChannelLinks(it) },
         onPlayerManagerInitialize = { viewModel.playerManager.initializePlayer() },
-        onPlayerManagerRelease = { viewModel.playerManager.release() },
         onPlayerManagerPause = { viewModel.playerManager.pause() },
         onPlayerManagerResume = { viewModel.playerManager.resume() },
         onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
@@ -137,7 +136,6 @@ fun PlayerScreen(
     onLoadStreamInfo: (String) -> Unit,
     onLoadChannelLinks: (String) -> Unit,
     onPlayerManagerInitialize: () -> Unit,
-    onPlayerManagerRelease: () -> Unit,
     onPlayerManagerPause: () -> Unit,
     onPlayerManagerResume: () -> Unit,
     onToggleFollow: (String, Boolean) -> Unit,
@@ -423,7 +421,7 @@ val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO
 
         if (!isFullscreen && !isInPipMode) {
             if (state is PlayerUiState.Playing) {
-                val playingState = state as PlayerUiState.Playing
+                val playingState = state
                 StreamerInfoCard(
                     streamerName = streamerName,
                     title = playingState.title,
