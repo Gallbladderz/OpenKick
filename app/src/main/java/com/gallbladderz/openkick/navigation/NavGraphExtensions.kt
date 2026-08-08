@@ -47,14 +47,10 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
                                 navController.navigate(CategoryDetailsRoute(slug))
                             },
                             onClipClick = { clip ->
+                                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                                 navController.navigate(
                                     ClipPlayerRoute(
-                                        videoUrl = clip.videoUrl,
-                                        title = clip.title,
-                                        streamerName = clip.streamerName,
-                                        streamerAvatarUrl = clip.streamerAvatarUrl,
-                                        views = clip.views,
-                                        durationFormatted = clip.durationFormatted
+                                        clipId = clip.id
                                     )
                                 )
                             },
@@ -110,14 +106,10 @@ fun NavGraphBuilder.categoryDetailsScreen(navController: NavController) {
                 navController.navigate(PlayerRoute(streamerName))
             },
             onClipClick = { clip ->
+                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                 navController.navigate(
                     ClipPlayerRoute(
-                        videoUrl = clip.videoUrl,
-                        title = clip.title,
-                        streamerName = clip.streamerName,
-                        streamerAvatarUrl = clip.streamerAvatarUrl,
-                        views = clip.views,
-                        durationFormatted = clip.durationFormatted
+                        clipId = clip.id
                     )
                 )
             }
@@ -129,12 +121,7 @@ fun NavGraphBuilder.clipPlayerScreen(navController: NavController) {
     composable<ClipPlayerRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<ClipPlayerRoute>()
         com.gallbladderz.openkick.features.player.ClipPlayerRoute(
-            videoUrl = route.videoUrl,
-            title = route.title,
-            streamerName = route.streamerName,
-            streamerAvatarUrl = route.streamerAvatarUrl,
-            views = route.views,
-            durationFormatted = route.durationFormatted,
+            clipId = route.clipId,
             onBackClick = { navController.popBackStack() },
             onStreamerClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
         )
@@ -192,26 +179,28 @@ fun NavGraphBuilder.streamerProfileScreen(navController: NavController) {
             onBackClick = { navController.popBackStack() },
             onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
             onVideoClick = { video, profile ->
+                val clip = com.gallbladderz.openkick.features.home.ClipUiModel(
+                    id = video.id,
+                    title = video.title,
+                    thumbnailUrl = video.thumbnailUrl,
+                    videoUrl = video.videoUrl,
+                    views = video.views,
+                    durationFormatted = video.durationFormatted,
+                    streamerName = profile.slug,
+                    streamerAvatarUrl = profile.avatarUrl
+                )
+                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                 navController.navigate(
                     ClipPlayerRoute(
-                        videoUrl = video.videoUrl,
-                        title = video.title,
-                        streamerName = profile.slug,
-                        streamerAvatarUrl = profile.avatarUrl,
-                        views = video.views,
-                        durationFormatted = video.durationFormatted
+                        clipId = video.id
                     )
                 )
             },
             onClipClick = { clip ->
+                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                 navController.navigate(
                     ClipPlayerRoute(
-                        videoUrl = clip.videoUrl,
-                        title = clip.title,
-                        streamerName = clip.streamerName,
-                        streamerAvatarUrl = clip.streamerAvatarUrl,
-                        views = clip.views,
-                        durationFormatted = clip.durationFormatted
+                        clipId = clip.id
                     )
                 )
             }
