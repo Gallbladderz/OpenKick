@@ -78,35 +78,57 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ClipPlayerRoute(
-    videoUrl: String,
-    title: String,
-    streamerName: String,
-    streamerAvatarUrl: String,
-    views: Int,
-    durationFormatted: String,
+    clipId: String,
     onBackClick: () -> Unit,
     onStreamerClick: (String) -> Unit = {},
     viewModel: PlayerViewModel = koinViewModel(),
     clipPlayerViewModel: ClipPlayerViewModel = koinViewModel()
 ) {
-    val isFollowed by viewModel.isStreamerFollowed(streamerName)
-        .collectAsStateWithLifecycle(initialValue = false)
+    LaunchedEffect(clipId) {
+        clipPlayerViewModel.loadClip(clipId)
+    }
+
+    val activeClip by clipPlayerViewModel.activeClip.collectAsStateWithLifecycle()
     val fetchedAvatarUrl by clipPlayerViewModel.avatarUrl.collectAsStateWithLifecycle()
 
-    ClipPlayerScreen(
-        videoUrl = videoUrl,
-        title = title,
-        streamerName = streamerName,
-        streamerAvatarUrl = streamerAvatarUrl,
-        views = views,
-        durationFormatted = durationFormatted,
-        isFollowed = isFollowed,
-        fetchedAvatarUrl = fetchedAvatarUrl,
-        onToggleFollow = { viewModel.toggleFollow(streamerName, isFollowed) },
-        onLoadAvatar = { clipPlayerViewModel.loadAvatar(streamerName) },
-        onBackClick = onBackClick,
-        onStreamerClick = onStreamerClick
-    )
+    val safeStreamerName = activeClip?.streamerName ?: ""
+    val isFollowed by viewModel.isStreamerFollowed(safeStreamerName)
+        .collectAsStateWithLifecycle(initialValue = false)
+
+    if (activeClip != null) {
+        val clip = activeClip!!
+        ClipPlayerScreen(
+            videoUrl = clip.videoUrl,
+            title = clip.title,
+            streamerName = clip.streamerName,
+            streamerAvatarUrl = clip.streamerAvatarUrl,
+            views = clip.views,
+            durationFormatted = clip.durationFormatted,
+            isFollowed = isFollowed,
+            fetchedAvatarUrl = fetchedAvatarUrl,
+            onToggleFollow = { viewModel.toggleFollow(clip.streamerName, isFollowed) },
+            onLoadAvatar = { clipPlayerViewModel.loadAvatar(clip.streamerName) },
+            onBackClick = onBackClick,
+            onStreamerClick = onStreamerClick
+        )
+    } else {
+        // Fallback or loading state could go here. For now, empty Box or immediate back navigation.
+        Box(modifier = Modifier.fillMaxSize()) {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back_button),
+                    tint = Color.White
+                )
+            }
+        }
+    }
 }
 
 @Composable

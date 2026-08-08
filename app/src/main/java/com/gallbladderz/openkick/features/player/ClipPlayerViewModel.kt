@@ -14,7 +14,18 @@ class ClipPlayerViewModel(
     private val _avatarUrl = MutableStateFlow("")
     val avatarUrl = _avatarUrl.asStateFlow()
 
+    private val _activeClip = MutableStateFlow<com.gallbladderz.openkick.features.home.ClipUiModel?>(null)
+    val activeClip = _activeClip.asStateFlow()
+
     private var loadedSlug: String? = null
+
+    fun loadClip(clipId: String) {
+        val clip = ActiveClipHolder.activeClip
+        if (clip?.id == clipId) {
+            _activeClip.value = clip
+            loadAvatar(clip.streamerName)
+        }
+    }
 
     fun loadAvatar(slug: String) {
         if (slug.isBlank() || loadedSlug == slug) return
