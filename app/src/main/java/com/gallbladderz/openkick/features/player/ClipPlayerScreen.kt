@@ -1,6 +1,7 @@
 @file:Suppress("DEPRECATION")
 @file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 package com.gallbladderz.openkick.features.player
+import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -388,111 +389,3 @@ fun ClipPlayerScreen(
     }
 }
 
-@Composable
-private fun ClipInfoPanel(
-    title: String,
-    streamerName: String,
-    streamerAvatarUrl: String,
-    views: Int,
-    durationFormatted: String,
-    isFollowed: Boolean,
-    onToggleFollow: () -> Unit,
-    onShareClick: () -> Unit,
-    onStreamerClick: () -> Unit
-) {
-    val anonymous = stringResource(R.string.anonymous)
-    val canOpenStreamer = streamerName.isNotBlank() && streamerName != anonymous
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = title.ifBlank { stringResource(R.string.untitled) },
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            KickAvatar(
-                avatarUrl = streamerAvatarUrl,
-                streamerName = streamerName,
-                size = 44.dp,
-                modifier = Modifier.clickable(enabled = canOpenStreamer) { onStreamerClick() }
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(enabled = canOpenStreamer) { onStreamerClick() }
-            ) {
-                Text(
-                    text = streamerName.ifBlank { anonymous },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(
-                            R.string.clip_views_duration,
-                            formatClipViews(views),
-                            durationFormatted
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onShareClick,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = stringResource(R.string.share_desc)
-                    )
-                }
-                FilledTonalButton(
-                    onClick = onToggleFollow,
-                    enabled = canOpenStreamer
-                ) {
-                    Text(if (isFollowed) stringResource(R.string.unfollow) else stringResource(R.string.follow))
-                }
-            }
-        }
-    }
-}
-
-private fun formatClipViews(views: Int): String {
-    return when {
-        views >= 1_000_000 -> String.format("%.1fM", views / 1_000_000.0)
-        views >= 1_000 -> String.format("%.1fK", views / 1_000.0)
-        else -> views.toString()
-    }
-}

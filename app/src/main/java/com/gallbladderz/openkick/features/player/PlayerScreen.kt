@@ -2,6 +2,7 @@
 @file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 
 package com.gallbladderz.openkick.features.player
+import com.gallbladderz.openkick.features.player.components.PlayerTabs
 import android.app.PendingIntent
 import android.app.RemoteAction
 import android.content.BroadcastReceiver
@@ -436,31 +437,14 @@ val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO
                     }
                 )
             }
-
-            PrimaryTabRow(
+            PlayerTabs(
                 selectedTabIndex = selectedTabIndex,
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = { Text(title, fontWeight = FontWeight.Medium) }
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                when (selectedTabIndex) {
-                    0 -> ChatList(chatMessages = chatMessages)
-                    1 -> InfoTabContent(links = channelLinks)
-                }
-            }
+                onTabSelected = { selectedTabIndex = it },
+                tabs = tabs,
+                chatMessages = chatMessages,
+                channelLinks = channelLinks,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 
