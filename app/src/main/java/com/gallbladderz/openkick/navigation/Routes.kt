@@ -5,6 +5,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
 
 @Serializable
+object MainTabsRoute
+
+@Serializable
 object HomeRoute
 
 @Serializable
