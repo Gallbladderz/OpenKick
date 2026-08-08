@@ -177,22 +177,11 @@ fun NavGraphBuilder.streamerProfileScreen(navController: NavController) {
         com.gallbladderz.openkick.features.profile.StreamerProfileRoute(
             slug = route.slug,
             onBackClick = { navController.popBackStack() },
-            onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
-            onVideoClick = { video, profile ->
-                val clip = com.gallbladderz.openkick.features.home.ClipUiModel(
-                    id = video.id,
-                    title = video.title,
-                    thumbnailUrl = video.thumbnailUrl,
-                    videoUrl = video.videoUrl,
-                    views = video.views,
-                    durationFormatted = video.durationFormatted,
-                    streamerName = profile.slug,
-                    streamerAvatarUrl = profile.avatarUrl
-                )
-                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
+onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+            onVideoClick = { clipId ->
                 navController.navigate(
                     ClipPlayerRoute(
-                        clipId = video.id
+                        clipId = clipId
                     )
                 )
             },

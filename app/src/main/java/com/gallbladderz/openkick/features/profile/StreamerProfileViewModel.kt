@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.UiText
+import com.gallbladderz.openkick.features.player.ClipRepository
 
 sealed interface ProfileUiState {
     data object Loading : ProfileUiState
@@ -30,7 +31,8 @@ sealed interface ProfileUiState {
 
 class StreamerProfileViewModel(
     private val repository: StreamerProfileRepository,
-    private val followsRepository: FollowsRepository
+    private val followsRepository: FollowsRepository,
+    private val clipRepository: ClipRepository
 ) : ViewModel() {
 
     private var clipsCursor: String? = null
@@ -176,5 +178,19 @@ class StreamerProfileViewModel(
             }
             isClipsLoading = false
         }
+    }
+
+    fun prepareVideoForPlayback(video: VideoUiModel, profile: ProfileInfoUi) {
+        val clip = ClipUiModel(
+            id = video.id,
+            title = video.title,
+            thumbnailUrl = video.thumbnailUrl,
+            videoUrl = video.videoUrl,
+            views = video.views,
+            durationFormatted = video.durationFormatted,
+            streamerName = profile.slug,
+            streamerAvatarUrl = profile.avatarUrl
+        )
+        clipRepository.cacheClip(clip)
     }
 }

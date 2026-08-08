@@ -6,6 +6,7 @@ import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.StreamUiModel
 import com.gallbladderz.openkick.features.home.toDomain
 import com.gallbladderz.openkick.features.home.toUiModel
+import com.gallbladderz.openkick.features.player.ClipRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -20,7 +21,10 @@ data class CategoryDetailsUiModel(
     val bannerUrl: String
 )
 
-class CategoriesRepository(private val apiService: KickApiService) {
+class CategoriesRepository(
+    private val apiService: KickApiService,
+    private val clipRepository: ClipRepository
+) {
 
     fun fetchCategories(page: Int = 1): Flow<Result<List<CategoryUiModel>>> = flow {
         try {
@@ -51,6 +55,7 @@ class CategoriesRepository(private val apiService: KickApiService) {
                 val response = apiService.getCategoryClips(slug = slug, cursor = cursor)
                 val uiModels = response.actualClips.map { it.toUiModel() }
                 val nextCursor = response.actualCursor
+                clipRepository.cacheClips(uiModels)
                 Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
             } catch (e: Exception) {
                 Result.failure(e.toDomainError())

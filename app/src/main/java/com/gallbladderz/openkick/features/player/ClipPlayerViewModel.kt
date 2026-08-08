@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ClipPlayerViewModel(
-    private val profileRepository: StreamerProfileRepository
+    private val profileRepository: StreamerProfileRepository,
+    private val clipRepository: ClipRepository
 ) : ViewModel() {
 
     private val _avatarUrl = MutableStateFlow("")
@@ -19,9 +20,9 @@ class ClipPlayerViewModel(
 
     private var loadedSlug: String? = null
 
-    fun loadClip(clipId: String) {
-        val clip = ActiveClipHolder.activeClip
-        if (clip?.id == clipId) {
+fun loadClip(clipId: String) {
+        val clip = clipRepository.getClipById(clipId)
+        if (clip != null) {
             _activeClip.value = clip
             loadAvatar(clip.streamerName)
         }

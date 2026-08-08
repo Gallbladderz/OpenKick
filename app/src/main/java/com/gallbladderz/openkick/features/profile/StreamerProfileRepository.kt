@@ -5,6 +5,7 @@ import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.KickApiService
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.toUiModel
+import com.gallbladderz.openkick.features.player.ClipRepository
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.toDomain
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,10 @@ data class VideoUiModel(
     val durationFormatted: String
 )
 
-class StreamerProfileRepository(private val apiService: KickApiService) {
+class StreamerProfileRepository(
+    private val apiService: KickApiService,
+    private val clipRepository: ClipRepository
+) {
 
     suspend fun fetchProfileInfo(slug: String): Result<ProfileInfoUi> =
         withContext(Dispatchers.IO) {
@@ -82,6 +86,7 @@ class StreamerProfileRepository(private val apiService: KickApiService) {
             val response = apiService.getChannelClips(slug, cursor)
             val clips = response.actualClips.map { it.toUiModel() }
             val nextCursor = response.actualCursor
+            clipRepository.cacheClips(clips)
             Result.success(Pair(clips, if (nextCursor.isNullOrBlank()) null else nextCursor))
         } catch (e: Exception) {
             Result.failure(e.toDomainError())
