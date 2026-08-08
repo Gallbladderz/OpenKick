@@ -47,6 +47,7 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
                                 navController.navigate(CategoryDetailsRoute(slug))
                             },
                             onClipClick = { clip ->
+                                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                                 navController.navigate(
                                     ClipPlayerRoute(
                                         clipId = clip.id
@@ -105,6 +106,7 @@ fun NavGraphBuilder.categoryDetailsScreen(navController: NavController) {
                 navController.navigate(PlayerRoute(streamerName))
             },
             onClipClick = { clip ->
+                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                 navController.navigate(
                     ClipPlayerRoute(
                         clipId = clip.id
@@ -175,7 +177,7 @@ fun NavGraphBuilder.streamerProfileScreen(navController: NavController) {
         com.gallbladderz.openkick.features.profile.StreamerProfileRoute(
             slug = route.slug,
             onBackClick = { navController.popBackStack() },
-            onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
             onVideoClick = { clipId ->
                 navController.navigate(
                     ClipPlayerRoute(
@@ -184,6 +186,7 @@ fun NavGraphBuilder.streamerProfileScreen(navController: NavController) {
                 )
             },
             onClipClick = { clip ->
+                com.gallbladderz.openkick.features.player.ActiveClipHolder.activeClip = clip
                 navController.navigate(
                     ClipPlayerRoute(
                         clipId = clip.id

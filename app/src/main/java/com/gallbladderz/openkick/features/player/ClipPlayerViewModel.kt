@@ -20,7 +20,7 @@ class ClipPlayerViewModel(
 
     private var loadedSlug: String? = null
 
-    fun loadClip(clipId: String) {
+fun loadClip(clipId: String) {
         val clip = clipRepository.getClipById(clipId)
         if (clip != null) {
             _activeClip.value = clip
