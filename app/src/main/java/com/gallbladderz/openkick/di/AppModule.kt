@@ -65,17 +65,19 @@ val appModule = module {
     single { get<Retrofit>().create(KickApiService::class.java) }
 
 
-    single { CategoriesRepository(get()) }
+    single { com.gallbladderz.openkick.features.player.ClipRepository() }
+
+    single { CategoriesRepository(get(), get()) }
 
 
 
 
-    single { HomeRepository(get()) }
+    single { HomeRepository(get(), get()) }
     single { SearchRepository(get()) }
     single { PlayerRepository(get()) }
     single { ChatRepository(get()) }
     single { FollowingRepository(get()) }
-    single { StreamerProfileRepository(get()) }
+    single { StreamerProfileRepository(get(), get()) }
 
     single {
         Room.databaseBuilder(
@@ -107,7 +109,7 @@ val appModule = module {
     single { PlayerManager(androidContext(), get()) }
 
     viewModel { PlayerViewModel(get(), get(), get(), get()) }
-    viewModel { ClipPlayerViewModel(get()) }
+    viewModel { ClipPlayerViewModel(get(), get()) }
     viewModel { CategoriesViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
 
@@ -115,5 +117,5 @@ val appModule = module {
     viewModel { CategoryDetailsViewModel(get()) }
 
     viewModel { FollowingViewModel(get(), get()) }
-    viewModel { StreamerProfileViewModel(get(), get()) }
+    viewModel { StreamerProfileViewModel(get(), get(), get()) }
 }

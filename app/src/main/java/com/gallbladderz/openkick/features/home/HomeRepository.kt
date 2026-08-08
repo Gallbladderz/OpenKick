@@ -2,10 +2,14 @@ package com.gallbladderz.openkick.features.home
 
 import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.KickApiService
+import com.gallbladderz.openkick.features.player.ClipRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class HomeRepository(private val apiService: KickApiService) {
+class HomeRepository(
+    private val apiService: KickApiService,
+    private val clipRepository: ClipRepository
+) {
 
     suspend fun fetchLivestreams(
         cursor: String? = null,
@@ -35,6 +39,8 @@ class HomeRepository(private val apiService: KickApiService) {
                 val response = apiService.getTopClips(cursor = cursor)
                 val uiModels = response.actualClips.map { it.toUiModel() }
                 val nextCursor = response.actualCursor
+
+                clipRepository.cacheClips(uiModels)
 
                 Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
             } catch (e: Exception) {

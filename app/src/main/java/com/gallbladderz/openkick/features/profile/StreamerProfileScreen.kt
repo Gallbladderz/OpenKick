@@ -51,7 +51,7 @@ fun StreamerProfileRoute(
     slug: String,
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit,
-    onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
+    onVideoClick: (String) -> Unit,
     onClipClick: (ClipUiModel) -> Unit,
     viewModel: StreamerProfileViewModel = koinViewModel()
 ) {
@@ -74,6 +74,7 @@ fun StreamerProfileRoute(
                 onResult
             )
         },
+        onPrepareVideoForPlayback = { video, profile -> viewModel.prepareVideoForPlayback(video, profile) },
         onBackClick = onBackClick,
         onStreamClick = onStreamClick,
         onVideoClick = onVideoClick,
@@ -93,9 +94,10 @@ fun StreamerProfileScreen(
     onToggleFollow: () -> Unit,
     onLoadMoreClips: () -> Unit,
     onLoadVideoPlaybackUrl: (String, (Result<String>) -> Unit) -> Unit,
+    onPrepareVideoForPlayback: (VideoUiModel, ProfileInfoUi) -> Unit,
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit,
-    onVideoClick: (VideoUiModel, ProfileInfoUi) -> Unit,
+    onVideoClick: (String) -> Unit,
     onClipClick: (ClipUiModel) -> Unit
 ) {
 
@@ -240,7 +242,8 @@ fun StreamerProfileScreen(
                                         onLoadVideoPlaybackUrl(video.id) { result ->
                                             result.onSuccess { url ->
                                                 val videoWithUrl = video.copy(videoUrl = url)
-                                                onVideoClick(videoWithUrl, uiState.info)
+                                                onPrepareVideoForPlayback(videoWithUrl, uiState.info)
+                                                onVideoClick(videoWithUrl.id)
                                             }.onFailure { error ->
                                                 Toast.makeText(
                                                     context,
