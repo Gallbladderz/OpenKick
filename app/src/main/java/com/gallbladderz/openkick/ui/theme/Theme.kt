@@ -73,9 +73,9 @@ private val KickLightColorScheme = lightColorScheme(
 
 @Composable
 fun OpenKickTheme(
-    appTheme: AppTheme = AppTheme.SYSTEM,
+    appTheme: AppTheme = AppTheme.DARK,
     appAccent: AppAccent = AppAccent.MAUVE,
-    useDynamicColors: Boolean = true,
+    useDynamicColors: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (appTheme) {

@@ -52,7 +52,7 @@ class MainViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
-                initialValue = AppTheme.SYSTEM
+                initialValue = AppTheme.DARK
             )
 
     val useDynamicColors: StateFlow<Boolean> =
@@ -60,7 +60,7 @@ class MainViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
-                initialValue = true
+                initialValue = false
             )
 
     val appLanguage: String

@@ -128,11 +128,12 @@ fun LanguageSettingsScreen(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.application_language)) },
                     supportingContent = {
-                        Text(
-                            if (appLanguage == "ru") stringResource(R.string.russian_lang) else stringResource(
-                                R.string.english_lang
-                            )
-                        )
+                        val currentLangText = when (appLanguage) {
+                            "ru" -> stringResource(R.string.russian_lang)
+                            "es" -> "Español"
+                            else -> stringResource(R.string.english_lang)
+                        }
+                        Text(currentLangText)
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier
@@ -216,11 +217,21 @@ fun LanguageSettingsScreen(
                         showLanguageSheet = false
                     }
                 )
+
                 LanguageOptionItem(
                     title = "English (English)",
                     isSelected = appLanguage == "en",
                     onClick = {
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
+                        showLanguageSheet = false
+                    }
+                )
+
+                LanguageOptionItem(
+                    title = "Español",
+                    isSelected = appLanguage == "es",
+                    onClick = {
+                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("es"))
                         showLanguageSheet = false
                     }
                 )

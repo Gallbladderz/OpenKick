@@ -1,20 +1,64 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base stuff -->
+    <string name="app_name">OpenKick</string>
+    <string name="back">Назад</string>
+    <string name="back_button">Назад</string>
+    <string name="home">Главная</string>
+    <string name="categories">Категории</string>
+    <string name="followers">Отслеживаемое</string>
+    <string name="profile">Профиль</string>
+    <string name="profile_title">Профиль</string>
+    <string name="application_title">Приложение</string>
+    <string name="manage">Управление</string>
+
+    <!-- Navigation and Tabs -->
+    <string name="chat_tab">Чат</string>
+    <string name="info_tab">Инфо</string>
+    <string name="clips_tab">Клипы</string>
+    <string name="streams_tab">Стримы</string>
+    <string name="settings_tab">Настройки</string>
+    <string name="tab_channels">Каналы</string>
+    <string name="tab_streams">Стримы</string>
+    <string name="tab_categories">Категории</string>
+
+    <!-- Placeholders -->
+    <string name="info_placeholder">Здесь скоро будет описание канала</string>
+    <string name="clips_placeholder">Здесь скоро будут клипы</string>
+    <string name="search_placeholder">Поиск каналов, стримов...</string>
+    <string name="search_idle">Введите запрос для поиска</string>
+    <string name="no_streams_found">Стримов не найдено</string>
+    <string name="no_information_yet">Информации пока нет</string>
+    <string name="streams_will_appear_here">Здесь скоро появятся стримы</string>
+    <string name="no_vods">Записей нет</string>
+    <string name="no_clips">Клипов нет</string>
+    <string name="no_popular_clips">Нет популярных клипов</string>
+    <string name="could_not_find_games">Не удалось найти игры</string>
+    <string name="category_no_streams">В этой категории сейчас никто не стримит</string>
+    <string name="empty_follow_someone">Тут пусто. Иди подпишись на кого-нибудь!</string>
+    <string name="streamer_wrote_nothing">Стример ничего о себе не написал...</string>
+    <string name="nothing_found">Ничего не найдено</string>
+
+    <!-- Actions and UI elements -->
+    <string name="search">Поиск</string>
+    <string name="retry">Повторить</string>
+    <string name="login_or_register">Войдите или зарегистрируйтесь</string>
+    <string name="unfollow">Отписаться</string>
+    <string name="follow">Отслеживать</string>
+    <string name="unfollow_action">Отписаться</string>
+    <string name="follow_action">Отслеживать</string>
+    <string name="disable">Отключить</string>
+    <string name="apply">Применить</string>
+    <string name="copied">Скопировано</string>
+    <string name="copied_to_clipboard">Скопировано</string>
+    <string name="toggle_view">Переключить вид</string>
+
+    <!-- Content Descriptions -->
+    <string name="avatar_desc">Аватар</string>
+    <string name="uptime_desc">Время трансляции</string>
     <string name="banner_desc">Баннер</string>
     <string name="share_profile_desc">Поделиться профилем</string>
     <string name="vod_desc">Запись (VOD)</string>
-    <string name="views_count_icon">👁 %1$s</string>
-    <string name="receive_stream_alerts">Получать оповещения о начале стримов</string>
-    <string name="battery_saving">Экономия заряда</string>
-    <string name="done_desc">Готово</string>
-    <string name="disable">Отключить</string>
-    <string name="content_settings_title">Контент</string>
-    <string name="hide_slots_title">Слоты и Казино</string>
-    <string name="hide_slots_desc">Скрывает стримы по слотам и казино из ленты.</string>
-    <string name="hide_pools_title">Бассейны и Джакузи</string>
-    <string name="hide_pools_desc">Скрывает стримы в бассейнах, джакузи и бикини из ленты.</string>
-    <string name="hide_crypto_title">Крипта и Трейдинг</string>
-    <string name="hide_crypto_desc">Скрывает стримы по крипте и трейдингу из ленты.</string>
     <string name="share_desc">Поделиться</string>
     <string name="settings_desc">Настройки</string>
     <string name="play_pause_desc">Плей/Пауза</string>
@@ -22,133 +66,13 @@
     <string name="selected_desc">Выбрано</string>
     <string name="thumbnail_desc">Превью</string>
     <string name="category_banner_desc">Баннер категории</string>
-    <string name="category_no_streams">В этой категории сейчас никто не стримит</string>
-    <string name="english_lang">English</string>
-    <string name="battery_opt_disabled">Оптимизация отключена. Фон работает стабильно.</string>
-    <string name="battery_opt_enable">Нажмите «Отключить», чтобы система не убивала уведомления.</string>
-    <string name="app_name">OpenKick</string>
-    <string name="back">Назад</string>
-    <string name="chat_tab">Чат</string>
-    <string name="info_tab">Инфо</string>
-    <string name="clips_tab">Клипы</string>
-    <string name="avatar_desc">Аватар</string>
-    <string name="uptime_desc">Время трансляции</string>
-    <string name="unfollow">Отписаться</string>
-    <string name="follow">Отслеживать</string>
-    <string name="info_placeholder">Здесь скоро будет описание канала</string>
-    <string name="clips_placeholder">Здесь скоро будут клипы</string>
+    <string name="done_desc">Готово</string>
 
-    <string name="home">Главная</string>
-    <string name="categories">Категории</string>
-    <string name="followers">Отслеживаемое</string>
-    <string name="profile">Профиль</string>
-
-    <string name="search">Поиск</string>
-    <string name="search_placeholder">Поиск каналов, стримов...</string>
-    <string name="search_idle">Введите запрос для поиска</string>
-    <string name="loading_api">Грузим API Kick...</string>
-    <string name="error_prefix">Ошибка: %s</string>
-    <string name="retry">Повторить</string>
-    <string name="streams_tab">Стримы</string>
-    <string name="loading">Загрузка...</string>
-    <string name="no_streams_found">Стримов не найдено</string>
-    <string name="login_or_register">Войдите или зарегистрируйтесь</string>
+    <!-- App Settings -->
     <string name="appearance">Внешний вид</string>
     <string name="theme_settings">Оформление</string>
     <string name="theme_settings_desc">Тема, цвета, настройка интерфейса</string>
-    <string name="notifications">Уведомления</string>
-    <string name="push_and_email">Push и Email</string>
-    <string name="language_and_region">Язык и регион</string>
-    <string name="language_desc">Русский</string>
-    <string name="about_app">О приложении</string>
-    <string name="version_info">Версия 1.0.0-alpha</string>
-    <string name="followed_streams">Отслеживаемое</string>
-    <string name="manage">Управление</string>
-
-    <string name="viewers_count">%1$s зрителей</string>
-    <string name="followers_count">%1$s фолловеров</string>
-    <string name="kick_rejected_request">Kick отбил запрос: код %1$s</string>
-    <string name="unified_push_subs">UnifiedPush, подписки</string>
-    <string name="avatar">Аватар</string>
-    <string name="anonymous">Аноним</string>
-    <string name="untitled">Без названия</string>
-    <string name="live">В эфире</string>
-    <string name="version_info_app">Версия 0.1-alpha</string>
-    <string name="filter_all">Все</string>
-    <string name="all_followed">Все отслеживаемые</string>
-    <string name="all_followed_arrow">Все отслеживаемые ➔</string>
-    <string name="all_languages">Все языки</string>
-    <string name="no_vods">Записей нет</string>
-    <string name="vods">Записи</string>
-    <string name="streams_will_appear_here">Здесь скоро появятся стримы</string>
-    <string name="no_information_yet">Информации пока нет</string>
-    <string name="channels">Каналы</string>
-    <string name="filter_categories">Категории</string>
-    <string name="category">Категория</string>
-    <string name="kick_hid_info">Кик зажал инфу</string>
-    <string name="kick_hid_streams">Кик зажал стримы: код %1$s по урлу %2$s</string>
-    <string name="kick_rejected_clips">Кик послал нахер: код %1$s (Клипы)</string>
-    <string name="no_clips">Клипов нет</string>
-    <string name="filter_clips">Клипы</string>
-    <string name="error_code">Код ошибки: %1$s</string>
-    <string name="clip_parsing_crash">Краш парсинга клипов: %1$s</string>
-    <string name="stream_parsing_crash">Краш парсинга стримов: %1$s</string>
-    <string name="game_parsing_crash">Крэш парсинга игр: %1$s</string>
-    <string name="parsing_crash">Крэш парсинга: %1$s</string>
-    <string name="back_button">Назад</string>
-    <string name="data_livestreams_not_found">Не нашли data.livestreams</string>
-    <string name="clips_array_not_found">Не нашли массив \'clips\' в ответе</string>
-    <string name="could_not_find_games">Не удалось найти игры</string>
-    <string name="unknown_error">Неизвестная ошибка</string>
-    <string name="unexpected_error">Непредвиденная ошибка</string>
-    <string name="no_channel_id">Нет ID канала</string>
-    <string name="no_popular_clips">Нет популярных клипов</string>
-    <string name="nothing_found">Ничего не найдено</string>
-    <string name="about_project">О проекте</string>
-    <string name="description">Описание</string>
-    <string name="unfollow_action">Отписаться</string>
-    <string name="follow_action">Отслеживать</string>
-    <string name="categories_api_error">Ошибка API Категорий: %1$s</string>
-    <string name="load_error">Ошибка загрузки</string>
-    <string name="error_loading_channel">Ошибка загрузки канала %1$s: %2$s</string>
-    <string name="error_loading_category">Ошибка загрузки категории %1$s: %2$s</string>
-    <string name="load_error_code">Ошибка загрузки: %1$s</string>
-    <string name="data_processing_error">Ошибка обработки данных</string>
-    <string name="api_response_error">Ошибка обработки ответа API</string>
-    <string name="json_parsing_error">Ошибка парсинга JSON</string>
-    <string name="clip_parsing_error">Ошибка парсинга клипов: %1$s</string>
-    <string name="parsing_error">Ошибка парсинга: %1$s</string>
-    <string name="network_error">Ошибка сети</string>
-    <string name="network_error_clips">Ошибка сети (Клипы): %1$s</string>
-    <string name="network_error_msg">Ошибка сети: %1$s</string>
-    <string name="error_msg_code">Ошибка: %1$s</string>
-    <string name="error_empty_slug">Ошибка: slug пустой!</string>
-    <string name="panels_did_not_load">Панели не загрузились</string>
-    <string name="toggle_view">Переключить вид</string>
-    <string name="search_failed">Поиск упал: %1$s</string>
-    <string name="show_streams_languages">Показывать стримы на выбранных языках:</string>
-    <string name="total_failure">Полный провал, ничего не загрузилось</string>
-    <string name="application_title">Приложение</string>
-    <string name="received_non_json">Пришел не JSON объект</string>
-    <string name="profile_title">Профиль</string>
-    <string name="empty_response">Пустой ответ</string>
-    <string name="trying_to_load_slug">Пытаемся загрузить слаг: \'%1$s\'</string>
-    <string name="russian_lang">Русский</string>
-    <string name="network_dropped_streams">Сеть отвалилась (Стримы): %1$s</string>
-    <string name="network_died">Сеть сдохла: %1$s</string>
-    <string name="script_choked">Скрипт подавился: %1$s</string>
-    <string name="streamer_wrote_nothing">Стример ничего о себе не написал...</string>
-    <string name="streamer_offline">Стример сейчас оффлайн</string>
-    <string name="live_streams">Стримы в эфире</string>
-    <string name="top_clips_week">Топ клипов за неделю</string>
-    <string name="stream_title">Трансляция</string>
-    <string name="empty_follow_someone">Тут пусто. Иди подпишись на кого-нибудь!</string>
-    <string name="interface_language">Язык интерфейса</string>
-    <string name="application_language">Язык приложения</string>
-    <string name="stream_languages">Языки трансляций</string>
-    <string name="username_is_live">🔴 %1$s в эфире!</string>
-    <string name="video_quality">Качество</string>
-    <string name="audio_only">Только аудио</string>
+    <string name="base_theme">Базовая тема</string>
     <string name="system_default">Системная</string>
     <string name="light">Светлая</string>
     <string name="dark">Темная</string>
@@ -157,31 +81,142 @@
     <string name="dynamic_colors">Динамические цвета</string>
     <string name="use_material_you">Использовать Material You</string>
     <string name="extracts_colors_wallpaper">Берет цвета из обоев</string>
-    <string name="tab_channels">Каналы</string>
-    <string name="tab_streams">Стримы</string>
-    <string name="tab_categories">Категории</string>
-    <string name="clip_views_duration">%1$s просмотров • %2$s</string>
-    <string name="copied_to_clipboard">Скопировано</string>
-    <string name="live_streams_channel_name">Прямые трансляции</string>
-    <string name="user_is_live">🔴 %1$s в эфире!</string>
+
+    <!-- Content Settings -->
+    <string name="content_settings_title">Контент</string>
+    <string name="hide_slots_title">Слоты и Казино</string>
+    <string name="hide_slots_desc">Скрывает стримы по слотам и казино из ленты.</string>
+    <string name="hide_pools_title">Бассейны и Джакузи</string>
+    <string name="hide_pools_desc">Скрывает стримы в бассейнах, джакузи и бикини из ленты.</string>
+    <string name="hide_crypto_title">Крипта и Трейдинг</string>
+    <string name="hide_crypto_desc">Скрывает стримы по крипте и трейдингу из ленты.</string>
+
+    <!-- Localization and Languages -->
+    <string name="language_and_region">Язык и регион</string>
+    <string name="language_desc">Русский</string>
+    <string name="interface_language">Язык интерфейса</string>
+    <string name="application_language">Язык приложения</string>
+    <string name="stream_languages">Языки трансляций</string>
+    <string name="show_streams_languages">Показывать стримы на выбранных языках:</string>
+    <string name="all_languages">Все языки</string>
+    <string name="russian_lang">Русский</string>
+    <string name="english_lang">English</string>
+
+    <!-- Notifications and Background Work -->
+    <string name="notifications">Уведомления</string>
+    <string name="push_and_email">Push и Email</string>
+    <string name="receive_stream_alerts">Получать оповещения о начале стримов</string>
+    <string name="battery_saving">Экономия заряда</string>
+    <string name="battery_opt_disabled">Оптимизация отключена. Фон работает стабильно.</string>
+    <string name="battery_opt_enable">Нажмите «Отключить», чтобы система не убивала уведомления.</string>
+    <string name="unified_push_subs">UnifiedPush, подписки</string>
     <string name="service_running_bg">%1$s работает в фоне</string>
     <string name="monitoring_streams">Мониторим стримы для моментальных пушей</string>
     <string name="background_work">Фоновая работа</string>
     <string name="maintain_connection_desc">Поддерживает соединение для получения уведомлений</string>
-    <string name="auto_quality">Авто</string>
-    <string name="base_theme">Базовая тема</string>
-    <string name="share_intent_text">Смотри %1$s на Kick!\nhttps://kick.com/%2$s</string>
-    <string name="error_prefix_msg">Ошибка: %1$s</string>
+    <string name="live_streams_channel_name">Прямые трансляции</string>
+
+    <!-- Streams, Clips, Categories -->
+    <string name="live">В эфире</string>
+    <string name="anonymous">Аноним</string>
+    <string name="untitled">Без названия</string>
+    <string name="category">Категория</string>
+    <string name="channels">Каналы</string>
+    <string name="vods">Записи</string>
+    <string name="avatar">Аватар</string>
+    <string name="description">Описание</string>
+    <string name="stream_title">Трансляция</string>
+    <string name="live_streams">Стримы в эфире</string>
+    <string name="top_clips_week">Топ клипов за неделю</string>
+    <string name="streamer_offline">Стример сейчас оффлайн</string>
+    <string name="followed_streams">Отслеживаемое</string>
+    <string name="all_followed">Все отслеживаемые</string>
+    <string name="all_followed_arrow">Все отслеживаемые ➔</string>
+    <string name="user_is_live">🔴 %1$s в эфире!</string>
+    <string name="username_is_live">🔴 %1$s в эфире!</string>
+
+    <!-- Filters -->
+    <string name="filter_all">Все</string>
+    <string name="filter_categories">Категории</string>
+    <string name="filter_clips">Клипы</string>
     <string name="filter_sort">Фильтр и Сортировка</string>
     <string name="sort_by">Сортировать по</string>
     <string name="recommended">Рекомендованные</string>
     <string name="viewers_high_to_low">Зрители: по убыванию</string>
-    <string name="apply">Применить</string>
-    <string name="settings_tab">Настройки</string>
+
+    <!-- Player -->
+    <string name="video_quality">Качество</string>
+    <string name="audio_only">Только аудио</string>
+    <string name="auto_quality">Авто</string>
+    <string name="share_intent_text">Смотри %1$s на Kick!\nhttps://kick.com/%2$s</string>
+
+    <!-- Formatting with placeholders -->
+    <string name="viewers_count">%1$s зрителей</string>
+    <string name="followers_count">%1$s фолловеров</string>
+    <string name="views_count_icon">👁 %1$s</string>
+    <string name="clip_views_duration">%1$s просмотров • %2$s</string>
+
+    <!-- About -->
+    <string name="about_app">О приложении</string>
+    <string name="about_project">О проекте</string>
+    <string name="version_info">Версия 1.0.0-alpha</string>
+    <string name="version_info_app">Версия 0.1-alpha</string>
     <string name="version">Версия %1$s</string>
     <string name="links">Ссылки</string>
     <string name="open_source_licenses">Лицензии открытого ПО</string>
     <string name="github">GitHub</string>
     <string name="donate">Пожертвовать 👉👈</string>
-    <string name="copied">Скопировано</string>
+
+    <!-- Loading States -->
+    <string name="loading">Загрузка...</string>
+    <string name="loading_api">Грузим API Kick...</string>
+
+    <!-- ERRORS AND CRASHES -->
+    <string name="error_prefix">Ошибка: %s</string>
+    <string name="error_prefix_msg">Ошибка: %1$s</string>
+    <string name="error_msg_code">Ошибка: %1$s</string>
+    <string name="error_code">Код ошибки: %1$s</string>
+    <string name="unknown_error">Неизвестная ошибка</string>
+    <string name="unexpected_error">Непредвиденная ошибка</string>
+    <string name="load_error">Ошибка загрузки</string>
+    <string name="load_error_code">Ошибка загрузки: %1$s</string>
+    <string name="network_error">Ошибка сети</string>
+    <string name="network_error_msg">Ошибка сети: %1$s</string>
+    <string name="network_error_clips">Ошибка сети (Клипы): %1$s</string>
+
+    <string name="kick_rejected_request">Kick отбил запрос: код %1$s</string>
+    <string name="kick_hid_info">Кик зажал инфу</string>
+    <string name="kick_hid_streams">Кик зажал стримы: код %1$s по урлу %2$s</string>
+    <string name="kick_rejected_clips">Кик послал нахер: код %1$s (Клипы)</string>
+
+    <string name="parsing_crash">Краш парсинга: %1$s</string>
+    <string name="clip_parsing_crash">Краш парсинга клипов: %1$s</string>
+    <string name="stream_parsing_crash">Краш парсинга стримов: %1$s</string>
+    <string name="game_parsing_crash">Краш парсинга игр: %1$s</string>
+
+    <string name="parsing_error">Ошибка парсинга: %1$s</string>
+    <string name="json_parsing_error">Ошибка парсинга JSON</string>
+    <string name="clip_parsing_error">Ошибка парсинга клипов: %1$s</string>
+    <string name="data_processing_error">Ошибка обработки данных</string>
+    <string name="api_response_error">Ошибка обработки ответа API</string>
+    <string name="categories_api_error">Ошибка API Категорий: %1$s</string>
+
+    <string name="data_livestreams_not_found">Не нашли data.livestreams</string>
+    <string name="clips_array_not_found">Не нашли массив \'clips\' в ответе</string>
+    <string name="no_channel_id">Нет ID канала</string>
+    <string name="empty_response">Пустой ответ</string>
+    <string name="received_non_json">Пришел не JSON объект</string>
+
+    <string name="error_loading_channel">Ошибка загрузки канала %1$s: %2$s</string>
+    <string name="error_loading_category">Ошибка загрузки категории %1$s: %2$s</string>
+    <string name="error_empty_slug">Ошибка: slug пустой!</string>
+
+    <string name="search_failed">Поиск упал: %1$s</string>
+    <string name="panels_did_not_load">Панели не загрузились</string>
+    <string name="trying_to_load_slug">Пытаемся загрузить слаг: \'%1$s\'</string>
+    <string name="total_failure">Полный провал ниче не загрузилось</string>
+
+    <string name="network_dropped_streams">Сеть отвалилась (Стримы): %1$s</string>
+    <string name="network_died">Сеть сдохла: %1$s</string>
+    <string name="script_choked">Скрипт подавился: %1$s</string>
 </resources>

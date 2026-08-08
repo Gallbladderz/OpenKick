@@ -49,12 +49,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     val appThemeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
-        val themeName = preferences[APP_THEME] ?: AppTheme.SYSTEM.name
-        try {
-            AppTheme.valueOf(themeName)
-        } catch (e: IllegalArgumentException) {
-            AppTheme.SYSTEM
-        }
+        AppTheme.valueOf(preferences[APP_THEME] ?: AppTheme.DARK.name)
     }
 
     suspend fun setAppTheme(theme: AppTheme) {
@@ -79,7 +74,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     val useDynamicColorsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[USE_DYNAMIC_COLORS] ?: true
+        preferences[USE_DYNAMIC_COLORS] ?: false
     }
 
     suspend fun setUseDynamicColors(use: Boolean) {

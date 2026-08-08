@@ -1,144 +1,64 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base stuff -->
     <string name="app_name">OpenKick</string>
     <string name="back">Back</string>
-    <string name="chat_tab">Chat</string>
-    <string name="info_tab">Info</string>
-    <string name="clips_tab">Clips</string>
-    <string name="avatar_desc">Avatar</string>
-    <string name="uptime_desc">Stream uptime</string>
-    <string name="unfollow">Unfollow</string>
-    <string name="follow">Follow</string>
-    <string name="info_placeholder">Channel description will appear here soon</string>
-    <string name="clips_placeholder">Clips will appear here soon</string>
-
+    <string name="back_button">Back</string>
     <string name="home">Home</string>
     <string name="categories">Categories</string>
     <string name="followers">Following</string>
     <string name="profile">Profile</string>
-
-    <string name="search">Search</string>
-    <string name="search_placeholder">Search channels, streams...</string>
-    <string name="search_idle">Enter a query to search</string>
-    <string name="loading_api">Loading Kick API...</string>
-    <string name="error_prefix">Error: %s</string>
-    <string name="retry">Retry</string>
-    <string name="streams_tab">Streams</string>
-    <string name="loading">Loading...</string>
-    <string name="no_streams_found">No streams found</string>
-    <string name="login_or_register">Log in or register</string>
-    <string name="appearance">Appearance</string>
-    <string name="theme_settings">Theme</string>
-    <string name="theme_settings_desc">Theme, colors, interface settings</string>
-    <string name="notifications">Notifications</string>
-    <string name="push_and_email">Push and Email</string>
-    <string name="language_and_region">Language and region</string>
-    <string name="language_desc">English</string>
-    <string name="about_app">About app</string>
-    <string name="version_info">Version 1.0.0-alpha</string>
-    <string name="followed_streams">Followed streams</string>
+    <string name="profile_title">Profile</string>
+    <string name="application_title">Application</string>
     <string name="manage">Manage</string>
 
-    <string name="viewers_count">%1$s viewers</string>
-    <string name="followers_count">%1$s followers</string>
-    <string name="kick_rejected_request">Kick rejected request: code %1$s</string>
-    <string name="unified_push_subs">UnifiedPush, subscriptions</string>
-    <string name="avatar">Avatar</string>
-    <string name="anonymous">Anonymous</string>
-    <string name="untitled">Untitled</string>
-    <string name="live">Live</string>
-    <string name="version_info_app">Version 0.1-alpha</string>
-    <string name="filter_all">All</string>
-    <string name="all_followed">All Followed</string>
-    <string name="all_followed_arrow">All Followed ➔</string>
-    <string name="all_languages">All languages</string>
-    <string name="no_vods">No VODs</string>
-    <string name="vods">VODs</string>
-    <string name="streams_will_appear_here">Streams will appear here soon</string>
+    <!-- Navigation and Tabs -->
+    <string name="chat_tab">Chat</string>
+    <string name="info_tab">Info</string>
+    <string name="clips_tab">Clips</string>
+    <string name="streams_tab">Streams</string>
+    <string name="settings_tab">Settings</string>
+    <string name="tab_channels">Channels</string>
+    <string name="tab_streams">Streams</string>
+    <string name="tab_categories">Categories</string>
+
+    <!-- Placeholders -->
+    <string name="info_placeholder">Channel description will appear here soon</string>
+    <string name="clips_placeholder">Clips will appear here soon</string>
+    <string name="search_placeholder">Search channels, streams...</string>
+    <string name="search_idle">Enter a query to search</string>
+    <string name="no_streams_found">No streams found</string>
     <string name="no_information_yet">No information yet</string>
-    <string name="channels">Channels</string>
-    <string name="filter_categories">Categories</string>
-    <string name="category">Category</string>
-    <string name="kick_hid_info">Kick hid the info</string>
-    <string name="kick_hid_streams">Kick hid streams: code %1$s for url %2$s</string>
-    <string name="kick_rejected_clips">Kick rejected: code %1$s (Clips)</string>
+    <string name="streams_will_appear_here">Streams will appear here soon</string>
+    <string name="no_vods">No VODs</string>
     <string name="no_clips">No clips</string>
-    <string name="filter_clips">Clips</string>
-    <string name="error_code">Error code: %1$s</string>
-    <string name="clip_parsing_crash">Clip parsing crash: %1$s</string>
-    <string name="stream_parsing_crash">Stream parsing crash: %1$s</string>
-    <string name="game_parsing_crash">Game parsing crash: %1$s</string>
-    <string name="parsing_crash">Parsing crash: %1$s</string>
-    <string name="back_button">Back</string>
-    <string name="data_livestreams_not_found">data.livestreams not found</string>
-    <string name="clips_array_not_found">\'clips\' array not found in response</string>
-    <string name="could_not_find_games">Could not find games</string>
-    <string name="unknown_error">Unknown error</string>
-    <string name="unexpected_error">Unexpected error</string>
-    <string name="no_channel_id">No channel ID</string>
     <string name="no_popular_clips">No popular clips</string>
+    <string name="could_not_find_games">Could not find games</string>
+    <string name="category_no_streams">No one is streaming in this category right now</string>
+    <string name="empty_follow_someone">It\'s empty here. Go follow someone!</string>
+    <string name="streamer_wrote_nothing">Streamer wrote nothing about themselves...</string>
     <string name="nothing_found">Nothing found</string>
-    <string name="about_project">About</string>
-    <string name="description">Description</string>
+
+    <!-- Actions and UI elements -->
+    <string name="search">Search</string>
+    <string name="retry">Retry</string>
+    <string name="login_or_register">Log in or register</string>
+    <string name="unfollow">Unfollow</string>
+    <string name="follow">Follow</string>
     <string name="unfollow_action">Unfollow</string>
     <string name="follow_action">Follow</string>
-    <string name="categories_api_error">Categories API error: %1$s</string>
-    <string name="load_error">Load error</string>
-    <string name="error_loading_channel">Error loading channel %1$s: %2$s</string>
-    <string name="error_loading_category">Error loading category %1$s: %2$s</string>
-    <string name="load_error_code">Load error: %1$s</string>
-    <string name="data_processing_error">Data processing error</string>
-    <string name="api_response_error">API response processing error</string>
-    <string name="json_parsing_error">JSON parsing error</string>
-    <string name="clip_parsing_error">Clip parsing error: %1$s</string>
-    <string name="parsing_error">Parsing error: %1$s</string>
-    <string name="network_error">Network error</string>
-    <string name="network_error_clips">Network error (Clips): %1$s</string>
-    <string name="network_error_msg">Network error: %1$s</string>
-    <string name="error_msg_code">Error: %1$s</string>
-    <string name="error_empty_slug">Error: empty slug!</string>
-    <string name="panels_did_not_load">Panels did not load</string>
+    <string name="disable">Disable</string>
+    <string name="apply">Apply</string>
+    <string name="copied">Copied</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="toggle_view">Toggle view</string>
-    <string name="search_failed">Search failed: %1$s</string>
-    <string name="show_streams_languages">Show streams in selected languages:</string>
-    <string name="total_failure">Total failure, nothing loaded</string>
-    <string name="application_title">Application</string>
-    <string name="received_non_json">Received non-JSON object</string>
-    <string name="profile_title">Profile</string>
-    <string name="empty_response">Empty response</string>
-    <string name="trying_to_load_slug">Trying to load slug: \'%1$s\'</string>
-    <string name="russian_lang">Russian</string>
-    <string name="network_dropped_streams">Network dropped (Streams): %1$s</string>
-    <string name="network_died">Network died: %1$s</string>
-    <string name="script_choked">Script choked: %1$s</string>
-    <string name="streamer_wrote_nothing">Streamer wrote nothing about themselves...</string>
-    <string name="streamer_offline">Streamer is currently offline</string>
-    <string name="live_streams">Live streams</string>
-    <string name="top_clips_week">Top clips of the week</string>
-    <string name="stream_title">Stream</string>
-    <string name="empty_follow_someone">It\'s empty here. Go follow someone!</string>
-    <string name="interface_language">Interface language</string>
-    <string name="application_language">Application language</string>
-    <string name="stream_languages">Stream languages</string>
-    <string name="username_is_live">🔴 %1$s is live!</string>
-    <string name="video_quality">Video quality</string>
-    <string name="audio_only">Audio only</string>
 
+    <!-- Content Descriptions -->
+    <string name="avatar_desc">Avatar</string>
+    <string name="uptime_desc">Stream uptime</string>
     <string name="banner_desc">Banner</string>
     <string name="share_profile_desc">Share profile</string>
     <string name="vod_desc">VOD</string>
-    <string name="views_count_icon">👁 %1$s</string>
-    <string name="receive_stream_alerts">Receive stream alerts</string>
-    <string name="battery_saving">Battery optimization</string>
-    <string name="done_desc">Done</string>
-    <string name="disable">Disable</string>
-    <string name="content_settings_title">Content</string>
-    <string name="hide_slots_title">Slots &amp; Casino</string>
-    <string name="hide_slots_desc">Hides slots and casino streams from the feed.</string>
-    <string name="hide_pools_title">Pools &amp; Hot Tubs</string>
-    <string name="hide_pools_desc">Hides pools, hot tubs, and bikinis streams from the feed.</string>
-    <string name="hide_crypto_title">Crypto &amp; Trading</string>
-    <string name="hide_crypto_desc">Hides crypto and trading streams from the feed.</string>
     <string name="share_desc">Share</string>
     <string name="settings_desc">Settings</string>
     <string name="play_pause_desc">Play/Pause</string>
@@ -146,10 +66,13 @@
     <string name="selected_desc">Selected</string>
     <string name="thumbnail_desc">Thumbnail</string>
     <string name="category_banner_desc">Category Banner</string>
-    <string name="category_no_streams">No one is streaming in this category right now</string>
-    <string name="english_lang">English</string>
-    <string name="battery_opt_disabled">Optimization disabled. Background works stably.</string>
-    <string name="battery_opt_enable">Tap "Disable" to prevent the system from killing notifications.</string>
+    <string name="done_desc">Done</string>
+
+    <!-- App Settings -->
+    <string name="appearance">Appearance</string>
+    <string name="theme_settings">Theme</string>
+    <string name="theme_settings_desc">Theme, colors, interface settings</string>
+    <string name="base_theme">Base Theme</string>
     <string name="system_default">System Default</string>
     <string name="light">Light</string>
     <string name="dark">Dark</string>
@@ -158,31 +81,142 @@
     <string name="dynamic_colors">Dynamic Colors</string>
     <string name="use_material_you">Use Material You</string>
     <string name="extracts_colors_wallpaper">Extracts colors from your wallpaper</string>
-    <string name="tab_channels">Channels</string>
-    <string name="tab_streams">Streams</string>
-    <string name="tab_categories">Categories</string>
-    <string name="clip_views_duration">%1$s views • %2$s</string>
-    <string name="copied_to_clipboard">Copied to clipboard</string>
-    <string name="live_streams_channel_name">Live streams</string>
-    <string name="user_is_live">🔴 %1$s is live!</string>
+
+    <!-- Content Settings -->
+    <string name="content_settings_title">Content</string>
+    <string name="hide_slots_title">Slots &amp; Casino</string>
+    <string name="hide_slots_desc">Hides slots and casino streams from the feed.</string>
+    <string name="hide_pools_title">Pools &amp; Hot Tubs</string>
+    <string name="hide_pools_desc">Hides pools, hot tubs, and bikinis streams from the feed.</string>
+    <string name="hide_crypto_title">Crypto &amp; Trading</string>
+    <string name="hide_crypto_desc">Hides crypto and trading streams from the feed.</string>
+
+    <!-- Localization and Languages -->
+    <string name="language_and_region">Language and region</string>
+    <string name="language_desc">English</string>
+    <string name="interface_language">Interface language</string>
+    <string name="application_language">Application language</string>
+    <string name="stream_languages">Stream languages</string>
+    <string name="show_streams_languages">Show streams in selected languages:</string>
+    <string name="all_languages">All languages</string>
+    <string name="russian_lang">Russian</string>
+    <string name="english_lang">English</string>
+
+    <!-- Notifications and Background Work -->
+    <string name="notifications">Notifications</string>
+    <string name="push_and_email">Push and Email</string>
+    <string name="receive_stream_alerts">Receive stream alerts</string>
+    <string name="battery_saving">Battery optimization</string>
+    <string name="battery_opt_disabled">Optimization disabled. Background works stably.</string>
+    <string name="battery_opt_enable">Tap "Disable" to prevent the system from killing notifications.</string>
+    <string name="unified_push_subs">UnifiedPush, subscriptions</string>
     <string name="service_running_bg">%1$s is running in the background</string>
     <string name="monitoring_streams">Monitoring streams for instant push notifications</string>
     <string name="background_work">Background Work</string>
     <string name="maintain_connection_desc">Maintains connection to receive notifications</string>
-    <string name="auto_quality">Auto</string>
-    <string name="base_theme">Base Theme</string>
-    <string name="share_intent_text">Watch %1$s on Kick!\nhttps://kick.com/%2$s</string>
-    <string name="error_prefix_msg">Error: %1$s</string>
+    <string name="live_streams_channel_name">Live streams</string>
+
+    <!-- Streams, Clips, Categories -->
+    <string name="live">Live</string>
+    <string name="anonymous">Anonymous</string>
+    <string name="untitled">Untitled</string>
+    <string name="category">Category</string>
+    <string name="channels">Channels</string>
+    <string name="vods">VODs</string>
+    <string name="avatar">Avatar</string>
+    <string name="description">Description</string>
+    <string name="stream_title">Stream</string>
+    <string name="live_streams">Live streams</string>
+    <string name="top_clips_week">Top clips of the week</string>
+    <string name="streamer_offline">Streamer is currently offline</string>
+    <string name="followed_streams">Followed streams</string>
+    <string name="all_followed">All Followed</string>
+    <string name="all_followed_arrow">All Followed ➔</string>
+    <string name="user_is_live">🔴 %1$s is live!</string>
+    <string name="username_is_live">🔴 %1$s is live!</string>
+
+    <!-- Filters -->
+    <string name="filter_all">All</string>
+    <string name="filter_categories">Categories</string>
+    <string name="filter_clips">Clips</string>
     <string name="filter_sort">Filter &amp; Sort</string>
     <string name="sort_by">Sort by</string>
     <string name="recommended">Recommended</string>
     <string name="viewers_high_to_low">Viewers: High to Low</string>
-    <string name="apply">Apply</string>
-    <string name="settings_tab">Settings</string>
+
+    <!-- Player -->
+    <string name="video_quality">Video quality</string>
+    <string name="audio_only">Audio only</string>
+    <string name="auto_quality">Auto</string>
+    <string name="share_intent_text">Watch %1$s on Kick!\nhttps://kick.com/%2$s</string>
+
+    <!-- Formatting with placeholders -->
+    <string name="viewers_count">%1$s viewers</string>
+    <string name="followers_count">%1$s followers</string>
+    <string name="views_count_icon">👁 %1$s</string>
+    <string name="clip_views_duration">%1$s views • %2$s</string>
+
+    <!-- About -->
+    <string name="about_app">About app</string>
+    <string name="about_project">About</string>
+    <string name="version_info">Version 1.0.0-alpha</string>
+    <string name="version_info_app">Version 0.1-alpha</string>
     <string name="version">Version %1$s</string>
     <string name="links">Links</string>
     <string name="open_source_licenses">Open Source Licenses</string>
-<string name="github">GitHub</string>
+    <string name="github">GitHub</string>
     <string name="donate">Donate 👉👈</string>
-    <string name="copied">Copied</string>
+
+    <!-- Loading States -->
+    <string name="loading">Loading...</string>
+    <string name="loading_api">Loading Kick API...</string>
+
+    <!-- ERRORS AND CRASHES -->
+    <string name="error_prefix">Error: %s</string>
+    <string name="error_prefix_msg">Error: %1$s</string>
+    <string name="error_msg_code">Error: %1$s</string>
+    <string name="error_code">Error code: %1$s</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="unexpected_error">Unexpected error</string>
+    <string name="load_error">Load error</string>
+    <string name="load_error_code">Load error: %1$s</string>
+    <string name="network_error">Network error</string>
+    <string name="network_error_msg">Network error: %1$s</string>
+    <string name="network_error_clips">Network error (Clips): %1$s</string>
+
+    <string name="kick_rejected_request">Kick rejected request: code %1$s</string>
+    <string name="kick_hid_info">Kick hid the info</string>
+    <string name="kick_hid_streams">Kick hid streams: code %1$s for url %2$s</string>
+    <string name="kick_rejected_clips">Kick rejected: code %1$s (Clips)</string>
+
+    <string name="parsing_crash">Parsing crash: %1$s</string>
+    <string name="clip_parsing_crash">Clip parsing crash: %1$s</string>
+    <string name="stream_parsing_crash">Stream parsing crash: %1$s</string>
+    <string name="game_parsing_crash">Game parsing crash: %1$s</string>
+
+    <string name="parsing_error">Parsing error: %1$s</string>
+    <string name="json_parsing_error">JSON parsing error</string>
+    <string name="clip_parsing_error">Clip parsing error: %1$s</string>
+    <string name="data_processing_error">Data processing error</string>
+    <string name="api_response_error">API response processing error</string>
+    <string name="categories_api_error">Categories API error: %1$s</string>
+
+    <string name="data_livestreams_not_found">data.livestreams not found</string>
+    <string name="clips_array_not_found">\'clips\' array not found in response</string>
+    <string name="no_channel_id">No channel ID</string>
+    <string name="empty_response">Empty response</string>
+    <string name="received_non_json">Received non-JSON object</string>
+
+    <string name="error_loading_channel">Error loading channel %1$s: %2$s</string>
+    <string name="error_loading_category">Error loading category %1$s: %2$s</string>
+    <string name="error_empty_slug">Error: empty slug!</string>
+
+    <string name="search_failed">Search failed: %1$s</string>
+    <string name="panels_did_not_load">Panels did not load</string>
+    <string name="trying_to_load_slug">Trying to load slug: \'%1$s\'</string>
+    <string name="total_failure">Total failure, nothing loaded</string>
+
+    <string name="network_dropped_streams">Network dropped (Streams): %1$s</string>
+    <string name="network_died">Network died: %1$s</string>
+    <string name="script_choked">Script choked: %1$s</string>
 </resources>
