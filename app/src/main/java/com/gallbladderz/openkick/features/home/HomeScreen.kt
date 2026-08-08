@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -48,11 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.home.components.HeroStreamPager
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.gallbladderz.openkick.features.home.components.HomeFilterChipsRow
-import com.gallbladderz.openkick.features.home.components.StreamCard
-import com.gallbladderz.openkick.ui.components.ClipCard
+import com.gallbladderz.openkick.features.home.components.homeClipsList
+import com.gallbladderz.openkick.features.home.components.homeStreamsList
 import com.gallbladderz.openkick.ui.components.StreamFilterBottomSheet
 import org.koin.androidx.compose.koinViewModel
 
@@ -247,112 +245,17 @@ is HomeUiState.Success -> {
                             modifier = Modifier.fillMaxSize()
                         ) {
                             if (selectedFilter == clipsFilter) {
-                                item {
-                                    Text(
-                                        text = stringResource(R.string.top_clips_week),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 16.dp)
-                                    )
-                                }
-
-                                val clipRows = uiState.clips.chunked(2)
-
-                                itemsIndexed(clipRows) { _, rowItems ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        ClipCard(
-                                            clip = rowItems[0],
-                                            modifier = Modifier.weight(1f),
-                                            onClick = { onClipClick(rowItems[0]) }
-                                        )
-
-                                        if (rowItems.size > 1) {
-                                            ClipCard(
-                                                clip = rowItems[1],
-                                                modifier = Modifier.weight(1f),
-                                                onClick = { onClipClick(rowItems[1]) }
-                                            )
-                                        } else {
-                                            Spacer(modifier = Modifier.weight(1f))
-                                        }
-                                    }
-                                }
-
+                                homeClipsList(
+                                    clips = uiState.clips,
+                                    onClipClick = onClipClick
+                                )
                             } else {
-                                val heroStreams = uiState.streams.take(5)
-                                val feedStreams = uiState.streams.drop(5)
-
-                                if (heroStreams.isNotEmpty()) {
-                                    item {
-                                        HeroStreamPager(
-                                            streams = heroStreams,
-                                            onStreamClick = onStreamClick
-                                        )
-                                    }
-                                }
-
-                                if (feedStreams.isNotEmpty()) {
-                                    item {
-                                        Text(
-                                            text = liveFilter,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 16.dp)
-                                        )
-                                    }
-                                }
-
-                                if (isGridMode) {
-                                    val streamRows = feedStreams.chunked(2)
-
-                                    itemsIndexed(streamRows) { _, rowItems ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 16.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            StreamCard(
-                                                stream = rowItems[0],
-                                                modifier = Modifier.weight(1f),
-                                                onClick = {
-                                                    onStreamClick(rowItems[0].streamerName)
-                                                }
-                                            )
-
-                                            if (rowItems.size > 1) {
-                                                StreamCard(
-                                                    stream = rowItems[1],
-                                                    modifier = Modifier.weight(1f),
-                                                    onClick = {
-                                                        onStreamClick(rowItems[1].streamerName)
-                                                    }
-                                                )
-                                            } else {
-                                                Spacer(modifier = Modifier.weight(1f))
-                                            }
-                                        }
-                                    }
-
-                                } else {
-                                    itemsIndexed(
-                                        feedStreams,
-                                        key = { _, it -> it.id }
-                                    ) { _, stream ->
-                                        StreamCard(
-                                            stream = stream,
-                                            modifier = Modifier.padding(horizontal = 16.dp),
-                                            onClick = {
-                                                onStreamClick(stream.streamerName)
-                                            }
-                                        )
-                                    }
-                                }
+                                homeStreamsList(
+                                    streams = uiState.streams,
+                                    isGridMode = isGridMode,
+                                    liveFilterText = liveFilter,
+                                    onStreamClick = onStreamClick
+                                )
                             }
                         }
                     }
