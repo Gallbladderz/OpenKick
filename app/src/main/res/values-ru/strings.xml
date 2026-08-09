@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-FileCopyrightText: 2026 Gallbladderz
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  -->
+
+<resources>
+    <!-- Base stuff -->
+    <string name="app_name">OpenKick</string>
+    <string name="back">Назад</string>
+    <string name="back_button">Назад</string>
+    <string name="home">Главная</string>
+    <string name="categories">Категории</string>
+    <string name="followers">Отслеживаемое</string>
+    <string name="profile_title">Профиль</string>
+    <string name="application_title">Приложение</string>
+
+    <!-- Navigation and Tabs -->
+    <string name="chat_tab">Чат</string>
+    <string name="clips_tab">Клипы</string>
+    <string name="streams_tab">Стримы</string>
+    <string name="settings_tab">Настройки</string>
+    <string name="tab_channels">Каналы</string>
+    <string name="tab_streams">Стримы</string>
+    <string name="tab_categories">Категории</string>
+
+    <!-- Placeholders -->
+    <string name="search_placeholder">Поиск каналов, стримов…</string>
+    <string name="search_idle">Введите запрос для поиска</string>
+    <string name="no_information_yet">Информации пока нет</string>
+    <string name="streams_will_appear_here">Здесь скоро появятся стримы</string>
+    <string name="no_vods">Записей нет</string>
+    <string name="no_clips">Клипов нет</string>
+    <string name="no_popular_clips">Нет популярных клипов</string>
+    <string name="could_not_find_games">Не удалось найти игры</string>
+    <string name="category_no_streams">В этой категории сейчас никто не стримит</string>
+    <string name="empty_follow_someone">Тут пусто. Иди подпишись на кого-нибудь!</string>
+    <string name="streamer_wrote_nothing">Стример ничего о себе не написал…</string>
+
+    <!-- Actions and UI elements -->
+    <string name="search">Поиск</string>
+    <string name="retry">Повторить</string>
+    <string name="unfollow">Отписаться</string>
+    <string name="follow">Отслеживать</string>
+    <string name="unfollow_action">Отписаться</string>
+    <string name="follow_action">Отслеживать</string>
+    <string name="disable">Отключить</string>
+    <string name="apply">Применить</string>
+    <string name="copied">Скопировано</string>
+    <string name="copied_to_clipboard">Скопировано</string>
+    <string name="toggle_view">Переключить вид</string>
+
+    <!-- Content Descriptions -->
+    <string name="avatar_desc">Аватар</string>
+    <string name="uptime_desc">Время трансляции</string>
+    <string name="banner_desc">Баннер</string>
+    <string name="share_profile_desc">Поделиться профилем</string>
+    <string name="vod_desc">Запись (VOD)</string>
+    <string name="share_desc">Поделиться</string>
+    <string name="settings_desc">Настройки</string>
+    <string name="play_pause_desc">Плей/Пауза</string>
+    <string name="fullscreen_desc">На весь экран</string>
+    <string name="selected_desc">Выбрано</string>
+    <string name="thumbnail_desc">Превью</string>
+    <string name="category_banner_desc">Баннер категории</string>
+    <string name="done_desc">Готово</string>
+
+    <!-- App Settings -->
+    <string name="appearance">Внешний вид</string>
+    <string name="theme_settings">Оформление</string>
+    <string name="base_theme">Базовая тема</string>
+    <string name="system_default">Системная</string>
+    <string name="light">Светлая</string>
+    <string name="dark">Темная</string>
+    <string name="dynamic_colors">Динамические цвета</string>
+    <string name="use_material_you">Использовать Material You</string>
+    <string name="extracts_colors_wallpaper">Берет цвета из обоев</string>
+
+    <!-- Content Settings -->
+    <string name="content_group_header">Контент</string>
+    <string name="content_settings_title">Настройки контента</string>
+    <string name="content_settings_desc">Фильтр категорий</string>
+    <string name="hide_slots_title">Слоты и Казино</string>
+    <string name="hide_slots_desc">Скрывает стримы по слотам и казино из ленты.</string>
+    <string name="hide_pools_title">Бассейны и Джакузи</string>
+    <string name="hide_pools_desc">Скрывает стримы в бассейнах, джакузи и бикини из ленты.</string>
+    <string name="hide_crypto_title">Крипта и Трейдинг</string>
+    <string name="hide_crypto_desc">Скрывает стримы по крипте и трейдингу из ленты.</string>
+
+    <!-- Localization and Languages -->
+    <string name="language_and_region">Язык и регион</string>
+    <string name="interface_language">Язык интерфейса</string>
+    <string name="application_language">Язык приложения</string>
+    <string name="stream_languages">Языки трансляций</string>
+    <string name="show_streams_languages">Показывать стримы на выбранных языках:</string>
+    <string name="all_languages">Все языки</string>
+    <string name="russian_lang">Русский</string>
+    <string name="english_lang">English</string>
+
+    <!-- Notifications and Background Work -->
+    <string name="enable_notifications">Включить уведомления</string>
+    <string name="notifications_settings_desc">Настройки оповещений и фона</string>
+    <string name="notifications">Уведомления</string>
+    <string name="receive_stream_alerts">Получать оповещения о начале стримов</string>
+    <string name="battery_saving">Экономия заряда</string>
+    <string name="battery_opt_disabled">Оптимизация отключена. Фон работает стабильно.</string>
+    <string name="battery_opt_enable">Нажмите «Отключить», чтобы система не убивала уведомления.</string>
+    <string name="live_streams_channel_name">Прямые трансляции</string>
+
+    <!-- Streams, Clips, Categories -->
+    <string name="live">В эфире</string>
+    <string name="anonymous">Аноним</string>
+    <string name="untitled">Без названия</string>
+    <string name="channels">Каналы</string>
+    <string name="vods">Записи</string>
+    <string name="description">Описание</string>
+    <string name="top_clips_week">Топ клипов за неделю</string>
+    <string name="followed_streams">Отслеживаемое</string>
+    <string name="all_followed">Все отслеживаемые</string>
+    <string name="all_followed_arrow">Все отслеживаемые ➔</string>
+    <string name="user_is_live">🔴 %1$s в эфире!</string>
+
+    <!-- Filters -->
+    <string name="filter_all">Все</string>
+    <string name="filter_categories">Категории</string>
+    <string name="filter_clips">Клипы</string>
+    <string name="filter_sort">Фильтр и Сортировка</string>
+    <string name="sort_by">Сортировать по</string>
+    <string name="recommended">Рекомендованные</string>
+    <string name="viewers_high_to_low">Зрители: по убыванию</string>
+
+    <!-- Player -->
+    <string name="video_quality">Качество</string>
+    <string name="audio_only">Только аудио</string>
+    <string name="auto_quality">Авто</string>
+    <string name="share_intent_text">Смотри %1$s на Kick!\nhttps://kick.com/%2$s</string>
+
+    <!-- Formatting with placeholders -->
+    <string name="viewers_count">%1$s зрителей</string>
+    <string name="followers_count">%1$s фолловеров</string>
+    <string name="clip_views_duration">%1$s просмотров • %2$s</string>
+
+    <!-- About -->
+    <string name="about_app">О приложении</string>
+    <string name="about_project">О проекте</string>
+    <string name="version">Версия %1$s</string>
+    <string name="links">Ссылки</string>
+    <string name="open_source_licenses">Лицензии открытого ПО</string>
+    <string name="github">GitHub</string>
+    <string name="donate">Пожертвовать 👉👈</string>
+
+    <!-- Loading States -->
+    <string name="loading">Загрузка…</string>
+
+    <!-- ERRORS AND CRASHES -->
+    <string name="error_prefix_msg">Ошибка: %1$s</string>
+    <string name="unknown_error">Неизвестная ошибка</string>
+    <string name="unexpected_error">Непредвиденная ошибка</string>
+    <string name="load_error">Ошибка загрузки</string>
+    <string name="network_error">Ошибка сети</string>
+    <string name="network_error_msg">Ошибка сети: %1$s</string>
+    <string name="error_empty_slug">Ошибка: slug пустой!</string>
+    <string name="total_failure">Полный провал ниче не загрузилось</string>
+</resources>

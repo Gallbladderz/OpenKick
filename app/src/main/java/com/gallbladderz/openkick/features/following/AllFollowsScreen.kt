@@ -1,0 +1,202 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Gallbladderz
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+package com.gallbladderz.openkick.features.following
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.gallbladderz.openkick.R
+import org.koin.androidx.compose.koinViewModel
+
+@Composable
+fun AllFollowsRoute(
+    viewModel: FollowingViewModel = koinViewModel(),
+    onBackClick: () -> Unit,
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AllFollowsScreen(
+        state = state,
+        onUnfollowStreamer = { viewModel.unfollowStreamer(it) },
+        onBackClick = onBackClick,
+        onStreamClick = onStreamClick,
+        onProfileClick = onProfileClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AllFollowsScreen(
+    state: FollowingUiState,
+    onUnfollowStreamer: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit
+) {
+    val context = LocalContext.current
+
+    val kickGradient = remember {
+        Brush.linearGradient(
+            colors = listOf(
+                com.gallbladderz.openkick.ui.theme.KickGradientStart,
+                com.gallbladderz.openkick.ui.theme.KickGradientEnd
+            )
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(R.string.all_followed),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button)
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (val uiState = state) {
+                is FollowingUiState.Success -> {
+
+                    val allStreamers = uiState.liveStreamers + uiState.offlineStreamers
+
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(allStreamers, key = { it.slug }) { streamer ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (streamer.isLive) onStreamClick(streamer.slug) else onProfileClick(
+                                            streamer.slug
+                                        )
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(streamer.avatarUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = streamer.username,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .border(
+                                            width = if (streamer.isLive) 4.dp else 1.dp,
+                                            brush = if (streamer.isLive) kickGradient else SolidColor(
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                            ),
+                                            shape = CircleShape
+                                        )
+                                        .padding(if (streamer.isLive) 6.dp else 4.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = streamer.username,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    if (streamer.isLive) {
+                                        Text(
+                                            text = stringResource(R.string.live),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
+                                }
+
+
+                                Button(
+                                    onClick = { onUnfollowStreamer(streamer.slug) },
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.unfollow_action))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                else -> {}
+            }
+        }
+    }
+}
