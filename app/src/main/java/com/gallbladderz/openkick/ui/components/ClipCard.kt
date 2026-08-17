@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.gallbladderz.openkick.core.ui.utils.formatViews
 import com.gallbladderz.openkick.features.home.ClipUiModel
 
 @Composable
@@ -117,13 +118,5 @@ fun ClipCard(
                 modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
             )
         }
-    }
-}
-
-private fun formatViews(views: Int): String {
-    return when {
-        views >= 1_000_000 -> String.format("%.1fM", views / 1_000_000.0)
-        views >= 1_000 -> String.format("%.1fK", views / 1_000.0)
-        else -> views.toString()
     }
 }

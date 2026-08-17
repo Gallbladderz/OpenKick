@@ -9,11 +9,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.UiText
+import com.gallbladderz.openkick.data.local.FollowsRepository
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import com.gallbladderz.openkick.features.home.StreamUiModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -32,7 +38,8 @@ sealed interface CategoryDetailsUiState {
 }
 
 class CategoryDetailsViewModel(
-    private val repository: CategoriesRepository
+    private val repository: CategoriesRepository,
+    private val followsRepository: FollowsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CategoryDetailsUiState>(CategoryDetailsUiState.Loading)
@@ -53,9 +60,23 @@ class CategoryDetailsViewModel(
     private val _selectedFilterLanguages = MutableStateFlow<Set<String>>(emptySet())
     val selectedFilterLanguages = _selectedFilterLanguages.asStateFlow()
 
+    val followedSlugs: StateFlow<Set<String>> = followsRepository.getFollowedCategoriesSlugs()
+        .map { it.toSet() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptySet()
+        )
+
+    fun toggleCategoryFollow(slug: String, isCurrentlyFollowed: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            followsRepository.toggleCategoryFollow(slug, isCurrentlyFollowed)
+        }
+    }
+
     fun updateFiltersAndRefresh(newSort: String, newLangs: Set<String>) {
-        _sort.value = newSort
-        _selectedFilterLanguages.value = newLangs
+        _sort.update { newSort }
+        _selectedFilterLanguages.update { newLangs }
         if (currentSlug.isNotBlank()) {
             loadCategory(currentSlug)
         }
@@ -136,9 +157,10 @@ class CategoryDetailsViewModel(
 
     fun loadMoreStreams() {
         if (isStreamsLoading || isStreamsEnd || _uiState.value !is CategoryDetailsUiState.Success) return
-        val categoryId = currentCategoryId ?: return
 
+        val categoryId = currentCategoryId ?: return
         isStreamsLoading = true
+
         viewModelScope.launch {
             val result = repository.fetchCategoryStreams(
                 categoryId = categoryId,
@@ -146,6 +168,7 @@ class CategoryDetailsViewModel(
                 sort = _sort.value,
                 languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
             )
+
             if (result.isSuccess) {
                 val (newStreams, nextCursor) = result.getOrThrow()
                 streamsCursor = nextCursor
@@ -178,7 +201,6 @@ class CategoryDetailsViewModel(
             if (result.isSuccess) {
                 val (newClips, nextCursor) = result.getOrThrow()
                 clipsCursor = nextCursor
-
                 if (newClips.isEmpty()) {
                     isClipsEnd = true
                 } else {

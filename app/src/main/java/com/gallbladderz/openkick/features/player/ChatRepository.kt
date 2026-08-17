@@ -6,17 +6,18 @@
 package com.gallbladderz.openkick.features.player
 
 import com.gallbladderz.openkick.core.network.KickApiConstants
+import com.gallbladderz.openkick.features.player.data.dto.ChatMessageDataDto
+import com.gallbladderz.openkick.features.player.data.dto.PusherEventDto
+import com.gallbladderz.openkick.features.player.data.dto.toDomainModel
 import com.gallbladderz.openkick.features.player.models.ChatMessage
-import com.gallbladderz.openkick.features.player.models.ChatToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -38,7 +39,7 @@ class ChatRepository(
     private var isManuallyDisconnected = false
     private var currentChatroomId: String? = null
 
-    private val EMOTE_REGEX = Regex("\\[emote:(\\d+):([^\\]]+)\\]")
+    private val json = Json { ignoreUnknownKeys = true }
 
     fun connectToChat(chatroomId: String) {
         currentChatroomId = chatroomId
@@ -59,61 +60,13 @@ class ChatRepository(
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try {
-                    val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(text).jsonObject
-                    val event = json["event"]?.jsonPrimitive?.content
+                    val eventDto = json.decodeFromString<PusherEventDto>(text)
 
-                    if (event == "App\\Events\\ChatMessageEvent") {
-                        val dataString = json["data"]?.jsonPrimitive?.content ?: return
-                        val dataJson = Json {
-                            ignoreUnknownKeys = true
-                        }.parseToJsonElement(dataString).jsonObject
-
-
-                        val id =
-                            dataJson["id"]?.jsonPrimitive?.content ?: java.util.UUID.randomUUID()
-                                .toString()
-
-                        val senderObj = dataJson["sender"]?.jsonObject
-                        val sender =
-                            senderObj?.get("username")?.jsonPrimitive?.content ?: "Anonymous"
-
-
-                        val senderColor =
-                            senderObj?.get("identity")?.jsonObject?.get("color")?.jsonPrimitive?.content
-                                ?: ""
-
-                        val content = dataJson["content"]?.jsonPrimitive?.content ?: ""
-
-                        val emotesMatches = EMOTE_REGEX.findAll(content).toList()
-                        val tokens = mutableListOf<ChatToken>()
-                        var currentIndex = 0
-
-                        for (match in emotesMatches) {
-                            val emoteId = match.groupValues[1]
-                            val emoteName = match.groupValues[2]
-                            val matchStart = match.range.first
-                            val matchEnd = match.range.last + 1
-
-                            if (matchStart > currentIndex) {
-                                tokens.add(
-                                    ChatToken.Text(
-                                        content.substring(
-                                            currentIndex,
-                                            matchStart
-                                        )
-                                    )
-                                )
-                            }
-                            tokens.add(ChatToken.Emote(emoteId, emoteName))
-                            currentIndex = matchEnd
-                        }
-
-                        if (currentIndex < content.length) {
-                            tokens.add(ChatToken.Text(content.substring(currentIndex)))
-                        }
-
-                        val newMessage = ChatMessage(id, sender, senderColor, content, tokens)
-                        _chatMessages.value = (listOf(newMessage) + _chatMessages.value).take(100)
+                    if (eventDto.event == "App\\Events\\ChatMessageEvent") {
+                        val dataString = eventDto.data ?: return
+                        val messageDto = json.decodeFromString<ChatMessageDataDto>(dataString)
+                        val newMessage = messageDto.toDomainModel()
+                        _chatMessages.update { (listOf(newMessage) + it).take(100) }
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("ChatRepository", "WebSocket parsing error", e)
@@ -150,6 +103,6 @@ class ChatRepository(
         coroutineScope.coroutineContext.cancelChildren()
         webSocket?.close(1000, "Normal closure")
         webSocket = null
-        _chatMessages.value = emptyList()
+        _chatMessages.update { emptyList() }
     }
 }

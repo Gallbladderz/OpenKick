@@ -9,9 +9,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.UiText
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -27,41 +29,46 @@ sealed interface SearchUiState {
     data class Error(val message: UiText) : SearchUiState
 }
 
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState = _uiState.asStateFlow()
 
-    private var searchJob: Job? = null
+    private val _searchQuery = MutableStateFlow("")
 
-    fun searchStreamer(query: String) {
-        if (query.isBlank()) {
-            _uiState.update { SearchUiState.Idle }
-            return
-        }
-
-        _uiState.update { SearchUiState.Loading }
-        searchJob?.cancel()
-
-        searchJob = viewModelScope.launch {
-            repository.searchStreamer(query).collect { result ->
-                result.onSuccess { data ->
-                    _uiState.update {
-                        SearchUiState.Success(
-                            data.channels,
-                            data.streams,
-                            data.categories
-                        )
+    init {
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(300)
+                .distinctUntilChanged()
+                .collectLatest { query ->
+                    if (query.isBlank()) {
+                        _uiState.update { SearchUiState.Idle }
+                        return@collectLatest
                     }
-                }.onFailure { exception ->
-                    _uiState.update {
-                        SearchUiState.Error(exception.message?.let {
-                            UiText.DynamicString(
-                                it
-                            )
-                        } ?: UiText.StringResource(R.string.network_error))
+                    _uiState.update { SearchUiState.Loading }
+                    repository.searchStreamer(query).collect { result ->
+                        result.onSuccess { data ->
+                            _uiState.update {
+                                SearchUiState.Success(
+                                    data.channels,
+                                    data.streams,
+                                    data.categories
+                                )
+                            }
+                        }.onFailure { exception ->
+                            _uiState.update {
+                                SearchUiState.Error(exception.message?.let {
+                                    UiText.DynamicString(it)
+                                } ?: UiText.StringResource(R.string.network_error))
+                            }
+                        }
                     }
                 }
-            }
         }
+    }
+
+    fun searchStreamer(query: String) {
+        _searchQuery.update { query }
     }
 }

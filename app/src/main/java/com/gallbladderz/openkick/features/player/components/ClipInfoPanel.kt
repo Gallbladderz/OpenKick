@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
+import com.gallbladderz.openkick.core.ui.utils.formatViews
 
 @Composable
 fun ClipInfoPanel(
@@ -99,7 +100,7 @@ fun ClipInfoPanel(
                     Text(
                         text = stringResource(
                             R.string.clip_views_duration,
-                            formatClipViews(views),
+                            formatViews(views),
                             durationFormatted
                         ),
                         style = MaterialTheme.typography.bodySmall,
@@ -131,13 +132,5 @@ fun ClipInfoPanel(
                 }
             }
         }
-    }
-}
-
-private fun formatClipViews(views: Int): String {
-    return when {
-        views >= 1_000_000 -> String.format("%.1fM", views / 1_000_000.0)
-        views >= 1_000 -> String.format("%.1fK", views / 1_000.0)
-        else -> views.toString()
     }
 }

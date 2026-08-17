@@ -122,7 +122,7 @@ val appModule = module {
     viewModel { SearchViewModel(get()) }
 
 
-    viewModel { CategoryDetailsViewModel(get()) }
+    viewModel { CategoryDetailsViewModel(get(), get()) }
     viewModel { FollowingViewModel(get(), get()) }
     viewModel { StreamerProfileViewModel(get(), get(), get()) }
     viewModel { (videoId: String) ->

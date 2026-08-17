@@ -116,7 +116,7 @@ class PlayerViewModel(
         viewModelScope.launch {
             repository.fetchChannelLinks(streamerName)
                 .onSuccess { links ->
-                    _channelLinks.value = links
+                    _channelLinks.update { links }
                 }
                 .onFailure {
                     Log.e(
@@ -131,6 +131,6 @@ class PlayerViewModel(
     override fun onCleared() {
         super.onCleared()
         chatRepository.disconnect()
-        playerManager.release()
+
     }
 }

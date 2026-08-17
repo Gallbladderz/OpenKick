@@ -5,109 +5,134 @@
 
 package com.gallbladderz.openkick.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.gallbladderz.openkick.LocalBottomBarOffset
+import com.gallbladderz.openkick.features.player.LocalGlobalPlayerController
 import com.gallbladderz.openkick.features.search.SearchScreen
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
     composable<MainTabsRoute> {
         val pagerState = rememberPagerState(pageCount = { MainTab.entries.size })
         val coroutineScope = rememberCoroutineScope()
+        val bottomBarOffset = LocalBottomBarOffset.current
 
-        Scaffold(
-            bottomBar = {
-                OpenKickBottomBar(
-                    currentPage = pagerState.currentPage,
-                    onTabSelected = { tabOrdinal ->
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(tabOrdinal)
+
+        Scaffold { innerPadding ->
+            val globalPlayerController = LocalGlobalPlayerController.current
+
+
+            Box(modifier = Modifier.fillMaxSize()) {
+
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+
+
+                        .padding(top = innerPadding.calculateTopPadding())
+                ) { page ->
+                    when (MainTab.entries[page]) {
+                        MainTab.HOME -> {
+                            com.gallbladderz.openkick.features.home.HomeRoute(
+                                onStreamClick = { streamerName ->
+                                    globalPlayerController.expandPlayer(streamerName)
+                                },
+                                onCategoryClick = { slug ->
+                                    navController.navigate(CategoryDetailsRoute(slug))
+                                },
+                                onClipClick = { clip ->
+                                    navController.navigate(
+                                        ClipPlayerRoute(
+                                            clipId = clip.id
+                                        )
+                                    )
+                                },
+                                onSearchClick = { navController.navigate(SearchRoute) }
+                            )
+                        }
+
+                        MainTab.FOLLOWERS -> {
+                            com.gallbladderz.openkick.features.following.FollowingRoute(
+                                onManageClick = { navController.navigate(AllFollowsRoute) },
+                                onStreamClick = { slug -> globalPlayerController.expandPlayer(slug) },
+                                onProfileClick = { slug ->
+                                    navController.navigate(StreamerProfileRoute(slug))
+                                },
+                                onCategoryClick = { slug ->
+                                    navController.navigate(CategoryDetailsRoute(slug))
+                                }
+                            )
+                        }
+
+                        MainTab.SETTINGS -> {
+                            com.gallbladderz.openkick.features.profile.SettingsRoute(
+                                onLanguageSettingsClick = {
+                                    navController.navigate(LanguageSettingsRoute)
+                                },
+                                onNotificationSettingsClick = {
+                                    navController.navigate(NotificationSettingsRoute)
+                                },
+                                onContentSettingsClick = {
+                                    navController.navigate(ContentSettingsRoute)
+                                },
+                                onThemeSettingsClick = {
+                                    navController.navigate(ThemeSettingsRoute)
+                                },
+                                onAboutAppClick = {
+                                    navController.navigate(AboutAppRoute)
+                                }
+                            )
                         }
                     }
-                )
-            }
-        ) { innerPadding ->
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) { page ->
-                when (MainTab.entries[page]) {
-                    MainTab.HOME -> {
-                        com.gallbladderz.openkick.features.home.HomeRoute(
-                            onStreamClick = { streamerName ->
-                                navController.navigate(PlayerRoute(streamerName))
-                            },
-                            onCategoryClick = { slug ->
-                                navController.navigate(CategoryDetailsRoute(slug))
-                            },
-                            onClipClick = { clip ->
-                                navController.navigate(
-                                    ClipPlayerRoute(
-                                        clipId = clip.id
-                                    )
-                                )
-                            },
-                            onSearchClick = { navController.navigate(SearchRoute) }
-                        )
-                    }
+                }
 
-                    MainTab.FOLLOWERS -> {
-                        com.gallbladderz.openkick.features.following.FollowingRoute(
-                            onManageClick = { navController.navigate(AllFollowsRoute) },
-                            onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
-                            onProfileClick = { slug ->
-                                navController.navigate(StreamerProfileRoute(slug))
-                            },
-                            onCategoryClick = { slug ->
-                                navController.navigate(CategoryDetailsRoute(slug))
-                            }
-                        )
-                    }
 
-                    MainTab.SETTINGS -> {
-                        com.gallbladderz.openkick.features.profile.SettingsRoute(
-                            onLanguageSettingsClick = {
-                                navController.navigate(LanguageSettingsRoute)
-                            },
-                            onNotificationSettingsClick = {
-                                navController.navigate(NotificationSettingsRoute)
-                            },
-                            onContentSettingsClick = {
-                                navController.navigate(ContentSettingsRoute)
-                            },
-                            onThemeSettingsClick = {
-                                navController.navigate(ThemeSettingsRoute)
-                            },
-                            onAboutAppClick = {
-                                navController.navigate(AboutAppRoute)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset { IntOffset(0, bottomBarOffset().roundToInt()) }
+                ) {
+                    OpenKickBottomBar(
+                        currentPage = pagerState.currentPage,
+                        onTabSelected = { tabOrdinal ->
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(tabOrdinal)
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
         }
     }
 }
 
+
 fun NavGraphBuilder.categoryDetailsScreen(navController: NavController) {
     composable<CategoryDetailsRoute> { backStackEntry ->
+        val globalPlayerController = LocalGlobalPlayerController.current
         val route = backStackEntry.toRoute<CategoryDetailsRoute>()
         com.gallbladderz.openkick.features.categories.CategoryDetailsRoute(
             slug = route.slug,
             onBackClick = { navController.popBackStack() },
             onStreamClick = { streamerName ->
-                navController.navigate(PlayerRoute(streamerName))
+                globalPlayerController.expandPlayer(streamerName)
             },
             onClipClick = { clip ->
                 navController.navigate(
@@ -133,17 +158,18 @@ fun NavGraphBuilder.clipPlayerScreen(navController: NavController) {
 
 fun NavGraphBuilder.searchScreen(navController: NavController) {
     composable<SearchRoute> {
+        val globalPlayerController = LocalGlobalPlayerController.current
         SearchScreen(
             onBackClick = { navController.popBackStack() },
             onChannelClick = { streamerName, isLive ->
                 if (isLive) {
-                    navController.navigate(PlayerRoute(streamerName))
+                    globalPlayerController.expandPlayer(streamerName)
                 } else {
                     navController.navigate(StreamerProfileRoute(slug = streamerName))
                 }
             },
             onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) },
-            onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) }
+            onStreamClick = { slug -> globalPlayerController.expandPlayer(slug) }
         )
     }
 }
@@ -166,9 +192,10 @@ fun NavGraphBuilder.notificationSettingsScreen(navController: NavController) {
 
 fun NavGraphBuilder.allFollowsScreen(navController: NavController) {
     composable<AllFollowsRoute> {
+        val globalPlayerController = LocalGlobalPlayerController.current
         com.gallbladderz.openkick.features.following.AllFollowsRoute(
             onBackClick = { navController.popBackStack() },
-            onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+            onStreamClick = { slug -> globalPlayerController.expandPlayer(slug) },
             onProfileClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
         )
     }
@@ -176,11 +203,12 @@ fun NavGraphBuilder.allFollowsScreen(navController: NavController) {
 
 fun NavGraphBuilder.streamerProfileScreen(navController: NavController) {
     composable<StreamerProfileRoute> { backStackEntry ->
+        val globalPlayerController = LocalGlobalPlayerController.current
         val route = backStackEntry.toRoute<StreamerProfileRoute>()
         com.gallbladderz.openkick.features.profile.StreamerProfileRoute(
             slug = route.slug,
             onBackClick = { navController.popBackStack() },
-            onStreamClick = { slug -> navController.navigate(PlayerRoute(slug)) },
+            onStreamClick = { slug -> globalPlayerController.expandPlayer(slug) },
             onVideoClick = { videoId: String ->
                 navController.navigate(
                     VodPlayerRoute(
@@ -206,18 +234,6 @@ fun NavGraphBuilder.vodPlayerScreen(navController: NavController) {
             videoId = route.videoId,
             onBackClick = { navController.popBackStack() },
             onStreamerClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
-        )
-    }
-}
-
-fun NavGraphBuilder.playerScreen(navController: NavController) {
-    composable<PlayerRoute> { backStackEntry ->
-        val playerRoute = backStackEntry.toRoute<PlayerRoute>()
-        com.gallbladderz.openkick.features.player.PlayerRoute(
-            streamerName = playerRoute.streamerName,
-            onBackClick = { navController.popBackStack() },
-            onAvatarClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) },
-            onCategoryClick = { slug -> navController.navigate(CategoryDetailsRoute(slug)) }
         )
     }
 }

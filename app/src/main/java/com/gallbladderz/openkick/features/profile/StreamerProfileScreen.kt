@@ -27,8 +27,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +35,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -92,7 +90,132 @@ fun StreamerProfileScreen(
     onVideoClick: (String) -> Unit,
     onClipClick: (ClipUiModel) -> Unit
 ) {
+    LaunchedEffect(slug) {
+        onLoadProfile(slug)
+    }
 
+    Scaffold(
+        topBar = {
+            ProfileTopAppBar(state = state, onBackClick = onBackClick)
+        }
+    ) { paddingValues ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .clipToBounds()
+        ) {
+            ProfileContent(
+                state = state,
+                onToggleFollow = onToggleFollow,
+                onStreamClick = onStreamClick,
+                onVideoClick = onVideoClick,
+                onClipClick = onClipClick,
+                onLoadMoreClips = onLoadMoreClips
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileTopAppBar(state: ProfileUiState, onBackClick: () -> Unit) {
+    val context = LocalContext.current
+
+    TopAppBar(
+        title = {
+            Text(
+                text = if (state is ProfileUiState.Success) state.info.username else stringResource(
+                    R.string.profile_title
+                ),
+                fontWeight = FontWeight.Bold
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back_button)
+                )
+            }
+        },
+        actions = {
+            if (state is ProfileUiState.Success) {
+                IconButton(onClick = {
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        putExtra(Intent.EXTRA_TEXT, "https://kick.com/${state.info.slug}")
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, null)
+                    context.startActivity(shareIntent)
+                }) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = stringResource(R.string.share_profile_desc)
+                    )
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Composable
+fun ProfileContent(
+    state: ProfileUiState,
+    onToggleFollow: () -> Unit,
+    onStreamClick: (String) -> Unit,
+    onVideoClick: (String) -> Unit,
+    onClipClick: (ClipUiModel) -> Unit,
+    onLoadMoreClips: () -> Unit
+) {
+    when (state) {
+        is ProfileUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize()) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        is ProfileUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Text(
+                    state.message.asString(),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
+
+        is ProfileUiState.Success -> {
+            ProfileSuccessContent(
+                uiState = state,
+                onToggleFollow = onToggleFollow,
+                onStreamClick = onStreamClick,
+                onVideoClick = onVideoClick,
+                onClipClick = onClipClick,
+                onLoadMoreClips = onLoadMoreClips
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileSuccessContent(
+    uiState: ProfileUiState.Success,
+    onToggleFollow: () -> Unit,
+    onStreamClick: (String) -> Unit,
+    onVideoClick: (String) -> Unit,
+    onClipClick: (ClipUiModel) -> Unit,
+    onLoadMoreClips: () -> Unit
+) {
     val tabs = listOf(
         stringResource(R.string.description),
         stringResource(R.string.vods),
@@ -101,150 +224,50 @@ fun StreamerProfileScreen(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    val context = LocalContext.current
-    val pullRefreshState = rememberPullToRefreshState()
-
-    LaunchedEffect(slug) {
-        onLoadProfile(slug)
-    }
-
-    if (pullRefreshState.isRefreshing) {
-        LaunchedEffect(true) {
-            onRefresh()
-        }
-    }
-
-    LaunchedEffect(isRefreshing) {
-        if (isRefreshing) {
-            pullRefreshState.startRefresh()
-        } else {
-            pullRefreshState.endRefresh()
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = if (state is ProfileUiState.Success) state.info.username else stringResource(
-                            R.string.profile_title
-                        ),
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button)
-                        )
-                    }
-                },
-                actions = {
-                    if (state is ProfileUiState.Success) {
-                        IconButton(onClick = {
-                            val sendIntent: Intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, "https://kick.com/${state.info.slug}")
-                                type = "text/plain"
-                            }
-                            val shareIntent = Intent.createChooser(sendIntent, null)
-                            context.startActivity(shareIntent)
-                        }) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = stringResource(R.string.share_profile_desc)
-                            )
+    Column(modifier = Modifier.fillMaxSize()) {
+        ProfileHeader(
+            info = uiState.info,
+            isFollowing = uiState.isFollowing,
+            onFollowClick = onToggleFollow,
+            onAvatarClick = { onStreamClick(uiState.info.slug) }
+        )
+        PrimaryTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.primary
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    },
+                    text = { Text(title, fontWeight = FontWeight.SemiBold) }
                 )
-            )
+            }
         }
-    ) { paddingValues ->
-        Box(
+
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .clipToBounds()
-                .nestedScroll(pullRefreshState.nestedScrollConnection)
-        ) {
-            when (val uiState = state) {
-                is ProfileUiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+        ) { page ->
+            when (page) {
+                0 -> DescriptionTab(uiState.info.bio, uiState.links)
+                1 -> VideosTab(
+                    videos = uiState.videos,
+                    onVideoClick = { video -> onVideoClick(video.id) }
+                )
 
-                is ProfileUiState.Error -> {
-                    Text(
-                        uiState.message.asString(),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                is ProfileUiState.Success -> {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        ProfileHeader(
-                            info = uiState.info,
-                            isFollowing = uiState.isFollowing,
-                            onFollowClick = { onToggleFollow() },
-                            onAvatarClick = { onStreamClick(uiState.info.slug) }
-                        )
-                        PrimaryTabRow(
-                            selectedTabIndex = pagerState.currentPage,
-                            containerColor = MaterialTheme.colorScheme.background,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ) {
-                            tabs.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = pagerState.currentPage == index,
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(index)
-                                        }
-                                    },
-                                    text = { Text(title, fontWeight = FontWeight.SemiBold) }
-                                )
-                            }
-                        }
-
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        ) { page ->
-                            when (page) {
-                                0 -> DescriptionTab(uiState.info.bio, uiState.links)
-                                1 -> VideosTab(
-                                    videos = uiState.videos,
-                                    onVideoClick = { video ->
-                                        onVideoClick(video.id)
-                                    }
-                                )
-
-                                2 -> ClipsTab(
-                                    clips = uiState.clips,
-                                    onClipClick = onClipClick,
-                                    onLoadMore = onLoadMoreClips
-                                )
-                            }
-                        }
-                    }
-                }
+                2 -> ClipsTab(
+                    clips = uiState.clips,
+                    onClipClick = onClipClick,
+                    onLoadMore = onLoadMoreClips
+                )
             }
-            PullToRefreshContainer(
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.primary
-            )
         }
     }
 }

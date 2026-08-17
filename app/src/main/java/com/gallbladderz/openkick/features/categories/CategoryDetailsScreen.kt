@@ -63,12 +63,17 @@ fun CategoryDetailsRoute(
     val sort by viewModel.sort.collectAsStateWithLifecycle()
     val langs by viewModel.selectedFilterLanguages.collectAsStateWithLifecycle()
 
+    val followedSlugs by viewModel.followedSlugs.collectAsStateWithLifecycle()
+    val isFollowed = followedSlugs.contains(slug)
+
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     CategoryDetailsScreen(
         slug = slug,
         state = state,
+        isFollowed = isFollowed,
+        onToggleFollow = { viewModel.toggleCategoryFollow(slug, isFollowed) },
         onLoadCategory = { viewModel.loadCategory(it) },
         onLoadMoreStreams = { viewModel.loadMoreStreams() },
         onLoadMoreClips = { viewModel.loadMoreClips() },
@@ -97,6 +102,8 @@ fun CategoryDetailsRoute(
 fun CategoryDetailsScreen(
     slug: String,
     state: CategoryDetailsUiState,
+    isFollowed: Boolean,
+    onToggleFollow: () -> Unit,
     onLoadCategory: (String) -> Unit,
     onLoadMoreStreams: () -> Unit,
     onLoadMoreClips: () -> Unit,
@@ -106,11 +113,8 @@ fun CategoryDetailsScreen(
     onFilterClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
-
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf(stringResource(R.string.streams_tab), stringResource(R.string.clips_tab))
-
-    var isFollowed by remember { mutableStateOf(false) }
 
     val gridState =
         rememberSaveable(saver = androidx.compose.foundation.lazy.grid.LazyGridState.Saver) { androidx.compose.foundation.lazy.grid.LazyGridState() }
@@ -212,7 +216,7 @@ fun CategoryDetailsScreen(
                         viewers = currentState.viewers,
                         tags = currentState.tags,
                         isFollowed = isFollowed,
-                        onFollowClick = { isFollowed = !isFollowed }
+                        onFollowClick = onToggleFollow
                     )
 
                     CategoryTabs(

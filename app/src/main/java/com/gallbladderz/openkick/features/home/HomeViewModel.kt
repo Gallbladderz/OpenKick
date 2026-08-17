@@ -10,10 +10,12 @@ import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.core.ui.UiText
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface HomeUiState {
@@ -67,8 +69,8 @@ class HomeViewModel(
     val selectedFilterLanguages = _selectedFilterLanguages.asStateFlow()
 
     fun updateFiltersAndRefresh(newSort: String, newLangs: Set<String>) {
-        _sort.value = newSort
-        _selectedFilterLanguages.value = newLangs
+        _sort.update { newSort }
+        _selectedFilterLanguages.update { newLangs }
         viewModelScope.launch {
             settingsRepository.setHomeStreamSort(newSort)
         }
@@ -97,17 +99,17 @@ class HomeViewModel(
 
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.homeGridModeFlow.collect {
-                _isGridMode.value = it
+        viewModelScope.launch {
+            settingsRepository.homeGridModeFlow.collectLatest {
+                _isGridMode.update { it }
             }
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.homeStreamSortFlow.collect {
-                _sort.value = it
+        viewModelScope.launch {
+            settingsRepository.homeStreamSortFlow.collectLatest {
+                _sort.update { it }
             }
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
 
             kotlinx.coroutines.flow.combine(
                 settingsRepository.selectedLanguagesFlow,
@@ -116,23 +118,15 @@ class HomeViewModel(
                 settingsRepository.hideCryptoFlow
             ) { langs, hideSlots, hidePools, hideCrypto ->
                 CombinedState(langs, hideSlots, hidePools, hideCrypto)
-            }.collect { state ->
-                val langsChanged = currentLanguages != state.langs
-                val hideSlotsChanged = currentHideSlots != state.hideSlots
-                val hidePoolsChanged = currentHidePools != state.hidePools
-                val hideCryptoChanged = currentHideCrypto != state.hideCrypto
-
-
-                if (langsChanged || hideSlotsChanged || hidePoolsChanged || hideCryptoChanged || currentLanguages == null) {
-                    currentLanguages = state.langs
-                    if (_selectedFilterLanguages.value.isEmpty()) {
-                        _selectedFilterLanguages.value = state.langs
-                    }
-                    currentHideSlots = state.hideSlots
-                    currentHidePools = state.hidePools
-                    currentHideCrypto = state.hideCrypto
-                    fetchHomeData()
+            }.distinctUntilChanged().collectLatest { state ->
+                currentLanguages = state.langs
+                if (_selectedFilterLanguages.value.isEmpty()) {
+                    _selectedFilterLanguages.update { state.langs }
                 }
+                currentHideSlots = state.hideSlots
+                currentHidePools = state.hidePools
+                currentHideCrypto = state.hideCrypto
+                fetchHomeData()
             }
         }
     }
@@ -140,13 +134,13 @@ class HomeViewModel(
     fun fetchHomeData() {
         val langs = _selectedFilterLanguages.value
 
-        _uiState.value = HomeUiState.Loading
+        _uiState.update { HomeUiState.Loading }
         streamsCursor = null
         clipsCursor = null
         isStreamsEnd = false
         isClipsEnd = false
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 val streamsDeferred = async {
                     repository.fetchLivestreams(
@@ -170,20 +164,25 @@ class HomeViewModel(
 
                 if (streamsResult.isFailure && clipsResult.isFailure) {
                     val ex = streamsResult.exceptionOrNull() ?: clipsResult.exceptionOrNull()
-                    _uiState.value =
+                    _uiState.update {
                         HomeUiState.Error(ex?.message?.let { UiText.DynamicString(it) }
                             ?: UiText.StringResource(R.string.total_failure))
+                    }
                 } else {
 
                     val filteredStreams = filterBanned(streamsList)
-                    _uiState.value = HomeUiState.Success(
-                        streams = filteredStreams,
-                        clips = clipsList
-                    )
+                    _uiState.update {
+                        HomeUiState.Success(
+                            streams = filteredStreams,
+                            clips = clipsList
+                        )
+                    }
                 }
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message?.let { UiText.DynamicString(it) }
-                    ?: UiText.StringResource(R.string.unexpected_error))
+                _uiState.update {
+                    HomeUiState.Error(e.message?.let { UiText.DynamicString(it) }
+                        ?: UiText.StringResource(R.string.unexpected_error))
+                }
             }
         }
     }
@@ -192,9 +191,9 @@ class HomeViewModel(
         val langs = _selectedFilterLanguages.value
         if (_isRefreshing.value) return
 
-        _isRefreshing.value = true
+        _isRefreshing.update { true }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 val streamsDeferred = async {
                     repository.fetchLivestreams(
@@ -218,14 +217,16 @@ class HomeViewModel(
                     isStreamsEnd = false
                     isClipsEnd = false
 
-                    _uiState.value = HomeUiState.Success(
+                    _uiState.update {
+                        HomeUiState.Success(
 
-                        streams = filterBanned(streamsPair?.first ?: emptyList()),
-                        clips = clipsPair?.first ?: emptyList()
-                    )
+                            streams = filterBanned(streamsPair?.first ?: emptyList()),
+                            clips = clipsPair?.first ?: emptyList()
+                        )
+                    }
                 }
             } finally {
-                _isRefreshing.value = false
+                _isRefreshing.update { false }
             }
         }
     }
@@ -239,7 +240,7 @@ class HomeViewModel(
 
         isStreamsLoading = true
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = repository.fetchLivestreams(
                 cursor = streamsCursor,
                 sort = _sort.value,
@@ -259,10 +260,12 @@ class HomeViewModel(
                     if (nextCursor.isNullOrBlank()) {
                         isStreamsEnd = true
                     }
-                    val currentState = _uiState.value as HomeUiState.Success
-
-                    val merged = (currentState.streams + filteredNewStreams).distinctBy { it.id }
-                    _uiState.value = currentState.copy(streams = merged)
+                    _uiState.update { state ->
+                        if (state is HomeUiState.Success) {
+                            val merged = (state.streams + filteredNewStreams).distinctBy { it.id }
+                            state.copy(streams = merged)
+                        } else state
+                    }
                 }
             } else {
                 isStreamsEnd = true
@@ -278,7 +281,7 @@ class HomeViewModel(
 
         isClipsLoading = true
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = repository.fetchTopClips(cursor = clipsCursor)
 
             if (result.isSuccess) {
@@ -291,9 +294,12 @@ class HomeViewModel(
                     if (nextCursor.isNullOrBlank()) {
                         isClipsEnd = true
                     }
-                    val currentState = _uiState.value as HomeUiState.Success
-                    val merged = (currentState.clips + newClips).distinctBy { it.id }
-                    _uiState.value = currentState.copy(clips = merged)
+                    _uiState.update { state ->
+                        if (state is HomeUiState.Success) {
+                            val merged = (state.clips + newClips).distinctBy { it.id }
+                            state.copy(clips = merged)
+                        } else state
+                    }
                 }
             } else {
                 isClipsEnd = true

@@ -36,7 +36,7 @@ class SearchRepository(private val apiService: KickApiService) {
                     ?: emptyList()
 
             if (channels.isEmpty() && streams.isEmpty() && categories.isEmpty()) {
-                emit(Result.failure(DomainError.ApiError("Ничего не найдено")))
+                emit(Result.failure(DomainError.EmptyResult()))
             } else {
                 emit(Result.success(SearchResultData(channels, streams, categories)))
             }

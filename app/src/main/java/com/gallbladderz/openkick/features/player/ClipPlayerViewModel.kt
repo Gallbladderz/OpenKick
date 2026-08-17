@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ClipPlayerViewModel(
@@ -26,8 +27,8 @@ class ClipPlayerViewModel(
         viewModelScope.launch {
             val result = clipRepository.fetchClip(clipId)
             result.onSuccess { clip ->
-                _activeClip.value = clip
-                _avatarUrl.value = clip.streamerAvatarUrl
+                _activeClip.update { clip }
+                _avatarUrl.update { clip.streamerAvatarUrl }
             }.onFailure {
 
             }

@@ -20,6 +20,7 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.gallbladderz.openkick.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 
 data class VideoQuality(
@@ -57,15 +58,15 @@ class PlayerManager(
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
-            _isPlaying.value = isPlaying
+            _isPlaying.update { isPlaying }
         }
 
         override fun onPlaybackStateChanged(state: Int) {
-            _playbackState.value = state
+            _playbackState.update { state }
         }
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-            _playWhenReady.value = playWhenReady
+            _playWhenReady.update { playWhenReady }
         }
 
         override fun onTracksChanged(tracks: Tracks) {
@@ -89,15 +90,17 @@ class PlayerManager(
                 .distinctBy { it.name }
                 .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
 
-            _availableQualities.value = listOf(
-                VideoQuality(appContext.getString(R.string.auto_quality), null, null),
-                VideoQuality(
-                    appContext.getString(R.string.audio_only),
-                    null,
-                    null,
-                    isAudioOnly = true
-                )
-            ) + sortedQualities
+            _availableQualities.update {
+                listOf(
+                    VideoQuality(appContext.getString(R.string.auto_quality), null, null),
+                    VideoQuality(
+                        appContext.getString(R.string.audio_only),
+                        null,
+                        null,
+                        isAudioOnly = true
+                    )
+                ) + sortedQualities
+            }
         }
     }
 
@@ -113,7 +116,7 @@ class PlayerManager(
     fun setQuality(quality: VideoQuality) {
         val currentPlayer = player ?: return
 
-        _selectedQuality.value = quality
+        _selectedQuality.update { quality }
 
         val builder = currentPlayer.trackSelectionParameters.buildUpon()
 
@@ -174,7 +177,7 @@ class PlayerManager(
         player?.removeListener(playerListener)
         player?.release()
         player = null
-        _isPlaying.value = false
-        _playbackState.value = Player.STATE_IDLE
+        _isPlaying.update { false }
+        _playbackState.update { Player.STATE_IDLE }
     }
 }

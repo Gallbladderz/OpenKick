@@ -13,6 +13,7 @@ sealed class DomainError(message: String) : Exception(message) {
     class OfflineError(message: String = "Streamer is currently offline") : DomainError(message)
     class UnknownError(message: String = "An unknown error occurred") : DomainError(message)
     class ApiError(message: String) : DomainError(message)
+    class EmptyResult(message: String = "No results found") : DomainError(message)
 }
 
 fun Throwable.toDomainError(): DomainError {

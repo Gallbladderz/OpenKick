@@ -1,21 +1,21 @@
 [versions]
-agp = "8.3.0"
+agp = "8.7.0"
 coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.7.0"
 activityCompose = "1.8.2"
-composeBom = "2024.02.02"
-kotlin = "1.9.22"
+composeBom = "2024.12.01"
+kotlin = "2.1.0"
 navCompose = "2.8.0"
 koin = "3.5.3"
 ktor = "2.3.8"
 room = "2.6.1"
-ksp = "1.9.22-1.0.17"
+ksp = "2.1.0-1.0.29"
 datastore = "1.0.0"
 coil = "2.6.0"
-media3 = "1.3.0"
+media3 = "1.11.0"
 workRuntimeKtx = "2.9.0"
 kotlinxSerializationJson = "1.6.3"
 materialIconsExtended = "1.6.1"
@@ -54,6 +54,7 @@ androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplaye
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls", version.ref = "media3" }
 androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
+androidx-media3-ui-compose-material3 = { group = "androidx.media3", name = "media3-ui-compose-material3", version.ref = "media3" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 koin-androidx-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager", version.ref = "koin" }
 lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
@@ -66,6 +67,7 @@ catppuccin-android-library-palette = { group = "com.github.ShiftHackZ.Catppuccin
 aboutlibraries-compose = { group = "com.mikepenz", name = "aboutlibraries-compose", version.ref = "aboutlibrariesCompose" }
 
 [plugins]
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

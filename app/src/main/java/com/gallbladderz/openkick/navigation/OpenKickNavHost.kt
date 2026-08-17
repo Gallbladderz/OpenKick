@@ -10,12 +10,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun OpenKickNavHost() {
-    val navController = rememberNavController()
+fun OpenKickNavHost(navController: NavHostController = rememberNavController()) {
 
     NavHost(
         navController = navController,
@@ -50,7 +50,6 @@ fun OpenKickNavHost() {
         allFollowsScreen(navController)
         streamerProfileScreen(navController)
         vodPlayerScreen(navController)
-        playerScreen(navController)
         contentSettingsScreen(navController)
         themeSettingsScreen(navController)
         aboutAppScreen(navController)

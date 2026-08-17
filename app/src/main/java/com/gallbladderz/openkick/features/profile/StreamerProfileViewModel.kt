@@ -65,13 +65,13 @@ class StreamerProfileViewModel(
         val slug = currentSlug ?: return
         if (_isRefreshing.value) return
 
-        _isRefreshing.value = true
+        _isRefreshing.update { true }
 
         viewModelScope.launch {
             try {
                 fetchData(slug)
             } finally {
-                _isRefreshing.value = false
+                _isRefreshing.update { false }
             }
         }
     }
@@ -124,23 +124,25 @@ class StreamerProfileViewModel(
     }
 
     fun toggleFollow() {
-        val currentState = _uiState.value
-        if (currentState is ProfileUiState.Success) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            if (currentState is ProfileUiState.Success) {
                 val currentlyFollowing = currentState.isFollowing
                 val slug = currentState.info.slug
 
                 followsRepository.toggleStreamerFollow(slug, currentlyFollowing)
 
-                _uiState.update {
-                    currentState.copy(isFollowing = !currentlyFollowing)
+                _uiState.update { state ->
+                    if (state is ProfileUiState.Success) {
+                        state.copy(isFollowing = !currentlyFollowing)
+                    } else state
                 }
             }
         }
     }
 
     fun loadMoreClips() {
-        val currentState = _uiState.value as? ProfileUiState.Success ?: return
+        if (_uiState.value !is ProfileUiState.Success) return
         val slug = currentSlug ?: return
 
         if (isClipsLoading || isClipsEnd) return
@@ -155,8 +157,12 @@ class StreamerProfileViewModel(
                     isClipsEnd = true
                 } else {
                     if (nextCursor.isNullOrBlank()) isClipsEnd = true
-                    val merged = (currentState.clips + newClips).distinctBy { it.id }
-                    _uiState.update { currentState.copy(clips = merged) }
+                    _uiState.update { state ->
+                        if (state is ProfileUiState.Success) {
+                            val merged = (state.clips + newClips).distinctBy { it.id }
+                            state.copy(clips = merged)
+                        } else state
+                    }
                 }
             } else {
                 isClipsEnd = true

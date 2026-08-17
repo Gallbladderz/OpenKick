@@ -26,8 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -125,8 +123,6 @@ fun HomeScreen(
     val defaultFilter = stringResource(R.string.filter_all)
     var selectedFilter by remember { mutableStateOf(defaultFilter) }
 
-    val pullRefreshState = rememberPullToRefreshState()
-
     val density = LocalDensity.current
     val filterChipsMaxHeightPx = with(density) { 56.dp.toPx() }
     var filterChipsHeightOffset by remember { mutableFloatStateOf(0f) }
@@ -139,21 +135,6 @@ fun HomeScreen(
                 filterChipsHeightOffset = newOffset.coerceIn(-filterChipsMaxHeightPx, 0f)
                 return Offset.Zero
             }
-        }
-    }
-
-    if (pullRefreshState.isRefreshing) {
-        LaunchedEffect(true) {
-            onRefresh()
-        }
-    }
-
-
-    LaunchedEffect(isRefreshing) {
-        if (isRefreshing) {
-            pullRefreshState.startRefresh()
-        } else {
-            pullRefreshState.endRefresh()
         }
     }
 
@@ -202,13 +183,14 @@ fun HomeScreen(
         }
 
 
-        Box(
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .clipToBounds()
                 .nestedScroll(nestedScrollConnection)
-                .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
             if (selectedFilter == stringResource(R.string.filter_categories)) {
                 com.gallbladderz.openkick.features.categories.CategoriesRoute(onCategoryClick = onCategoryClick)
@@ -276,14 +258,6 @@ fun HomeScreen(
                     }
                 }
             }
-
-
-            PullToRefreshContainer(
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.primary
-            )
         }
     }
 }

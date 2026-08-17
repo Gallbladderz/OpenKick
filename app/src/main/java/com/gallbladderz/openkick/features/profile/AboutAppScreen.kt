@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.config.AppConfig
 
 @Composable
 fun AboutAppRoute(
@@ -106,7 +107,7 @@ fun AboutAppScreen(
                 modifier = Modifier.clickable {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/Gallbladderz/OpenKick")
+                        Uri.parse(AppConfig.GITHUB_REPO_URL)
                     )
                     context.startActivity(intent)
                 }
@@ -114,15 +115,9 @@ fun AboutAppScreen(
 
             SettingsGroupHeader(stringResource(R.string.donate))
 
-            val wallets = listOf(
-                "GRAM" to "UQCe8z8g1DDZv_kXwTmC1nHthbU9QFQFcPLoUApTT9Osnvix",
-                "USDT (TRC-20)" to "TP4jKX8hbLVd87cVF5ZkjuHz1jc5oxphge",
-                "USDT (BEP-20)" to "0x2325718CD1dCD1fA3463d8Ff7512B891bDe11Edf"
-            )
-
             val copiedText = stringResource(R.string.copied)
 
-            wallets.forEach { (name, address) ->
+            AppConfig.CRYPTO_WALLETS.forEach { (name, address) ->
                 ListItem(
                     headlineContent = { Text(name) },
                     supportingContent = { Text(address) },

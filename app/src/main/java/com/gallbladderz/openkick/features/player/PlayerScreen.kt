@@ -19,48 +19,39 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
@@ -75,29 +66,31 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.utils.findActivity
-import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
-import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
+import com.gallbladderz.openkick.features.player.components.PlayerContent
 import com.gallbladderz.openkick.features.player.components.PlayerTabs
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
-import com.gallbladderz.openkick.features.player.components.StreamerInfoCard
+import com.gallbladderz.openkick.features.player.components.StreamerInfoOverlay
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.ChatMessage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun PlayerRoute(
     streamerName: String,
+    dragState: AnchoredDraggableState<PlayerExpandedState>,
     onBackClick: () -> Unit,
     onAvatarClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     viewModel: PlayerViewModel = koinViewModel()
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
     val channelLinks by viewModel.channelLinks.collectAsStateWithLifecycle()
     val isFollowed by viewModel.isStreamerFollowed(streamerName)
         .collectAsStateWithLifecycle(initialValue = false)
+
     val playWhenReady by viewModel.playerManager.playWhenReady.collectAsStateWithLifecycle()
     val playbackState by viewModel.playerManager.playbackState.collectAsStateWithLifecycle()
     val availableQualities by viewModel.availableQualities.collectAsStateWithLifecycle()
@@ -105,7 +98,8 @@ fun PlayerRoute(
 
     PlayerScreen(
         streamerName = streamerName,
-        state = state,
+        uiState = uiState,
+        dragState = dragState,
         chatMessages = chatMessages,
         channelLinks = channelLinks,
         isFollowed = isFollowed,
@@ -123,7 +117,7 @@ fun PlayerRoute(
         onSetVideoQuality = { viewModel.setVideoQuality(it) },
         onBackClick = onBackClick,
         onAvatarClick = onAvatarClick,
-        onCategoryClick = onCategoryClick,
+        onCategoryClick = { slug -> onCategoryClick(slug) },
         onSeekToLiveEdge = { viewModel.playerManager.seekToLiveEdge() }
     )
 }
@@ -132,7 +126,8 @@ fun PlayerRoute(
 @Composable
 fun PlayerScreen(
     streamerName: String,
-    state: PlayerUiState,
+    uiState: PlayerUiState,
+    dragState: AnchoredDraggableState<PlayerExpandedState>,
     chatMessages: List<ChatMessage>,
     channelLinks: List<ChannelLink>,
     isFollowed: Boolean,
@@ -154,35 +149,40 @@ fun PlayerScreen(
     onSeekToLiveEdge: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
+
+    var isInPipMode by remember {
+        mutableStateOf(context.findActivity()?.isInPictureInPictureMode == true)
+    }
+    var videoViewBounds by remember { mutableStateOf(android.graphics.Rect()) }
+
+    val fraction by remember {
+        derivedStateOf {
+            if (isInPipMode) return@derivedStateOf 0f
+
+            val offset = if (dragState.offset.isNaN()) 0f else dragState.requireOffset()
+            val expandedOffset = dragState.anchors.positionOf(PlayerExpandedState.EXPANDED)
+            val miniOffset = dragState.anchors.positionOf(PlayerExpandedState.MINI)
+            if (miniOffset == expandedOffset || offset.isNaN()) 0f
+            else ((offset - expandedOffset) / (miniOffset - expandedOffset)).coerceIn(0f, 1f)
+        }
+    }
 
     var showControls by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
-
     var isFullscreen by remember {
         mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
     }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var isInPipMode by remember { mutableStateOf(false) }
-
 
     var isAtLiveEdge by remember { mutableStateOf(true) }
     var baselineOffset by remember { mutableStateOf(-1L) }
     var hasFallenBehind by remember { mutableStateOf(false) }
 
-    val pullRefreshState = rememberPullToRefreshState()
-
-    if (pullRefreshState.isRefreshing) {
-        LaunchedEffect(true) {
-            onLoadStreamInfo(streamerName)
-            delay(1000)
-            pullRefreshState.endRefresh()
-        }
-    }
-
     DisposableEffect(context) {
-        val activity = context.findActivity() as? ComponentActivity
+        val activity = context.findActivity()
         val pipListener = Consumer<androidx.core.app.PictureInPictureModeChangedInfo> { info ->
             isInPipMode = info.isInPictureInPictureMode
             if (!info.isInPictureInPictureMode) {
@@ -191,7 +191,6 @@ fun PlayerScreen(
             }
         }
         activity?.addOnPictureInPictureModeChangedListener(pipListener)
-
         onDispose {
             activity?.removeOnPictureInPictureModeChangedListener(pipListener)
         }
@@ -199,7 +198,7 @@ fun PlayerScreen(
 
     DisposableEffect(context) {
         onDispose {
-            val activity = context.findActivity() as? ComponentActivity
+            val activity = context.findActivity()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 activity?.setPictureInPictureParams(
                     PictureInPictureParams.Builder().setAutoEnterEnabled(false).build()
@@ -217,31 +216,28 @@ fun PlayerScreen(
     }
 
     val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO"
-
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: android.content.Context?, intent: Intent?) {
                 if (intent?.action == ACTION_BACKGROUND_AUDIO) {
-                    val activity = context.findActivity() as? ComponentActivity
+                    val activity = context.findActivity()
                     activity?.moveTaskToBack(true)
                 }
             }
         }
-
         ContextCompat.registerReceiver(
             context,
             receiver,
             IntentFilter(ACTION_BACKGROUND_AUDIO),
             ContextCompat.RECEIVER_EXPORTED
         )
-
         onDispose {
             context.unregisterReceiver(receiver)
         }
     }
 
-    LaunchedEffect(state, playWhenReady) {
-        val activity = context.findActivity() as? ComponentActivity
+    LaunchedEffect(uiState, playWhenReady, videoViewBounds) {
+        val activity = context.findActivity()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val backgroundAudioIntent = Intent(ACTION_BACKGROUND_AUDIO)
             val pendingIntent = PendingIntent.getBroadcast(
@@ -260,18 +256,18 @@ fun PlayerScreen(
 
             val paramsBuilder = PictureInPictureParams.Builder()
                 .setActions(listOf(remoteAction))
+                .setAspectRatio(android.util.Rational(16, 9))
+
+            if (!videoViewBounds.isEmpty) {
+                paramsBuilder.setSourceRectHint(videoViewBounds)
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                paramsBuilder.setAutoEnterEnabled(state is PlayerUiState.Playing && playWhenReady)
+                paramsBuilder.setAutoEnterEnabled(uiState is PlayerUiState.Playing && playWhenReady)
             }
             activity?.setPictureInPictureParams(paramsBuilder.build())
         }
     }
-
-    val tabs = listOf(
-        stringResource(R.string.chat_tab),
-        stringResource(R.string.description)
-    )
 
     LaunchedEffect(showControls, playWhenReady) {
         if (showControls && playWhenReady) {
@@ -289,11 +285,9 @@ fun PlayerScreen(
                         if (baselineOffset == -1L || liveOffset < baselineOffset) {
                             baselineOffset = liveOffset
                         }
-
                         if (playbackState == Player.STATE_READY && !playWhenReady) {
                             hasFallenBehind = true
                         }
-
                         isAtLiveEdge =
                             playWhenReady && !hasFallenBehind && (liveOffset <= baselineOffset + 4000L)
                     }
@@ -307,7 +301,13 @@ fun PlayerScreen(
 
     LaunchedEffect(configuration.orientation) {
         if (!isInPipMode) {
-            isFullscreen = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                if (dragState.currentValue == PlayerExpandedState.EXPANDED) {
+                    isFullscreen = true
+                }
+            } else {
+                isFullscreen = false
+            }
         }
     }
 
@@ -315,7 +315,6 @@ fun PlayerScreen(
         val activity = context.findActivity() ?: return@LaunchedEffect
         val window = activity.window
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-
         if (isFullscreen) {
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             insetsController.hide(WindowInsetsCompat.Type.systemBars())
@@ -329,22 +328,19 @@ fun PlayerScreen(
         }
     }
 
-    BackHandler(enabled = isFullscreen) {
-        isFullscreen = false
+    BackHandler(enabled = isFullscreen || dragState.currentValue == PlayerExpandedState.EXPANDED) {
+        if (isFullscreen) {
+            isFullscreen = false
+        } else {
+            coroutineScope.launch { dragState.animateTo(PlayerExpandedState.MINI) }
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_START -> {
-                    onPlayerManagerInitialize()
-                    onLoadStreamInfo(streamerName)
-                }
-
-                Lifecycle.Event.ON_STOP -> {
-                }
-
+                Lifecycle.Event.ON_START -> onPlayerManagerInitialize()
                 else -> {}
             }
         }
@@ -355,196 +351,109 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(streamerName) {
+        onLoadStreamInfo(streamerName)
         onLoadChannelLinks(streamerName)
     }
 
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val animatedTopPadding = lerp(statusBarHeight, 0.dp, fraction)
+    val screenHeight = configuration.screenHeightDp.dp
+    val miniPlayerHeight = 64.dp
+    val currentHeight = lerp(screenHeight, miniPlayerHeight, fraction)
+
     val rootModifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)
-        .let { if (!isFullscreen && !isInPipMode) it.statusBarsPadding() else it }
+        .fillMaxWidth()
+        .let {
+            if (isFullscreen || isInPipMode) it.fillMaxSize()
+            else it.height(currentHeight)
+        }
+        .background(MaterialTheme.colorScheme.background.copy(alpha = 1f - fraction))
+        .let {
+            if (!isFullscreen && !isInPipMode) it.padding(top = animatedTopPadding) else it
+        }
+        .clipToBounds()
 
     Column(modifier = rootModifier) {
-        Box(
-            modifier = Modifier
-                .nestedScroll(pullRefreshState.nestedScrollConnection)
-                .let { if (isFullscreen || isInPipMode) it.weight(1f) else it }
-        ) {
-            Column(
-                modifier = if (!isFullscreen && !isInPipMode) {
-                    Modifier.verticalScroll(rememberScrollState())
-                } else {
-                    Modifier
-                }
-            ) {
-                Box(
-                    modifier = if (isInPipMode) {
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color.Black)
-                    } else if (isFullscreen) {
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color.Black)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { showControls = !showControls }
-                    } else {
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .background(Color.Black)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { showControls = !showControls }
-                    }
-                ) {
-                    when (val currentState = state) {
-                        is PlayerUiState.Loading -> {
-                            CircularProgressIndicator(
-                                color = Color(0xFF7CFC00),
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
-
-                        is PlayerUiState.Playing -> {
-                            if (player != null) {
-                                KickStreamPlayer(
-                                    player = player,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black)) {
-                                    CircularProgressIndicator(
-                                        color = Color(0xFF7CFC00),
-                                        modifier = Modifier.align(Alignment.Center)
-                                    )
-                                }
-                            }
-
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = showControls && !isInPipMode,
-                                enter = fadeIn(),
-                                exit = fadeOut(),
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize()) {
-                                    CustomPlayerControls(
-                                        playWhenReady = playWhenReady,
-                                        playbackState = playbackState,
-                                        isFullscreen = isFullscreen,
-                                        isAtLiveEdge = isAtLiveEdge,
-                                        onSeekToLive = {
-                                            onSeekToLiveEdge()
-                                            baselineOffset = -1L
-                                            hasFallenBehind = false
-                                            isAtLiveEdge = true
-                                            if (!playWhenReady) onPlayerManagerResume()
-                                        },
-                                        onPlayPause = {
-                                            if (playWhenReady) onPlayerManagerPause()
-                                            else onPlayerManagerResume()
-                                        },
-                                        onFullscreen = { isFullscreen = !isFullscreen },
-                                        onSettings = { showSettingsSheet = true },
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-
-                                    IconButton(
-                                        onClick = {
-                                            if (isFullscreen) isFullscreen =
-                                                false else onBackClick()
-                                        },
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(8.dp)
-                                            .background(
-                                                Color.Black.copy(alpha = 0.5f),
-                                                shape = MaterialTheme.shapes.small
-                                            )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                            contentDescription = stringResource(R.string.back),
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        is PlayerUiState.Error -> {
-                            Text(
-                                text = currentState.message,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
-                    }
-                }
+        Box(modifier = Modifier.let { if (isFullscreen || isInPipMode) it.weight(1f) else it }) {
+            Column {
+                PlayerContent(
+                    uiState = uiState,
+                    player = player,
+                    fraction = fraction,
+                    isInPipMode = isInPipMode,
+                    isFullscreen = isFullscreen,
+                    showControls = showControls,
+                    onShowControlsChange = { showControls = it },
+                    playWhenReady = playWhenReady,
+                    playbackState = playbackState,
+                    isAtLiveEdge = isAtLiveEdge,
+                    onSeekToLiveEdge = {
+                        onSeekToLiveEdge()
+                        baselineOffset = -1L
+                        hasFallenBehind = false
+                        isAtLiveEdge = true
+                        if (!playWhenReady) onPlayerManagerResume()
+                    },
+                    onPlayerManagerResume = onPlayerManagerResume,
+                    onPlayerManagerPause = onPlayerManagerPause,
+                    onFullscreenToggle = { isFullscreen = !isFullscreen },
+                    onShowSettings = { showSettingsSheet = true },
+                    onBackClick = onBackClick,
+                    onUpdateVideoBounds = { videoViewBounds = it },
+                    dragState = dragState,
+                    coroutineScope = coroutineScope
+                )
 
                 if (!isFullscreen && !isInPipMode) {
-                    if (state is PlayerUiState.Playing) {
-                        val playingState = state
-                        StreamerInfoCard(
+                    if (uiState is PlayerUiState.Playing && fraction <= 0.5f) {
+                        StreamerInfoOverlay(
                             streamerName = streamerName,
-                            title = playingState.title,
-                            avatarUrl = playingState.avatarUrl,
-                            viewers = playingState.viewers,
-                            categoryName = playingState.categoryName,
+                            title = uiState.title,
+                            avatarUrl = uiState.avatarUrl,
+                            viewers = uiState.viewers,
+                            categoryName = uiState.categoryName ?: "",
+                            categorySlug = uiState.categorySlug,
                             isFollowed = isFollowed,
+                            fraction = fraction,
                             onToggleFollow = { onToggleFollow(streamerName, isFollowed) },
                             onAvatarClick = { onAvatarClick(streamerName) },
-                            onCategoryClick = {
-                                playingState.categorySlug?.let { slug -> onCategoryClick(slug) }
-                            },
-                            onShareClick = {
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, "https://kick.com/$streamerName")
-                                }
-                                context.startActivity(
-                                    Intent.createChooser(
-                                        shareIntent,
-                                        context.getString(R.string.share_desc)
-                                    )
-                                )
-                            }
+                            onCategoryClick = { slug -> onCategoryClick(slug) }
                         )
                     }
                 }
             }
-
-            PullToRefreshContainer(
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
         }
 
-        if (!isFullscreen && !isInPipMode) {
-            PlayerTabs(
-                selectedTabIndex = selectedTabIndex,
-                onTabSelected = { selectedTabIndex = it },
-                tabs = tabs,
-                chatMessages = chatMessages,
-                channelLinks = channelLinks,
-                modifier = Modifier.weight(1f)
+        if (!isFullscreen && !isInPipMode && fraction <= 0.5f) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .graphicsLayer { alpha = 1f - (fraction * 2f).coerceIn(0f, 1f) }
+            ) {
+                PlayerTabs(
+                    selectedTabIndex = selectedTabIndex,
+                    onTabSelected = { selectedTabIndex = it },
+                    tabs = listOf(
+                        stringResource(R.string.chat_tab),
+                        stringResource(R.string.description)
+                    ),
+                    chatMessages = chatMessages,
+                    channelLinks = channelLinks,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        if (showSettingsSheet) {
+            QualitySelectionSheet(
+                qualities = availableQualities,
+                selectedQuality = selectedQuality,
+                onQualitySelect = { quality ->
+                    onSetVideoQuality(quality)
+                    showSettingsSheet = false
+                },
+                onDismiss = { showSettingsSheet = false }
             )
         }
-    }
-
-    if (showSettingsSheet) {
-        QualitySelectionSheet(
-            qualities = availableQualities,
-            selectedQuality = selectedQuality,
-            onQualitySelect = { quality ->
-                onSetVideoQuality(quality)
-                showSettingsSheet = false
-            },
-            onDismiss = { showSettingsSheet = false }
-        )
     }
 }

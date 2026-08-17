@@ -126,7 +126,7 @@ class FollowingViewModel(
 
     private fun syncWithApi() {
         viewModelScope.launch(Dispatchers.IO) {
-            _isRefreshing.value = true
+            _isRefreshing.update { true }
             val entities = followsRepository.getAllFollowedEntities().first()
             val streamerSlugs = entities.filter { it.type == FollowType.STREAMER }.map { it.slug }
             val categorySlugs = entities.filter { it.type == FollowType.CATEGORY }.map { it.slug }
@@ -174,7 +174,7 @@ class FollowingViewModel(
             streamerJobs.awaitAll()
             categoryJobs.awaitAll()
 
-            _isRefreshing.value = false
+            _isRefreshing.update { false }
         }
     }
 }
