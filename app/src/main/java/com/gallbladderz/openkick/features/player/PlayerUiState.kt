@@ -13,7 +13,8 @@ sealed interface PlayerUiState {
         val viewers: Int,
         val title: String,
         val categoryName: String?,
-        val categorySlug: String?
+        val categorySlug: String?,
+        val isVerified: Boolean
     ) : PlayerUiState
 
     data class Error(val message: String) : PlayerUiState

@@ -56,3 +56,6 @@ data class VideoThumbnailDto(
 data class VideoInnerDto(
     val uuid: String? = null
 )
+
+@Serializable
+data class ChannelInfoV2Response(val verified: Boolean = false)

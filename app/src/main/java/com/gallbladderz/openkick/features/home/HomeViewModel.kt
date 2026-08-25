@@ -100,13 +100,13 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            settingsRepository.homeGridModeFlow.collectLatest {
-                _isGridMode.update { it }
+            settingsRepository.homeGridModeFlow.collectLatest { isGrid ->
+                _isGridMode.value = isGrid
             }
         }
         viewModelScope.launch {
-            settingsRepository.homeStreamSortFlow.collectLatest {
-                _sort.update { it }
+            settingsRepository.homeStreamSortFlow.collectLatest { newSort ->
+                _sort.value = newSort
             }
         }
         viewModelScope.launch {

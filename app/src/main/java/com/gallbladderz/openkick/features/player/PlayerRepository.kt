@@ -65,6 +65,7 @@ fun ChannelStreamInfoResponse.toDomain(): StreamInfo? {
         title = title,
         chatroomId = chatroomId,
         categoryName = categoryName,
-        categorySlug = categorySlug
+        categorySlug = categorySlug,
+        isVerified = this.verified
     )
 }

@@ -235,7 +235,8 @@ fun HomeScreen(
                             if (selectedFilter == clipsFilter) {
                                 homeClipsList(
                                     clips = uiState.clips,
-                                    onClipClick = onClipClick
+                                    onClipClick = onClipClick,
+                                    onProfileClick = onStreamClick
                                 )
                             } else {
                                 homeStreamsList(

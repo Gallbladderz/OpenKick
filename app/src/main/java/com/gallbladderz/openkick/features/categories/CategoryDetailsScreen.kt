@@ -242,7 +242,8 @@ fun CategoryDetailsScreen(
                             CategoryClipsList(
                                 clips = currentState.clips,
                                 listState = listState,
-                                onClipClick = onClipClick
+                                onClipClick = onClipClick,
+                                onProfileClick = onStreamClick
                             )
                         }
                     }

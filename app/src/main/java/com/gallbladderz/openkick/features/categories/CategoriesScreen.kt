@@ -157,7 +157,7 @@ fun CategoryCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(3f / 4f)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             AsyncImage(
@@ -172,7 +172,7 @@ fun CategoryCard(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(6.dp)
+                    .padding(16.dp)
                     .background(
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
                         RoundedCornerShape(6.dp)
@@ -237,10 +237,9 @@ fun CategoryCard(
                         .weight(1f, fill = false)
                         .padding(end = if (index == 0 && category.tags.size > 1) 4.dp else 0.dp)
                 ) {
-                    Text(
+               Text(
                         text = tag,
                         style = MaterialTheme.typography.labelSmall,
-                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

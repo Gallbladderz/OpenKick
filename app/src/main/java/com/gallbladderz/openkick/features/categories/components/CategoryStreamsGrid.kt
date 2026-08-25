@@ -67,7 +67,8 @@ fun CategoryStreamsGrid(
             ) { stream ->
                 StreamCard(
                     stream = stream,
-                    onClick = { onStreamClick(stream.streamerName) }
+                    onClick = { onStreamClick(stream.streamerName) },
+                    onProfileClick = { onStreamClick(stream.streamerName) }
                 )
             }
         }

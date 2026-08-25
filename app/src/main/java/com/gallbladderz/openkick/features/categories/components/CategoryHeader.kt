@@ -66,7 +66,7 @@ fun CategoryHeader(
             modifier = Modifier
                 .width(80.dp)
                 .height(110.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
 
@@ -87,7 +87,7 @@ fun CategoryHeader(
                         viewers
                     ),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -99,7 +99,7 @@ fun CategoryHeader(
                     items(tags) { tag ->
                         SuggestionChip(
                             onClick = { },
-                            label = { Text(tag, fontSize = 10.sp) },
+                            label = { Text(tag, style = MaterialTheme.typography.labelSmall) },
                             modifier = Modifier.height(24.dp)
                         )
                     }
@@ -111,7 +111,7 @@ fun CategoryHeader(
             FilledTonalButton(
                 onClick = onFollowClick,
                 modifier = Modifier.height(36.dp),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = if (isFollowed) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
                     contentColor = if (isFollowed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary

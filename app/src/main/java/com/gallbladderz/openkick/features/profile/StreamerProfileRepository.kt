@@ -15,6 +15,7 @@ import com.gallbladderz.openkick.features.player.ClipRepository
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.toDomain
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -29,7 +30,8 @@ data class ProfileInfoUi(
     val avatarUrl: String,
     val bannerUrl: String,
     val followers: Int,
-    val isLive: Boolean
+    val isLive: Boolean,
+    val isVerified: Boolean
 )
 
 data class VideoUiModel(
@@ -57,8 +59,21 @@ class StreamerProfileRepository(
     suspend fun fetchProfileInfo(slug: String): Result<ProfileInfoUi> =
         withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getChannelV1(slug)
-                val profileInfo = response.toDomain(slug)
+                val v1Deferred = async { apiService.getChannelV1(slug) }
+                val v2Deferred = async {
+                    try {
+                        apiService.getChannelInfoV2(slug)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                val response = v1Deferred.await()
+                val v2Response = v2Deferred.await()
+
+                val isVerified = v2Response?.verified ?: false
+
+                val profileInfo = response.toDomain(slug, isVerified)
                 if (profileInfo != null) {
                     Result.success(profileInfo)
                 } else {
@@ -131,7 +146,7 @@ class StreamerProfileRepository(
         }
 }
 
-fun ChannelV1Response.toDomain(slugFallback: String): ProfileInfoUi? {
+fun ChannelV1Response.toDomain(slugFallback: String, isVerified: Boolean): ProfileInfoUi? {
     val channelId = this.id ?: return null
     val username = this.user?.username ?: slugFallback
     val bio = this.user?.bio ?: ""
@@ -153,7 +168,8 @@ fun ChannelV1Response.toDomain(slugFallback: String): ProfileInfoUi? {
         avatarUrl,
         bannerUrl,
         followers,
-        isLive
+        isLive,
+        isVerified
     )
 }
 

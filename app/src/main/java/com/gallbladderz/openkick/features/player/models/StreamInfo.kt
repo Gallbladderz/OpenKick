@@ -12,5 +12,6 @@ data class StreamInfo(
     val title: String,
     val chatroomId: String?,
     val categoryName: String?,
-    val categorySlug: String?
+    val categorySlug: String?,
+    val isVerified: Boolean
 )

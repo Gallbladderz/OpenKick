@@ -104,11 +104,18 @@ class PlayerManager(
         }
     }
 
+    private var isExplicitlyPausedByUser = false
+
     fun initializePlayer() {
         if (player == null) {
-            player = ExoPlayer.Builder(appContext).build().apply {
-                addListener(playerListener)
-            }
+            player = ExoPlayer.Builder(appContext)
+                .setWakeMode(C.WAKE_MODE_NETWORK)
+                .build().apply {
+                    addListener(playerListener)
+                    if (!isExplicitlyPausedByUser) {
+                        playWhenReady = true
+                    }
+                }
         }
     }
 
@@ -155,6 +162,7 @@ class PlayerManager(
 
     fun play(videoUrl: String, title: String, streamerName: String, avatarUrl: String) {
         val currentPlayer = player ?: return
+        isExplicitlyPausedByUser = false
         val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
             .createMediaSource(
                 MediaItem.Builder().setUri(videoUrl).setMediaMetadata(
@@ -165,13 +173,21 @@ class PlayerManager(
             )
         currentPlayer.setMediaSource(mediaSource)
         currentPlayer.prepare()
-        currentPlayer.playWhenReady = true
+        if (!isExplicitlyPausedByUser) {
+            currentPlayer.playWhenReady = true
+        }
     }
 
 
-    fun pause() = player?.pause()
+    fun pause() {
+        isExplicitlyPausedByUser = true
+        player?.pause()
+    }
 
-    fun resume() = player?.play()
+    fun resume() {
+        isExplicitlyPausedByUser = false
+        player?.play()
+    }
 
     fun release() {
         player?.removeListener(playerListener)

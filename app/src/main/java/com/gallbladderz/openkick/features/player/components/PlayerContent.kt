@@ -34,6 +34,17 @@ import com.gallbladderz.openkick.features.player.PlayerExpandedState
 import com.gallbladderz.openkick.features.player.PlayerUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import com.gallbladderz.openkick.features.player.models.ChatMessage
 
 @Composable
 fun PlayerContent(
@@ -50,14 +61,24 @@ fun PlayerContent(
     onSeekToLiveEdge: () -> Unit,
     onPlayerManagerResume: () -> Unit,
     onPlayerManagerPause: () -> Unit,
+    onPlayerManagerRelease: () -> Unit,
     onFullscreenToggle: () -> Unit,
     onShowSettings: () -> Unit,
     onBackClick: () -> Unit,
     onUpdateVideoBounds: (android.graphics.Rect) -> Unit,
     dragState: AnchoredDraggableState<PlayerExpandedState>,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    chatMessages: List<ChatMessage>
 ) {
     val configuration = LocalConfiguration.current
+
+    var isLandscapeChatOpen by remember { mutableStateOf(true) }
+
+    LaunchedEffect(isFullscreen) {
+        if (isFullscreen) {
+            isLandscapeChatOpen = true
+        }
+    }
     val screenWidth = configuration.screenWidthDp.dp
     val miniPlayerWidth = 120.dp
     val miniPlayerHeight = 64.dp
@@ -98,7 +119,7 @@ fun PlayerContent(
                 }
         }
     ) {
-        Box(
+        Row(
             modifier = if (isInPipMode || isFullscreen) {
                 Modifier.fillMaxSize()
             } else {
@@ -108,10 +129,15 @@ fun PlayerContent(
                     .align(Alignment.CenterStart)
             }
         ) {
-            when (uiState) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f)
+            ) {
+                when (uiState) {
                 is PlayerUiState.Loading -> {
                     CircularProgressIndicator(
-                        color = Color(0xFF7CFC00),
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -139,7 +165,7 @@ fun PlayerContent(
                             .fillMaxSize()
                             .background(Color.Black)) {
                             CircularProgressIndicator(
-                                color = Color(0xFF7CFC00),
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -161,7 +187,8 @@ fun PlayerContent(
                             onPlayerManagerPause = onPlayerManagerPause,
                             onFullscreenToggle = onFullscreenToggle,
                             onShowSettings = onShowSettings,
-                            onBackClick = onBackClick
+                            onBackClick = onBackClick,
+                            onToggleChat = { isLandscapeChatOpen = !isLandscapeChatOpen }
                         )
                     }
                 }
@@ -174,6 +201,30 @@ fun PlayerContent(
                     )
                 }
             }
+            }
+
+            AnimatedVisibility(
+                visible = isFullscreen && isLandscapeChatOpen,
+                enter = expandHorizontally(expandFrom = Alignment.Start),
+                exit = shrinkHorizontally()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.35f)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures { change, dragAmount ->
+                                if (dragAmount > 50) {
+                                    isLandscapeChatOpen = false
+                                    change.consume()
+                                }
+                            }
+                        }
+                ) {
+                    ChatList(chatMessages = chatMessages)
+                }
+            }
         }
 
         if (uiState is PlayerUiState.Playing) {
@@ -184,6 +235,7 @@ fun PlayerContent(
                 onPlayerManagerPause = onPlayerManagerPause,
                 onPlayerManagerResume = onPlayerManagerResume,
                 onClose = {
+                    onPlayerManagerRelease()
                     onBackClick()
                     coroutineScope.launch { dragState.animateTo(PlayerExpandedState.HIDDEN) }
                 },

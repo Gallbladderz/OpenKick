@@ -8,6 +8,7 @@ package com.gallbladderz.openkick.features.player.components
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -41,6 +42,7 @@ fun MiniPlayerDetails(
         exit = androidx.compose.animation.fadeOut(),
         modifier = Modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(start = miniPlayerWidth + 16.dp, end = 8.dp)
             .graphicsLayer {
                 translationY = (1f - fraction) * 200f
@@ -50,7 +52,9 @@ fun MiniPlayerDetails(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
         ) {
             Text(
                 text = title,

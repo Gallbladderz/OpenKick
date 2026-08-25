@@ -5,8 +5,11 @@
 
 package com.gallbladderz.openkick.features.player
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import com.gallbladderz.openkick.features.home.ClipUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,8 +17,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ClipPlayerViewModel(
-    private val clipRepository: ClipRepository
+    private val clipRepository: ClipRepository,
+    context: Context
 ) : ViewModel() {
+
+    val player: ExoPlayer = ExoPlayer.Builder(context).build()
 
     private val _avatarUrl = MutableStateFlow("")
     val avatarUrl = _avatarUrl.asStateFlow()
@@ -29,9 +35,17 @@ class ClipPlayerViewModel(
             result.onSuccess { clip ->
                 _activeClip.update { clip }
                 _avatarUrl.update { clip.streamerAvatarUrl }
+                player.setMediaItem(MediaItem.fromUri(clip.videoUrl))
+                player.prepare()
+                player.playWhenReady = true
             }.onFailure {
 
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        player.release()
     }
 }

@@ -142,4 +142,8 @@
     <string name="network_error_msg">Error de red: %1$s</string>
     <string name="error_empty_slug">Error: ¡slug vacío!</string>
     <string name="total_failure">Fallo total, nada cargado</string>
+    <string name="action_go_to_profile">Ir al perfil</string>
+    <string name="action_copy_channel_link">Copiar enlace del canal</string>
+    <string name="action_copy_video_link">Copiar enlace del video</string>
+    <string name="action_share_video">Compartir</string>
 </resources>

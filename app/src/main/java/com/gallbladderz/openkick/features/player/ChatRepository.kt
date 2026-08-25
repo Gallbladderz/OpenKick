@@ -33,6 +33,8 @@ class ChatRepository(
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages = _chatMessages.asStateFlow()
 
+    private val internalDeque = java.util.ArrayDeque<ChatMessage>()
+
     private var webSocket: WebSocket? = null
 
     private var reconnectAttempt = 0
@@ -66,7 +68,13 @@ class ChatRepository(
                         val dataString = eventDto.data ?: return
                         val messageDto = json.decodeFromString<ChatMessageDataDto>(dataString)
                         val newMessage = messageDto.toDomainModel()
-                        _chatMessages.update { (listOf(newMessage) + it).take(100) }
+
+                        internalDeque.addFirst(newMessage)
+                        if (internalDeque.size > 100) {
+                            internalDeque.removeLast()
+                        }
+
+                        _chatMessages.value = internalDeque.toList()
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("ChatRepository", "WebSocket parsing error", e)

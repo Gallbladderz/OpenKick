@@ -29,8 +29,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import android.content.res.Configuration
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -51,7 +53,8 @@ fun DraggablePlayerContainer(
 ) {
     val density = LocalDensity.current
     val context = LocalContext.current
-
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     var isInPipMode by remember {
         mutableStateOf(context.findActivity()?.isInPictureInPictureMode == true)
@@ -178,7 +181,7 @@ fun DraggablePlayerContainer(
         val rawOffset = if (state.offset.isNaN()) maxHeightPx else state.offset
 
 
-        val finalOffset = if (isInPipMode) 0f else rawOffset
+        val finalOffset = if (isInPipMode || isLandscape) 0f else rawOffset
 
         Box(
             modifier = Modifier
@@ -186,7 +189,7 @@ fun DraggablePlayerContainer(
                 .offset { IntOffset(0, finalOffset.roundToInt()) }
 
                 .let {
-                    if (!isInPipMode) {
+                    if (!isInPipMode && !isLandscape) {
                         it
                             .anchoredDraggable(state = state, orientation = Orientation.Vertical)
                             .nestedScroll(nestedScrollConnection)

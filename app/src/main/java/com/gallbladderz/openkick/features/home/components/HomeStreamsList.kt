@@ -63,7 +63,8 @@ fun LazyListScope.homeStreamsList(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         onStreamClick(rowItems[0].streamerName)
-                    }
+                    },
+                    onProfileClick = { onStreamClick(rowItems[0].streamerName) }
                 )
 
                 if (rowItems.size > 1) {
@@ -72,7 +73,8 @@ fun LazyListScope.homeStreamsList(
                         modifier = Modifier.weight(1f),
                         onClick = {
                             onStreamClick(rowItems[1].streamerName)
-                        }
+                        },
+                        onProfileClick = { onStreamClick(rowItems[1].streamerName) }
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
@@ -90,7 +92,8 @@ fun LazyListScope.homeStreamsList(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = {
                     onStreamClick(stream.streamerName)
-                }
+                },
+                onProfileClick = { onStreamClick(stream.streamerName) }
             )
         }
     }

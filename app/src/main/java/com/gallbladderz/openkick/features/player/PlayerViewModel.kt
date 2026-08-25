@@ -50,6 +50,10 @@ class PlayerViewModel(
         playerManager.setQuality(quality)
     }
 
+    fun disconnectChat() {
+        chatRepository.disconnect()
+    }
+
     fun isStreamerFollowed(streamerName: String) =
         followsRepository.isStreamerFollowed(streamerName)
 
@@ -80,7 +84,8 @@ class PlayerViewModel(
                                 viewers = streamInfo.viewers,
                                 title = streamInfo.title,
                                 categoryName = streamInfo.categoryName,
-                                categorySlug = streamInfo.categorySlug
+                                categorySlug = streamInfo.categorySlug,
+                                isVerified = streamInfo.isVerified
                             )
                         }
 

@@ -50,10 +50,11 @@ import com.gallbladderz.openkick.navigation.OpenKickNavHost
 import com.gallbladderz.openkick.navigation.StreamerProfileRoute
 import com.gallbladderz.openkick.ui.theme.OpenKickTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import androidx.appcompat.app.AppCompatActivity
 
 val LocalBottomBarOffset = compositionLocalOf<() -> Float> { { 0f } }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val mainViewModel: MainViewModel by viewModel()
 

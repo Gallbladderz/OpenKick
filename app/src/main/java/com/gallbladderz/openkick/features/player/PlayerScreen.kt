@@ -70,6 +70,8 @@ import com.gallbladderz.openkick.features.player.components.PlayerContent
 import com.gallbladderz.openkick.features.player.components.PlayerTabs
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
 import com.gallbladderz.openkick.features.player.components.StreamerInfoOverlay
+import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
+import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
 import com.gallbladderz.openkick.features.player.models.ChannelLink
 import com.gallbladderz.openkick.features.player.models.ChatMessage
 import kotlinx.coroutines.delay
@@ -113,6 +115,10 @@ fun PlayerRoute(
         onPlayerManagerInitialize = { viewModel.playerManager.initializePlayer() },
         onPlayerManagerPause = { viewModel.playerManager.pause() },
         onPlayerManagerResume = { viewModel.playerManager.resume() },
+        onPlayerManagerRelease = {
+            viewModel.playerManager.release()
+            viewModel.disconnectChat()
+        },
         onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
         onSetVideoQuality = { viewModel.setVideoQuality(it) },
         onBackClick = onBackClick,
@@ -141,6 +147,7 @@ fun PlayerScreen(
     onPlayerManagerInitialize: () -> Unit,
     onPlayerManagerPause: () -> Unit,
     onPlayerManagerResume: () -> Unit,
+    onPlayerManagerRelease: () -> Unit,
     onToggleFollow: (String, Boolean) -> Unit,
     onSetVideoQuality: (VideoQuality) -> Unit,
     onBackClick: () -> Unit,
@@ -171,6 +178,8 @@ fun PlayerScreen(
 
     var showControls by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
+
+    val deviceOrientation = rememberDeviceOrientation()
     var isFullscreen by remember {
         mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
     }
@@ -299,14 +308,16 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(configuration.orientation) {
+    LaunchedEffect(deviceOrientation) {
         if (!isInPipMode) {
-            if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                if (dragState.currentValue == PlayerExpandedState.EXPANDED) {
-                    isFullscreen = true
+            when (deviceOrientation) {
+                DeviceOrientation.LANDSCAPE -> {
+                    if (dragState.currentValue == PlayerExpandedState.EXPANDED) {
+                        isFullscreen = true
+                    }
                 }
-            } else {
-                isFullscreen = false
+                DeviceOrientation.PORTRAIT -> isFullscreen = false
+                DeviceOrientation.UNKNOWN -> {}
             }
         }
     }
@@ -321,10 +332,8 @@ fun PlayerScreen(
             insetsController.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
-            delay(500)
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -396,12 +405,14 @@ fun PlayerScreen(
                     },
                     onPlayerManagerResume = onPlayerManagerResume,
                     onPlayerManagerPause = onPlayerManagerPause,
+                    onPlayerManagerRelease = onPlayerManagerRelease,
                     onFullscreenToggle = { isFullscreen = !isFullscreen },
                     onShowSettings = { showSettingsSheet = true },
                     onBackClick = onBackClick,
                     onUpdateVideoBounds = { videoViewBounds = it },
                     dragState = dragState,
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
+                    chatMessages = chatMessages
                 )
 
                 if (!isFullscreen && !isInPipMode) {
@@ -413,6 +424,7 @@ fun PlayerScreen(
                             viewers = uiState.viewers,
                             categoryName = uiState.categoryName ?: "",
                             categorySlug = uiState.categorySlug,
+                            isVerified = uiState.isVerified,
                             isFollowed = isFollowed,
                             fraction = fraction,
                             onToggleFollow = { onToggleFollow(streamerName, isFollowed) },

@@ -75,12 +75,16 @@ fun ClipsTab(
                 ClipCard(
                     clip = rowItems[0],
                     modifier = Modifier.weight(1f),
-                    onClick = { onClipClick(rowItems[0]) })
+                    onClick = { onClipClick(rowItems[0]) },
+                    onProfileClick = {}
+                )
                 if (rowItems.size > 1) {
                     ClipCard(
                         clip = rowItems[1],
                         modifier = Modifier.weight(1f),
-                        onClick = { onClipClick(rowItems[1]) })
+                        onClick = { onClipClick(rowItems[1]) },
+                        onProfileClick = {}
+                    )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }

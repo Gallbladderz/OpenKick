@@ -62,6 +62,8 @@ import com.gallbladderz.openkick.core.ui.utils.findActivity
 import com.gallbladderz.openkick.features.player.VideoQuality
 import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
 import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
+import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
+import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
 import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
 import kotlinx.coroutines.delay
@@ -107,6 +109,8 @@ fun VodPlayerScreen(
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var showControls by remember { mutableStateOf(true) }
+
+    val deviceOrientation = rememberDeviceOrientation()
     var isFullscreen by remember { mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) }
 
 
@@ -195,9 +199,14 @@ fun VodPlayerScreen(
         }
     }
 
-    LaunchedEffect(configuration.orientation) {
-        isFullscreen = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    LaunchedEffect(deviceOrientation) {
+        when (deviceOrientation) {
+            DeviceOrientation.LANDSCAPE -> isFullscreen = true
+            DeviceOrientation.PORTRAIT -> isFullscreen = false
+            DeviceOrientation.UNKNOWN -> {}
+        }
     }
+
     LaunchedEffect(isFullscreen) {
         val activity = context.findActivity() ?: return@LaunchedEffect
         val window = activity.window
@@ -208,10 +217,8 @@ fun VodPlayerScreen(
             insetsController.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
-            delay(500)
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
     BackHandler(enabled = isFullscreen) { isFullscreen = false }

@@ -33,7 +33,8 @@ fun PlayerControlsOverlay(
     onPlayerManagerPause: () -> Unit,
     onFullscreenToggle: () -> Unit,
     onShowSettings: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onToggleChat: () -> Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         CustomPlayerControls(
@@ -47,6 +48,7 @@ fun PlayerControlsOverlay(
             },
             onFullscreen = onFullscreenToggle,
             onSettings = onShowSettings,
+            onToggleChat = onToggleChat,
             modifier = Modifier.fillMaxSize()
         )
         IconButton(

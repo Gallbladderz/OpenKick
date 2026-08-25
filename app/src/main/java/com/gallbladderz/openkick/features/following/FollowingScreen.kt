@@ -166,6 +166,7 @@ fun FollowingScreen(
                                         Text(
                                             text = stringResource(R.string.channels),
                                             style = MaterialTheme.typography.titleMedium,
+
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
@@ -201,6 +202,7 @@ fun FollowingScreen(
                                     Text(
                                         text = stringResource(R.string.categories),
                                         style = MaterialTheme.typography.titleMedium,
+
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)
@@ -225,6 +227,7 @@ fun FollowingScreen(
                                 Text(
                                     text = stringResource(R.string.live),
                                     style = MaterialTheme.typography.titleMedium,
+
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier
                                         .padding(horizontal = 16.dp)
@@ -298,7 +301,7 @@ private fun StoryAvatarItem(streamer: FollowedStreamerUi, onClick: () -> Unit) {
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = streamer.username,
-            style = MaterialTheme.typography.labelSmall,
+
             color = if (streamer.isLive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = if (streamer.isLive) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
@@ -338,7 +341,7 @@ private fun LiveStreamCard(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(8.dp)
+                        .padding(16.dp)
                         .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 4.dp)
                 ) { ViewerCountBadge(viewers = streamer.viewers) }
@@ -397,7 +400,7 @@ private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Un
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(3f / 4f)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             AsyncImage(
@@ -417,8 +420,9 @@ private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Un
                 Text(
                     text = formatShortViewers(category.viewers),
                     color = Color.White,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp,
+
+
+style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -426,7 +430,9 @@ private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Un
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = category.name,
-            style = MaterialTheme.typography.labelSmall,
+
+
+                    style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

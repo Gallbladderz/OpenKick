@@ -160,4 +160,8 @@
     <string name="network_error_msg">Network error: %1$s</string>
     <string name="error_empty_slug">Error: empty slug!</string>
     <string name="total_failure">Total failure, nothing loaded</string>
+    <string name="action_go_to_profile">Go to profile</string>
+    <string name="action_copy_channel_link">Copy channel link</string>
+    <string name="action_copy_video_link">Copy video link</string>
+    <string name="action_share_video">Share</string>
 </resources>

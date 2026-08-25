@@ -117,7 +117,7 @@ val appModule = module {
     single { PlayerManager(androidContext(), get()) }
 
     viewModel { PlayerViewModel(get(), get(), get(), get()) }
-    viewModel { ClipPlayerViewModel(get()) }
+    viewModel { ClipPlayerViewModel(get(), androidContext()) }
     viewModel { CategoriesViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
 

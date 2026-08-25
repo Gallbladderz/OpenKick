@@ -158,7 +158,8 @@ fun ChatMessageItem(message: ChatMessage) {
         blurRadius = 3f
     )
 
-    val fontSize = 14.sp
+    val typography = MaterialTheme.typography.bodyMedium
+    val fontSize = typography.fontSize
     val emoteSize = 22.sp
     val inlineContentMap = mutableMapOf<String, InlineTextContent>()
 
@@ -233,6 +234,6 @@ fun ChatMessageItem(message: ChatMessage) {
                 ).show()
             }
             .padding(horizontal = 12.dp, vertical = 3.dp),
-        lineHeight = 20.sp
+        style = MaterialTheme.typography.bodyMedium
     )
 }

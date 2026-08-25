@@ -160,4 +160,8 @@
     <string name="network_error_msg">Ошибка сети: %1$s</string>
     <string name="error_empty_slug">Ошибка: slug пустой!</string>
     <string name="total_failure">Полный провал ниче не загрузилось</string>
+    <string name="action_go_to_profile">Перейти в профиль</string>
+    <string name="action_copy_channel_link">Копировать ссылку на канал</string>
+    <string name="action_copy_video_link">Копировать ссылку на видео</string>
+    <string name="action_share_video">Поделиться</string>
 </resources>

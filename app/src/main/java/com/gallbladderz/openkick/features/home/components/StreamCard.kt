@@ -6,6 +6,21 @@
 package com.gallbladderz.openkick.features.home.components
 
 import androidx.compose.foundation.background
+
+import android.content.Intent
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
+import com.gallbladderz.openkick.R
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,34 +43,42 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
 import com.gallbladderz.openkick.features.home.StreamUiModel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StreamCard(
     stream: StreamUiModel,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    var showMenu by remember { mutableStateOf(false) }
 
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = Color.Transparent
         )
     ) {
-        Column {
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column {
+
             Box(modifier = Modifier.fillMaxWidth()) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -72,7 +95,7 @@ fun StreamCard(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(8.dp)
+                        .padding(16.dp)
                         .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 4.dp)
                 ) {
@@ -117,6 +140,39 @@ fun StreamCard(
                         }
                     }
                 }
+            }
+
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_go_to_profile)) },
+                    onClick = {
+                        showMenu = false
+                        onProfileClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_copy_channel_link)) },
+                    onClick = {
+                        showMenu = false
+                        clipboardManager.setText(AnnotatedString("https://kick.com/${stream.streamerName}"))
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_share_video)) },
+                    onClick = {
+                        showMenu = false
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, "https://kick.com/${stream.streamerName}")
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, null))
+                    }
+                )
             }
         }
     }

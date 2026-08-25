@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,21 +57,32 @@ fun CustomPlayerControls(
     onPlayPause: () -> Unit,
     onFullscreen: () -> Unit,
     onSettings: () -> Unit,
+    onToggleChat: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.background(Color.Black.copy(alpha = 0.6f))) {
 
-        IconButton(
-            onClick = onSettings,
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(8.dp)
+                .padding(16.dp)
         ) {
-            Icon(
-                Icons.Default.Settings,
-                contentDescription = stringResource(R.string.settings_desc),
-                tint = Color.White
-            )
+            if (isFullscreen && isLive) {
+                IconButton(onClick = onToggleChat) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Message,
+                        contentDescription = "Toggle Chat",
+                        tint = Color.White
+                    )
+                }
+            }
+            IconButton(onClick = onSettings) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.settings_desc),
+                    tint = Color.White
+                )
+            }
         }
 
         if (playbackState == Player.STATE_BUFFERING) {
@@ -112,7 +124,7 @@ fun CustomPlayerControls(
                         modifier = Modifier
                             .size(8.dp)
                             .background(
-                                if (isAtLiveEdge) MaterialTheme.colorScheme.primary else Color.Gray,
+                                if (isAtLiveEdge) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 CircleShape
                             )
                     )
@@ -132,7 +144,7 @@ fun CustomPlayerControls(
                         .weight(1f)
                         .padding(end = 8.dp)
                 ) {
-                    Text(text = formatTime(currentPosition), color = Color.White, fontSize = 12.sp)
+                    Text(text = formatTime(currentPosition), color = Color.White, style = MaterialTheme.typography.labelSmall)
                     Slider(
                         value = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f,
                         onValueChange = { value -> onSeek((value * duration).toLong()) },
@@ -145,7 +157,7 @@ fun CustomPlayerControls(
                             inactiveTrackColor = Color.White.copy(alpha = 0.3f)
                         )
                     )
-                    Text(text = formatTime(duration), color = Color.White, fontSize = 12.sp)
+                    Text(text = formatTime(duration), color = Color.White, style = MaterialTheme.typography.labelSmall)
                 }
             }
 

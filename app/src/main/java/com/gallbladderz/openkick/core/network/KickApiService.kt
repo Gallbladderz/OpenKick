@@ -83,6 +83,11 @@ interface KickApiService {
         @Path("slug") slug: String
     ): com.gallbladderz.openkick.features.profile.ChannelV1Response
 
+    @GET("api/v2/channels/{slug}/info")
+    suspend fun getChannelInfoV2(
+        @Path("slug") slug: String
+    ): com.gallbladderz.openkick.features.profile.ChannelInfoV2Response
+
     @GET("api/v2/channels/{slug}/videos")
     suspend fun getChannelVideos(
         @Path("slug") slug: String

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -30,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,6 +46,7 @@ fun StreamerInfoCard(
     avatarUrl: String,
     viewers: Int,
     categoryName: String?,
+    isVerified: Boolean,
     isFollowed: Boolean,
     onToggleFollow: () -> Unit,
     onAvatarClick: () -> Unit,
@@ -84,6 +85,7 @@ fun StreamerInfoCard(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -95,19 +97,35 @@ fun StreamerInfoCard(
                 modifier = Modifier.clickable { onAvatarClick() }
             )
             Spacer(modifier = Modifier.width(12.dp))
+
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .clickable { onAvatarClick() }
             ) {
-                Text(
-                    text = streamerName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = streamerName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    if (isVerified) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Verified",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    ViewerCountBadge(viewers = viewers, textColor = Color.Red)
+                    ViewerCountBadge(viewers = viewers, textColor = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
@@ -123,6 +141,7 @@ fun StreamerInfoCard(
                     )
                 }
             }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -140,7 +159,7 @@ fun StreamerInfoCard(
                 Button(
                     onClick = onToggleFollow,
                     modifier = Modifier.height(36.dp),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isFollowed) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
@@ -148,9 +167,7 @@ fun StreamerInfoCard(
                     )
                 ) {
                     Text(
-                        text = if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(
-                            R.string.follow_action
-                        ),
+                        text = if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(R.string.follow_action),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.labelMedium
                     )

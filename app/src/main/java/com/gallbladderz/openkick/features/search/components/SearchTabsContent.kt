@@ -109,13 +109,15 @@ fun SearchTabsContent(
                                 SearchStreamCard(
                                     stream = rowItems[0],
                                     modifier = Modifier.weight(1f),
-                                    onClick = { onStreamClick(rowItems[0].slug) }
+                                    onClick = { onStreamClick(rowItems[0].slug) },
+                                    onProfileClick = { onChannelClick(rowItems[0].slug, false) }
                                 )
                                 if (rowItems.size > 1) {
                                     SearchStreamCard(
                                         stream = rowItems[1],
                                         modifier = Modifier.weight(1f),
-                                        onClick = { onStreamClick(rowItems[1].slug) }
+                                        onClick = { onStreamClick(rowItems[1].slug) },
+                                        onProfileClick = { onChannelClick(rowItems[1].slug, false) }
                                     )
                                 } else {
                                     Spacer(modifier = Modifier.weight(1f))

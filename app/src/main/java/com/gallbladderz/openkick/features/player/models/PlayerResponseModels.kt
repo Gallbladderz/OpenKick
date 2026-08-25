@@ -15,7 +15,8 @@ data class ChannelStreamInfoResponse(
     val user: UserDto? = null,
     val chatroom: ChatroomDto? = null,
     val chatroom_id: Int? = null,
-    val recent_categories: List<CategoryDto> = emptyList()
+    val recent_categories: List<CategoryDto> = emptyList(),
+    val verified: Boolean = false
 )
 
 @Serializable

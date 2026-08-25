@@ -33,7 +33,8 @@ fun HeroStreamPager(
         StreamCard(
             stream = stream,
             modifier = Modifier.fillMaxWidth(),
-            onClick = { onStreamClick(stream.streamerName) }
+            onClick = { onStreamClick(stream.streamerName) },
+            onProfileClick = { onStreamClick(stream.streamerName) }
         )
     }
 }

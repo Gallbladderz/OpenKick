@@ -63,6 +63,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.utils.findActivity
 import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
+import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
+import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
 import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
 import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
@@ -92,7 +94,6 @@ fun ClipPlayerRoute(
         val clip = activeClip!!
         ClipPlayerScreen(
             clipId = clipId,
-            videoUrl = clip.videoUrl,
             title = clip.title,
             streamerName = clip.streamerName,
             streamerAvatarUrl = clip.streamerAvatarUrl,
@@ -100,6 +101,7 @@ fun ClipPlayerRoute(
             durationFormatted = clip.durationFormatted,
             isFollowed = isFollowed,
             fetchedAvatarUrl = fetchedAvatarUrl,
+            exoPlayer = clipPlayerViewModel.player,
             onToggleFollow = { viewModel.toggleFollow(clip.streamerName, isFollowed) },
             onLoadAvatar = { },
             onBackClick = onBackClick,
@@ -128,7 +130,6 @@ fun ClipPlayerRoute(
 @Composable
 fun ClipPlayerScreen(
     clipId: String,
-    videoUrl: String,
     title: String,
     streamerName: String,
     streamerAvatarUrl: String,
@@ -136,6 +137,7 @@ fun ClipPlayerScreen(
     durationFormatted: String,
     isFollowed: Boolean,
     fetchedAvatarUrl: String?,
+    exoPlayer: ExoPlayer,
     onToggleFollow: () -> Unit,
     onLoadAvatar: () -> Unit,
     onBackClick: () -> Unit,
@@ -147,20 +149,13 @@ fun ClipPlayerScreen(
 
     val resolvedAvatarUrl = streamerAvatarUrl.replace("\\/", "/").ifBlank { fetchedAvatarUrl ?: "" }
 
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(videoUrl))
-            prepare()
-            playWhenReady = true
-        }
-    }
-
     var isPlaying by remember { mutableStateOf(true) }
     var playbackState by remember { mutableIntStateOf(Player.STATE_BUFFERING) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var showControls by remember { mutableStateOf(true) }
 
+    val deviceOrientation = rememberDeviceOrientation()
     var isFullscreen by remember { mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     var availableQualities by remember { mutableStateOf<List<VideoQuality>>(emptyList()) }
@@ -209,8 +204,12 @@ fun ClipPlayerScreen(
         }
     }
 
-    LaunchedEffect(configuration.orientation) {
-        isFullscreen = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    LaunchedEffect(deviceOrientation) {
+        when (deviceOrientation) {
+            DeviceOrientation.LANDSCAPE -> isFullscreen = true
+            DeviceOrientation.PORTRAIT -> isFullscreen = false
+            DeviceOrientation.UNKNOWN -> {}
+        }
     }
 
     LaunchedEffect(isFullscreen) {
@@ -224,10 +223,8 @@ fun ClipPlayerScreen(
             insetsController.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
-            delay(500)
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -293,7 +290,6 @@ fun ClipPlayerScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            exoPlayer.release()
         }
     }
 

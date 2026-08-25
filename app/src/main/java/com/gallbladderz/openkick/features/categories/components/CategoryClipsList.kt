@@ -32,7 +32,8 @@ fun CategoryClipsList(
     clips: List<ClipUiModel>,
     listState: LazyListState,
     onClipClick: (ClipUiModel) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onProfileClick: (String) -> Unit
 ) {
     if (clips.isEmpty()) {
         Box(
@@ -62,13 +63,15 @@ fun CategoryClipsList(
                     ClipCard(
                         clip = rowItems[0],
                         modifier = Modifier.weight(1f),
-                        onClick = { onClipClick(rowItems[0]) }
+                        onClick = { onClipClick(rowItems[0]) },
+                        onProfileClick = { onProfileClick(rowItems[0].streamerName) }
                     )
                     if (rowItems.size > 1) {
                         ClipCard(
                             clip = rowItems[1],
                             modifier = Modifier.weight(1f),
-                            onClick = { onClipClick(rowItems[1]) }
+                            onClick = { onClipClick(rowItems[1]) },
+                            onProfileClick = { onProfileClick(rowItems[1].streamerName) }
                         )
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
