@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.home.components
+
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,13 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.gallbladderz.openkick.features.home.StreamUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 
 fun LazyListScope.homeStreamsList(
     streams: List<StreamUiModel>,
     isGridMode: Boolean,
     liveFilterText: String,
-    onStreamClick: (String) -> Unit
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit
 ) {
     val heroStreams = streams.take(5)
     val feedStreams = streams.drop(5)
@@ -32,7 +36,8 @@ fun LazyListScope.homeStreamsList(
         item {
             HeroStreamPager(
                 streams = heroStreams,
-                onStreamClick = onStreamClick
+                onStreamClick = onStreamClick,
+                onProfileClick = onProfileClick
             )
         }
     }
@@ -64,7 +69,7 @@ fun LazyListScope.homeStreamsList(
                     onClick = {
                         onStreamClick(rowItems[0].streamerName)
                     },
-                    onProfileClick = { onStreamClick(rowItems[0].streamerName) }
+                    onProfileClick = { onProfileClick(rowItems[0].streamerName) }
                 )
 
                 if (rowItems.size > 1) {
@@ -74,7 +79,7 @@ fun LazyListScope.homeStreamsList(
                         onClick = {
                             onStreamClick(rowItems[1].streamerName)
                         },
-                        onProfileClick = { onStreamClick(rowItems[1].streamerName) }
+                        onProfileClick = { onProfileClick(rowItems[1].streamerName) }
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
@@ -93,7 +98,7 @@ fun LazyListScope.homeStreamsList(
                 onClick = {
                     onStreamClick(stream.streamerName)
                 },
-                onProfileClick = { onStreamClick(stream.streamerName) }
+                onProfileClick = { onProfileClick(stream.streamerName) }
             )
         }
     }

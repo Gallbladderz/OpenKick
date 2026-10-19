@@ -1,54 +1,58 @@
 <div align="center">
 <br />
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="Logo" width="192" />
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="OpenKick logo" width="192" />
 </div>
 
 <h1 align="center">OpenKick</h1>
 
-<br />
-
-<h4 align="center">An open-source, lightweight, and fully autonomous Android client for Kick.com.<br>Available in English, Spanish, and Russian.</h4>
-
-<div align="center">
-  <a href="https://github.com/Gallbladderz/OpenKick/releases"><img src="https://user-images.githubusercontent.com/69304392/148696068-0cfea65d-b18f-4685-82b5-329a330b1c0d.png" alt="Get it on GitHub" height="60" /></a>
-  &nbsp;
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.gallbladderz.openkick%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FGallbladderz%2FOpenKick%22%2C%22author%22%3A%22Gallbladderz%22%2C%22name%22%3A%22OpenKick%22%2C%22additionalSettings%22%3A%22%7B%5C%22appName%5C%22%3A%5C%22OpenKick%5C%22%2C%5C%22appAuthor%5C%22%3A%5C%22Gallbladderz%5C%22%2C%5C%22about%5C%22%3A%5C%22An%20open-source%2C%20lightweight%2C%20and%20fully%20autonomous%20Android%20client%20for%20Kick.com.%5C%22%7D%22%7D"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60" /></a>
-</div>
-
-<br />
+<p align="center">
+  An open-source Android client for <a href="https://kick.com">Kick.com</a> with account sign-in, live chat, streams, clips, and VODs.<br />
+  Available in English, Spanish, and Russian.
+</p>
 
 <div align="center">
-<img src=".github/assets/screen-home.png" alt="Screenshot 1" width="30%" />
-&nbsp;&nbsp;&nbsp;&nbsp;
-<img src=".github/assets/screen-categories.png" alt="Screenshot 2" width="30%" />
+  <a href="https://github.com/Gallbladderz/OpenKick/releases"><img src="https://user-images.githubusercontent.com/69304392/148696068-0cfea65d-b18f-4685-82b5-329a330b1c0d.png" alt="Get it on GitHub" height="80" /></a>
+  &nbsp;&nbsp;
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.gallbladderz.openkick%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FGallbladderz%2FOpenKick%22%2C%22author%22%3A%22Gallbladderz%22%2C%22name%22%3A%22OpenKick%22%2C%22additionalSettings%22%3A%22%7B%5C%22appName%5C%22%3A%5C%22OpenKick%5C%22%2C%5C%22appAuthor%5C%22%3A%5C%22Gallbladderz%5C%22%2C%5C%22about%5C%22%3A%5C%22An%20open-source%20Android%20client%20for%20Kick.com.%5C%22%7D%22%7D"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="80" /></a>
 </div>
 
-<br />
+## Features
 
-## ✨ Features
+- **Kick account sign-in:** Authenticate through Kick and use your account from the app.
+- **Guest mode:** Browse Kick and keep local follows without signing in.
+- **Live streams, VODs, and clips:** Watch content with Media3/ExoPlayer playback.
+- **Live chat:** Read and send messages, use replies and emotes, and view badges and name colors.
+- **Following sync:** Keep followed channels and categories in sync with Kick after signing in, or manage them locally in guest mode.
+- **Background playback and PiP:** Continue listening or watching while using other apps.
+- **Notifications:** Receive notifications when followed channels go live.
+- **Search and discovery:** Find channels, streams, clips, categories, and category details.
+- **Personalization:** Use dynamic colors, Catppuccin themes, language settings, and chat display controls.
 
-*   **Modern UI:** Built entirely with Jetpack Compose & Material 3, including dynamic colors and beautiful Catppuccin themes.
-*   **Feature-Rich Player:** Watch live streams, VODs, and clips seamlessly using ExoPlayer.
-*   **Live Chat:** Real-time chat integration to keep up with the community.
-*   **Background Playback & PiP:** Keep listening to audio in the background or watch via Picture-in-Picture mode while using other apps.
-*   **Local Following System:** Follow your favorite streamers locally without an account, complete with live stream push notifications.
-*   **Search & Discover:** Easily browse Kick categories and search for channels, streams, or clips.
+## Build
 
-> [!NOTE]  
-> **Privacy First & Fully Autonomous:** OpenKick operates entirely in autonomous mode. The app does not have an authorization function—you cannot log into your Kick account. All data (like your followed streamers and app settings) is stored securely and locally on your device.
+OpenKick is an Android Studio project built with Kotlin, Jetpack Compose, and Gradle. Use JDK 17 or newer.
 
-## 🛠️ Build Instructions
+```bash
+git clone https://github.com/Gallbladderz/OpenKick.git
+cd OpenKick
+```
 
-Building OpenKick is incredibly simple. There are no API keys or complex setups required.
+Open the project in Android Studio, allow Gradle to sync, and run the `app` configuration.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Gallbladderz/OpenKick.git
-   ```
-2. Open the project in **Android Studio**.
-3. Allow Gradle to sync all dependencies.
-4. Click **Run** (`Shift + F10`) to build and install the app on your device or emulator.
+### Authentication configuration
 
-## 📜 License
+The app can be built and used in guest mode without additional configuration. To enable OAuth sign-in in a custom build, provide the Kick client identifier as a Gradle property:
 
-This project is open-source and distributed under the **GPL-3.0 License**. See the `LICENSE` file for more details.
+```properties
+kickClientId=your_kick_client_id
+```
+
+Keep local or environment-specific values outside the repository. The default BFF endpoint is `https://kick.com/`; it can be overridden with the `bffBaseUrl` Gradle property when needed.
+
+## Privacy
+
+Guest follows and app settings are stored locally on the device. When you sign in, OpenKick stores the session required to access your Kick account and synchronizes account follows with Kick.
+
+## License
+
+OpenKick is distributed under the **GPL-3.0 License**. See [LICENSE](LICENSE) for the full license text.

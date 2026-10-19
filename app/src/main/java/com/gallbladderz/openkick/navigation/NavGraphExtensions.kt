@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -21,7 +23,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.gallbladderz.openkick.LocalBottomBarOffset
-import com.gallbladderz.openkick.features.player.LocalGlobalPlayerController
+import com.gallbladderz.openkick.core.player.LocalGlobalPlayerController
 import com.gallbladderz.openkick.features.search.SearchScreen
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -32,19 +34,15 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
         val coroutineScope = rememberCoroutineScope()
         val bottomBarOffset = LocalBottomBarOffset.current
 
-
         Scaffold { innerPadding ->
             val globalPlayerController = LocalGlobalPlayerController.current
 
-
             Box(modifier = Modifier.fillMaxSize()) {
-
 
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxSize()
-
 
                         .padding(top = innerPadding.calculateTopPadding())
                 ) { page ->
@@ -53,6 +51,9 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
                             com.gallbladderz.openkick.features.home.HomeRoute(
                                 onStreamClick = { streamerName ->
                                     globalPlayerController.expandPlayer(streamerName)
+                                },
+                                onProfileClick = { slug ->
+                                    navController.navigate(StreamerProfileRoute(slug))
                                 },
                                 onCategoryClick = { slug ->
                                     navController.navigate(CategoryDetailsRoute(slug))
@@ -83,6 +84,9 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
 
                         MainTab.SETTINGS -> {
                             com.gallbladderz.openkick.features.profile.SettingsRoute(
+                                onProfileClick = { slug ->
+                                    navController.navigate(StreamerProfileRoute(slug))
+                                },
                                 onLanguageSettingsClick = {
                                     navController.navigate(LanguageSettingsRoute)
                                 },
@@ -103,7 +107,6 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
                     }
                 }
 
-
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -123,7 +126,6 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
     }
 }
 
-
 fun NavGraphBuilder.categoryDetailsScreen(navController: NavController) {
     composable<CategoryDetailsRoute> { backStackEntry ->
         val globalPlayerController = LocalGlobalPlayerController.current
@@ -134,6 +136,7 @@ fun NavGraphBuilder.categoryDetailsScreen(navController: NavController) {
             onStreamClick = { streamerName ->
                 globalPlayerController.expandPlayer(streamerName)
             },
+            onProfileClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) },
             onClipClick = { clip ->
                 navController.navigate(
                     ClipPlayerRoute(

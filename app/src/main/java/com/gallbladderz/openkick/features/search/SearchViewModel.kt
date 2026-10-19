@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.search
+
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

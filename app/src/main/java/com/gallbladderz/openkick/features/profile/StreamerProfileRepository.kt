@@ -3,17 +3,22 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile
 
+
+import com.gallbladderz.openkick.core.data.mapper.toDomain
+import com.gallbladderz.openkick.core.data.mapper.toUiModel
+import com.gallbladderz.openkick.core.data.repository.ClipRepository
 import com.gallbladderz.openkick.core.domain.DomainError
+import com.gallbladderz.openkick.core.domain.model.ChannelLink
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
 import com.gallbladderz.openkick.core.domain.toDomainError
-import com.gallbladderz.openkick.core.network.KickApiService
+import com.gallbladderz.openkick.core.network.api.KickApiService
+import com.gallbladderz.openkick.core.network.dto.profile.ChannelV1Response
+import com.gallbladderz.openkick.core.network.dto.profile.VideoItemDto
 import com.gallbladderz.openkick.core.ui.utils.formatVideoDuration
-import com.gallbladderz.openkick.features.home.ClipUiModel
-import com.gallbladderz.openkick.features.home.toUiModel
-import com.gallbladderz.openkick.features.player.ClipRepository
-import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.features.player.models.toDomain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext

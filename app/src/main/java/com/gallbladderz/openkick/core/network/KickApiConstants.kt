@@ -3,16 +3,18 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.core.network
 
 object KickApiConstants {
-    const val APP_VERSION = "40.21.0"
+    const val APP_VERSION = "40.32.1"
+    const val APP_BUILD = "60006965"
     const val USER_AGENT =
-        "KickMobile/$APP_VERSION (com.kick.mobile; platform: android; build:60006889)"
+        "KickMobile/$APP_VERSION (com.kick.mobile; platform: android; build:$APP_BUILD)"
 
-    const val PUSHER_WS_URL =
-        "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=7.6.0&flash=false"
-    const val PUSHER_API_KEY = "32cbd69e4b950bf97679"
+    const val CENTRIFUGO_WS_URL = "wss://realtime.us-east-1.platform.kick.com/connection/websocket"
+    const val REALTIME_AUTH_URL = "https://mobile.kick.com/api/v1/realtime/auth/connection"
 
     const val KICK_BASE_URL = "https://kick.com"
     const val KICK_MOBILE_API_BASE_URL = "https://mobile.kick.com/api/v1"

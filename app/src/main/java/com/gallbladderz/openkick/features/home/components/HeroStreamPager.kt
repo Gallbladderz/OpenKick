@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.home.components
+
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,13 +16,14 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.gallbladderz.openkick.features.home.StreamUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HeroStreamPager(
     streams: List<StreamUiModel>,
-    onStreamClick: (String) -> Unit
+    onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { streams.size })
 
@@ -34,8 +38,7 @@ fun HeroStreamPager(
             stream = stream,
             modifier = Modifier.fillMaxWidth(),
             onClick = { onStreamClick(stream.streamerName) },
-            onProfileClick = { onStreamClick(stream.streamerName) }
+            onProfileClick = { onProfileClick(stream.streamerName) }
         )
     }
 }
-

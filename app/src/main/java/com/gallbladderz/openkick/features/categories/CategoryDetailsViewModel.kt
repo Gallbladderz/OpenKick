@@ -3,22 +3,27 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.categories
+
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 import com.gallbladderz.openkick.core.ui.UiText
-import com.gallbladderz.openkick.data.local.FollowsRepository
-import com.gallbladderz.openkick.features.home.ClipUiModel
-import com.gallbladderz.openkick.features.home.StreamUiModel
+import com.gallbladderz.openkick.features.following.FollowingRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -39,11 +44,12 @@ sealed interface CategoryDetailsUiState {
 
 class CategoryDetailsViewModel(
     private val repository: CategoriesRepository,
-    private val followsRepository: FollowsRepository
+    private val followingRepository: FollowingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CategoryDetailsUiState>(CategoryDetailsUiState.Loading)
     val uiState = _uiState.asStateFlow()
+    val followErrors = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
     private var currentCategoryId: Int? = null
     private var streamsCursor: String? = null
@@ -53,6 +59,7 @@ class CategoryDetailsViewModel(
     private var isStreamsEnd = false
     private var isClipsEnd = false
     private var currentSlug: String = ""
+    private var loadJob: Job? = null
 
     private val _sort = MutableStateFlow("viewer_count_desc")
     val sort = _sort.asStateFlow()
@@ -60,8 +67,7 @@ class CategoryDetailsViewModel(
     private val _selectedFilterLanguages = MutableStateFlow<Set<String>>(emptySet())
     val selectedFilterLanguages = _selectedFilterLanguages.asStateFlow()
 
-    val followedSlugs: StateFlow<Set<String>> = followsRepository.getFollowedCategoriesSlugs()
-        .map { it.toSet() }
+    val followedSlugs: StateFlow<Set<String>> = followingRepository.followedCategorySlugs()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -70,7 +76,25 @@ class CategoryDetailsViewModel(
 
     fun toggleCategoryFollow(slug: String, isCurrentlyFollowed: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            followsRepository.toggleCategoryFollow(slug, isCurrentlyFollowed)
+            try {
+                followingRepository.toggleCategoryFollow(slug, isCurrentlyFollowed)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                followErrors.tryEmit(e.message ?: "Could not update category")
+            }
+        }
+    }
+
+    fun refreshFollowedCategories() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                followingRepository.refreshCategories()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                followErrors.tryEmit(e.message ?: "Could not load followed categories")
+            }
         }
     }
 
@@ -83,6 +107,7 @@ class CategoryDetailsViewModel(
     }
 
     fun loadCategory(slug: String) {
+        loadJob?.cancel()
         currentSlug = slug.trim().lowercase()
         _uiState.update { CategoryDetailsUiState.Loading }
         streamsCursor = null
@@ -93,7 +118,7 @@ class CategoryDetailsViewModel(
         isClipsEnd = false
         currentCategoryId = null
 
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             if (currentSlug.isBlank()) {
                 _uiState.update { CategoryDetailsUiState.Error(UiText.StringResource(R.string.error_empty_slug)) }
                 return@launch
@@ -101,17 +126,20 @@ class CategoryDetailsViewModel(
 
             try {
                 val detailsResult = repository.fetchCategoryDetails(currentSlug)
-                if (detailsResult.isFailure) {
+                val details = detailsResult.getOrNull()
+                if (details == null) {
                     _uiState.update {
                         CategoryDetailsUiState.Error(
-                            detailsResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                            detailsResult.exceptionOrNull()?.message?.let { message ->
+                                UiText.DynamicString(
+                                    message
+                                )
+                            }
                                 ?: UiText.StringResource(R.string.unknown_error)
                         )
                     }
                     return@launch
                 }
-
-                val details = detailsResult.getOrNull()!!
                 currentCategoryId = details.id
 
                 val clipsDeferred = async { repository.fetchCategoryClips(currentSlug) }
@@ -119,7 +147,7 @@ class CategoryDetailsViewModel(
                     repository.fetchCategoryStreams(
                         categoryId = details.id,
                         sort = _sort.value,
-                        languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
+                        languages = selectedLanguages()
                     )
                 }
 
@@ -142,6 +170,8 @@ class CategoryDetailsViewModel(
                         streams = parsedStreams
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     CategoryDetailsUiState.Error(
@@ -162,33 +192,34 @@ class CategoryDetailsViewModel(
         isStreamsLoading = true
 
         viewModelScope.launch {
-            val result = repository.fetchCategoryStreams(
-                categoryId = categoryId,
-                cursor = streamsCursor,
-                sort = _sort.value,
-                languages = if (_selectedFilterLanguages.value.isEmpty()) null else _selectedFilterLanguages.value.toList()
-            )
+            try {
+                val result = repository.fetchCategoryStreams(
+                    categoryId = categoryId,
+                    cursor = streamsCursor,
+                    sort = _sort.value,
+                    languages = selectedLanguages()
+                )
 
-            if (result.isSuccess) {
-                val (newStreams, nextCursor) = result.getOrThrow()
-                streamsCursor = nextCursor
-                if (newStreams.isEmpty()) {
-                    isStreamsEnd = true
-                } else {
-                    if (nextCursor.isNullOrBlank()) {
+                if (result.isSuccess) {
+                    val (newStreams, nextCursor) = result.getOrThrow()
+                    streamsCursor = nextCursor
+                    if (newStreams.isEmpty()) {
                         isStreamsEnd = true
+                    } else {
+                        isStreamsEnd = nextCursor.isNullOrBlank()
+                        _uiState.update { state ->
+                            if (state is CategoryDetailsUiState.Success) {
+                                val merged = (state.streams + newStreams).distinctBy { it.id }
+                                state.copy(streams = merged)
+                            } else state
+                        }
                     }
-                    _uiState.update { state ->
-                        if (state is CategoryDetailsUiState.Success) {
-                            val merged = (state.streams + newStreams).distinctBy { it.id }
-                            state.copy(streams = merged)
-                        } else state
-                    }
+                } else {
+                    isStreamsEnd = true
                 }
-            } else {
-                isStreamsEnd = true
+            } finally {
+                isStreamsLoading = false
             }
-            isStreamsLoading = false
         }
     }
 
@@ -197,27 +228,31 @@ class CategoryDetailsViewModel(
 
         isClipsLoading = true
         viewModelScope.launch {
-            val result = repository.fetchCategoryClips(currentSlug, clipsCursor)
-            if (result.isSuccess) {
-                val (newClips, nextCursor) = result.getOrThrow()
-                clipsCursor = nextCursor
-                if (newClips.isEmpty()) {
-                    isClipsEnd = true
-                } else {
-                    if (nextCursor.isNullOrBlank()) {
+            try {
+                val result = repository.fetchCategoryClips(currentSlug, clipsCursor)
+                if (result.isSuccess) {
+                    val (newClips, nextCursor) = result.getOrThrow()
+                    clipsCursor = nextCursor
+                    if (newClips.isEmpty()) {
                         isClipsEnd = true
+                    } else {
+                        isClipsEnd = nextCursor.isNullOrBlank()
+                        _uiState.update { state ->
+                            if (state is CategoryDetailsUiState.Success) {
+                                val merged = (state.clips + newClips).distinctBy { it.id }
+                                state.copy(clips = merged)
+                            } else state
+                        }
                     }
-                    _uiState.update { state ->
-                        if (state is CategoryDetailsUiState.Success) {
-                            val merged = (state.clips + newClips).distinctBy { it.id }
-                            state.copy(clips = merged)
-                        } else state
-                    }
+                } else {
+                    isClipsEnd = true
                 }
-            } else {
-                isClipsEnd = true
+            } finally {
+                isClipsLoading = false
             }
-            isClipsLoading = false
         }
     }
+
+    private fun selectedLanguages(): List<String>? =
+        _selectedFilterLanguages.value.takeIf { it.isNotEmpty() }?.toList()
 }

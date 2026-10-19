@@ -3,23 +3,26 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
 @file:Suppress("DEPRECATION")
 @file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 
 package com.gallbladderz.openkick.features.player
 
+
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.animateTo
@@ -64,19 +67,29 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.gallbladderz.openkick.MainActivity
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.datastore.ChatSettings
+import com.gallbladderz.openkick.core.datastore.SettingsRepository
+import com.gallbladderz.openkick.core.domain.chat.ChatEmoteSet
+import com.gallbladderz.openkick.core.domain.chat.ChatMessage
+import com.gallbladderz.openkick.core.domain.model.ChannelLink
+import com.gallbladderz.openkick.core.player.PlaybackService
+import com.gallbladderz.openkick.core.player.PlayerExpandedState
+import com.gallbladderz.openkick.core.player.VideoQuality
+import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
 import com.gallbladderz.openkick.core.ui.utils.findActivity
+import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
 import com.gallbladderz.openkick.features.player.components.PlayerContent
 import com.gallbladderz.openkick.features.player.components.PlayerTabs
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
 import com.gallbladderz.openkick.features.player.components.StreamerInfoOverlay
-import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
-import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
-import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.features.player.models.ChatMessage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun PlayerRoute(
@@ -89,6 +102,9 @@ fun PlayerRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
+    val chatSendState by viewModel.chatSendState.collectAsStateWithLifecycle()
+    val chatEmoteSets by viewModel.chatEmoteSets.collectAsStateWithLifecycle()
+    val chatMode by viewModel.chatMode.collectAsStateWithLifecycle()
     val channelLinks by viewModel.channelLinks.collectAsStateWithLifecycle()
     val isFollowed by viewModel.isStreamerFollowed(streamerName)
         .collectAsStateWithLifecycle(initialValue = false)
@@ -98,11 +114,41 @@ fun PlayerRoute(
     val availableQualities by viewModel.availableQualities.collectAsStateWithLifecycle()
     val selectedQuality by viewModel.selectedQuality.collectAsStateWithLifecycle()
 
+    val isAuthenticated by viewModel.isAuthenticated.collectAsStateWithLifecycle()
+    val settingsRepository: SettingsRepository = koinInject()
+    val chatSettings by settingsRepository.chatSettingsFlow.collectAsStateWithLifecycle(
+        initialValue = ChatSettings(),
+        lifecycle = LocalLifecycleOwner.current.lifecycle
+    )
+    val settingsScope = rememberCoroutineScope()
+    val settingsWriteMutex = remember { Mutex() }
+    var displayedChatSettings by remember { mutableStateOf(chatSettings) }
+
+    LaunchedEffect(chatSettings) { displayedChatSettings = chatSettings }
+
+    val closePlayer = {
+        viewModel.playerManager.release()
+        viewModel.disconnectChat()
+        onBackClick()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.playerManager.release()
+            viewModel.disconnectChat()
+        }
+    }
+
     PlayerScreen(
         streamerName = streamerName,
         uiState = uiState,
         dragState = dragState,
         chatMessages = chatMessages,
+        chatSendState = chatSendState,
+        chatEmoteSets = chatEmoteSets,
+        chatMode = chatMode,
+        isAuthenticated = isAuthenticated,
+        chatSettings = displayedChatSettings,
         channelLinks = channelLinks,
         isFollowed = isFollowed,
         playWhenReady = playWhenReady,
@@ -121,10 +167,19 @@ fun PlayerRoute(
         },
         onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
         onSetVideoQuality = { viewModel.setVideoQuality(it) },
-        onBackClick = onBackClick,
+        onBackClick = closePlayer,
         onAvatarClick = onAvatarClick,
         onCategoryClick = { slug -> onCategoryClick(slug) },
-        onSeekToLiveEdge = { viewModel.playerManager.seekToLiveEdge() }
+        onSeekToLiveEdge = { viewModel.playerManager.seekToLiveEdge() },
+        onSendChatMessage = { content, replyTo -> viewModel.sendChatMessage(content, replyTo) },
+        onChatSettingsChange = { updated ->
+            displayedChatSettings = updated
+            settingsScope.launch {
+                settingsWriteMutex.withLock {
+                    settingsRepository.setChatSettings(updated)
+                }
+            }
+        }
     )
 }
 
@@ -135,7 +190,12 @@ fun PlayerScreen(
     uiState: PlayerUiState,
     dragState: AnchoredDraggableState<PlayerExpandedState>,
     chatMessages: List<ChatMessage>,
+    chatSendState: ChatSendState,
+    chatEmoteSets: List<ChatEmoteSet> = emptyList(),
+    chatMode: com.gallbladderz.openkick.core.domain.chat.ChatMode = com.gallbladderz.openkick.core.domain.chat.ChatMode(),
+    isAuthenticated: Boolean,
     channelLinks: List<ChannelLink>,
+    chatSettings: ChatSettings = ChatSettings(),
     isFollowed: Boolean,
     playWhenReady: Boolean,
     playbackState: Int,
@@ -153,9 +213,13 @@ fun PlayerScreen(
     onBackClick: () -> Unit,
     onAvatarClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
-    onSeekToLiveEdge: () -> Unit = {}
+    onSeekToLiveEdge: () -> Unit = {},
+    onSendChatMessage: (String, ChatMessage?) -> Unit = { _, _ -> },
+    onChatSettingsChange: (ChatSettings) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val backgroundAudioTitle = stringResource(R.string.pip_background_audio_title)
+    val backgroundAudioDescription = stringResource(R.string.pip_background_audio_desc)
     val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
 
@@ -177,7 +241,10 @@ fun PlayerScreen(
     }
 
     var showControls by remember { mutableStateOf(false) }
+    var isChatExpanded by remember { mutableStateOf(false) }
+    var playerInteractionTick by remember { mutableIntStateOf(0) }
     var showSettingsSheet by remember { mutableStateOf(false) }
+    var showChatSettingsSheet by remember { mutableStateOf(false) }
 
     val deviceOrientation = rememberDeviceOrientation()
     var isFullscreen by remember {
@@ -216,40 +283,36 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    DisposableEffect(context) {
         val sessionToken = SessionToken(
             context,
             ComponentName(context, PlaybackService::class.java)
         )
-        MediaController.Builder(context, sessionToken).buildAsync()
-    }
-
-    val ACTION_BACKGROUND_AUDIO = "com.gallbladderz.openkick.ACTION_BACKGROUND_AUDIO"
-    DisposableEffect(context) {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: android.content.Context?, intent: Intent?) {
-                if (intent?.action == ACTION_BACKGROUND_AUDIO) {
-                    val activity = context.findActivity()
-                    activity?.moveTaskToBack(true)
-                }
+        val future = MediaController.Builder(context, sessionToken).buildAsync()
+        var controller: MediaController? = null
+        var disposed = false
+        future.addListener({
+            val builtController = runCatching { future.get() }.getOrNull()
+            if (disposed) {
+                builtController?.release()
+            } else {
+                controller = builtController
             }
-        }
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            IntentFilter(ACTION_BACKGROUND_AUDIO),
-            ContextCompat.RECEIVER_EXPORTED
-        )
+        }, ContextCompat.getMainExecutor(context))
+
         onDispose {
-            context.unregisterReceiver(receiver)
+            disposed = true
+            controller?.release()
+            if (!future.isDone) future.cancel(false)
         }
     }
 
     LaunchedEffect(uiState, playWhenReady, videoViewBounds) {
         val activity = context.findActivity()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val backgroundAudioIntent = Intent(ACTION_BACKGROUND_AUDIO)
-            val pendingIntent = PendingIntent.getBroadcast(
+            val backgroundAudioIntent = Intent(context, MainActivity::class.java)
+                .setAction(PlaybackService.ACTION_PIP_AUDIO_ONLY)
+            val pendingIntent = PendingIntent.getActivity(
                 context,
                 0,
                 backgroundAudioIntent,
@@ -258,8 +321,8 @@ fun PlayerScreen(
 
             val remoteAction = RemoteAction(
                 Icon.createWithResource(context, R.drawable.ic_headphones),
-                "Background Audio",
-                "Play audio in background",
+                backgroundAudioTitle,
+                backgroundAudioDescription,
                 pendingIntent
             )
 
@@ -285,24 +348,33 @@ fun PlayerScreen(
         }
     }
 
+    LaunchedEffect(playWhenReady, isFullscreen, isInPipMode, fraction, playerInteractionTick) {
+        if (!playWhenReady || isFullscreen || isInPipMode || fraction > 0.1f) {
+            isChatExpanded = false
+            return@LaunchedEffect
+        }
+
+        delay(3_000)
+        isChatExpanded = true
+    }
+
     LaunchedEffect(playWhenReady, playbackState, player) {
-        while (true) {
-            player?.let {
-                if (it.isCurrentMediaItemLive) {
-                    val liveOffset = it.currentLiveOffset
-                    if (liveOffset != androidx.media3.common.C.TIME_UNSET) {
-                        if (baselineOffset == -1L || liveOffset < baselineOffset) {
-                            baselineOffset = liveOffset
-                        }
-                        if (playbackState == Player.STATE_READY && !playWhenReady) {
-                            hasFallenBehind = true
-                        }
-                        isAtLiveEdge =
-                            playWhenReady && !hasFallenBehind && (liveOffset <= baselineOffset + 4000L)
+        while (player != null) {
+            val currentPlayer = player ?: break
+            if (currentPlayer.isCurrentMediaItemLive) {
+                val liveOffset = currentPlayer.currentLiveOffset
+                if (liveOffset != androidx.media3.common.C.TIME_UNSET) {
+                    if (baselineOffset == -1L || liveOffset < baselineOffset) {
+                        baselineOffset = liveOffset
                     }
-                } else {
-                    isAtLiveEdge = true
+                    if (playbackState == Player.STATE_READY && !playWhenReady) {
+                        hasFallenBehind = true
+                    }
+                    isAtLiveEdge =
+                        playWhenReady && !hasFallenBehind && (liveOffset <= baselineOffset + 4000L)
                 }
+            } else {
+                isAtLiveEdge = true
             }
             delay(500)
         }
@@ -316,6 +388,7 @@ fun PlayerScreen(
                         isFullscreen = true
                     }
                 }
+
                 DeviceOrientation.PORTRAIT -> isFullscreen = false
                 DeviceOrientation.UNKNOWN -> {}
             }
@@ -360,6 +433,9 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(streamerName) {
+        baselineOffset = -1L
+        hasFallenBehind = false
+        isAtLiveEdge = true
         onLoadStreamInfo(streamerName)
         onLoadChannelLinks(streamerName)
     }
@@ -386,6 +462,7 @@ fun PlayerScreen(
         Box(modifier = Modifier.let { if (isFullscreen || isInPipMode) it.weight(1f) else it }) {
             Column {
                 PlayerContent(
+                    streamerName = streamerName,
                     uiState = uiState,
                     player = player,
                     fraction = fraction,
@@ -393,6 +470,11 @@ fun PlayerScreen(
                     isFullscreen = isFullscreen,
                     showControls = showControls,
                     onShowControlsChange = { showControls = it },
+                    isChatExpanded = isChatExpanded,
+                    onPlayerInteraction = {
+                        isChatExpanded = false
+                        playerInteractionTick++
+                    },
                     playWhenReady = playWhenReady,
                     playbackState = playbackState,
                     isAtLiveEdge = isAtLiveEdge,
@@ -412,25 +494,39 @@ fun PlayerScreen(
                     onUpdateVideoBounds = { videoViewBounds = it },
                     dragState = dragState,
                     coroutineScope = coroutineScope,
-                    chatMessages = chatMessages
+                    chatMessages = chatMessages,
+                    onSendMessage = onSendChatMessage,
+                    chatSendState = chatSendState,
+                    chatEmoteSets = chatEmoteSets,
+                    chatMode = chatMode,
+                    isAuthenticated = isAuthenticated,
+                    chatSettings = chatSettings,
+                    onChatSettingsClick = { showChatSettingsSheet = true },
+                    onProfileClick = onAvatarClick
                 )
 
                 if (!isFullscreen && !isInPipMode) {
-                    if (uiState is PlayerUiState.Playing && fraction <= 0.5f) {
-                        StreamerInfoOverlay(
-                            streamerName = streamerName,
-                            title = uiState.title,
-                            avatarUrl = uiState.avatarUrl,
-                            viewers = uiState.viewers,
-                            categoryName = uiState.categoryName ?: "",
-                            categorySlug = uiState.categorySlug,
-                            isVerified = uiState.isVerified,
-                            isFollowed = isFollowed,
-                            fraction = fraction,
-                            onToggleFollow = { onToggleFollow(streamerName, isFollowed) },
-                            onAvatarClick = { onAvatarClick(streamerName) },
-                            onCategoryClick = { slug -> onCategoryClick(slug) }
-                        )
+                    AnimatedVisibility(
+                        visible = !isChatExpanded && uiState is PlayerUiState.Playing && fraction <= 0.5f,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        if (uiState is PlayerUiState.Playing) {
+                            StreamerInfoOverlay(
+                                streamerName = streamerName,
+                                title = uiState.title,
+                                avatarUrl = uiState.avatarUrl,
+                                viewers = uiState.viewers,
+                                categoryName = uiState.categoryName ?: "",
+                                categorySlug = uiState.categorySlug,
+                                isVerified = uiState.isVerified,
+                                isFollowed = isFollowed,
+                                fraction = fraction,
+                                onToggleFollow = { onToggleFollow(streamerName, isFollowed) },
+                                onAvatarClick = { onAvatarClick(streamerName) },
+                                onCategoryClick = { slug -> onCategoryClick(slug) }
+                            )
+                        }
                     }
                 }
             }
@@ -451,6 +547,14 @@ fun PlayerScreen(
                     ),
                     chatMessages = chatMessages,
                     channelLinks = channelLinks,
+                    onSendMessage = onSendChatMessage,
+                    chatSendState = chatSendState,
+                    chatEmoteSets = chatEmoteSets,
+                    chatMode = chatMode,
+                    isAuthenticated = isAuthenticated,
+                    chatSettings = chatSettings,
+                    onChatSettingsClick = { showChatSettingsSheet = true },
+                    onProfileClick = onAvatarClick,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -465,6 +569,14 @@ fun PlayerScreen(
                     showSettingsSheet = false
                 },
                 onDismiss = { showSettingsSheet = false }
+            )
+        }
+
+        if (showChatSettingsSheet) {
+            com.gallbladderz.openkick.features.player.components.ChatSettingsSheet(
+                settings = chatSettings,
+                onSettingsChange = onChatSettingsChange,
+                onDismiss = { showChatSettingsSheet = false }
             )
         }
     }

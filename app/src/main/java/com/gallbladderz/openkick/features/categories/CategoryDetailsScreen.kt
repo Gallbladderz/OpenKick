@@ -3,9 +3,13 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.categories
 
+
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,14 +44,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.ui.components.StreamFilterBottomSheet
 import com.gallbladderz.openkick.features.categories.components.CategoryClipsList
 import com.gallbladderz.openkick.features.categories.components.CategoryHeader
 import com.gallbladderz.openkick.features.categories.components.CategoryStreamsGrid
 import com.gallbladderz.openkick.features.categories.components.CategoryTabs
-import com.gallbladderz.openkick.features.home.ClipUiModel
-import com.gallbladderz.openkick.ui.components.StreamFilterBottomSheet
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +63,7 @@ fun CategoryDetailsRoute(
     viewModel: CategoryDetailsViewModel = koinViewModel(),
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit = {},
+    onProfileClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -64,7 +71,14 @@ fun CategoryDetailsRoute(
     val langs by viewModel.selectedFilterLanguages.collectAsStateWithLifecycle()
 
     val followedSlugs by viewModel.followedSlugs.collectAsStateWithLifecycle()
-    val isFollowed = followedSlugs.contains(slug)
+    val isFollowed = followedSlugs.contains(slug.lowercase())
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshFollowedCategories() }
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.followErrors.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -79,6 +93,7 @@ fun CategoryDetailsRoute(
         onLoadMoreClips = { viewModel.loadMoreClips() },
         onBackClick = onBackClick,
         onStreamClick = onStreamClick,
+        onProfileClick = onProfileClick,
         onClipClick = onClipClick,
         onFilterClick = { showFilterSheet = true }
     )
@@ -109,6 +124,7 @@ fun CategoryDetailsScreen(
     onLoadMoreClips: () -> Unit,
     onBackClick: () -> Unit,
     onStreamClick: (String) -> Unit = {},
+    onProfileClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit,
     onFilterClick: () -> Unit = {}
 ) {
@@ -182,7 +198,7 @@ fun CategoryDetailsScreen(
                     }) {
                         Icon(
                             Icons.Default.Share,
-                            contentDescription = "Share"
+                            contentDescription = stringResource(R.string.share_desc)
                         )
                     }
                 }
@@ -236,14 +252,15 @@ fun CategoryDetailsScreen(
                                 streams = currentState.streams,
                                 viewers = currentState.viewers,
                                 gridState = gridState,
-                                onStreamClick = onStreamClick
+                                onStreamClick = onStreamClick,
+                                onProfileClick = onProfileClick
                             )
                         } else {
                             CategoryClipsList(
                                 clips = currentState.clips,
                                 listState = listState,
                                 onClipClick = onClipClick,
-                                onProfileClick = onStreamClick
+                                onProfileClick = onProfileClick
                             )
                         }
                     }

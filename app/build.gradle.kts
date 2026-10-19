@@ -1,8 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2026 Gallbladderz
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.application)
@@ -24,9 +19,12 @@ android {
         applicationId = "com.gallbladderz.openkick"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "BFF_BASE_URL", "\"${providers.gradleProperty("bffBaseUrl").getOrElse("https://kick.com/")}\"")
+        buildConfigField("String", "KICK_CLIENT_ID", "\"${providers.gradleProperty("kickClientId").getOrElse("")}\"")
+        buildConfigField("String", "KICK_REDIRECT_URI", "\"openkick://oauth/callback\"")
     }
     buildTypes {
         release {
@@ -47,6 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.10"
@@ -68,12 +67,15 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
+    implementation("androidx.compose.animation:animation")
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.exoplayer.hls)
@@ -93,4 +95,5 @@ dependencies {
     implementation(libs.catppuccin.android.library.compose)
     implementation(libs.catppuccin.android.library.palette)
     implementation(libs.aboutlibraries.compose)
+    implementation(libs.androidx.browser)
 }

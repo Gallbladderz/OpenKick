@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.categories.components
+
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,8 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.home.ClipUiModel
-import com.gallbladderz.openkick.ui.components.ClipCard
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.ui.components.ClipCard
 
 @Composable
 fun CategoryClipsList(

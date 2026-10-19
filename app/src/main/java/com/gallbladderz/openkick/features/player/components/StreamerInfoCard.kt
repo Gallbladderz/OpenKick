@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.components
+
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -117,7 +120,7 @@ fun StreamerInfoCard(
                     if (isVerified) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Verified",
+                            contentDescription = stringResource(R.string.verified_desc),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -167,7 +170,9 @@ fun StreamerInfoCard(
                     )
                 ) {
                     Text(
-                        text = if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(R.string.follow_action),
+                        text = if (isFollowed) stringResource(R.string.unfollow_action) else stringResource(
+                            R.string.follow_action
+                        ),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.labelMedium
                     )

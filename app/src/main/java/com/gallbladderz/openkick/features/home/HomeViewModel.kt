@@ -5,11 +5,16 @@
 
 package com.gallbladderz.openkick.features.home
 
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 import com.gallbladderz.openkick.core.ui.UiText
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +48,6 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
@@ -53,8 +57,8 @@ class HomeViewModel(
     private var isClipsLoading = false
     private var isStreamsEnd = false
     private var isClipsEnd = false
+    private var homeLoadJob: Job? = null
 
-    private var currentLanguages: Set<String>? = null
     private var currentHideSlots: Boolean = false
     private var currentHidePools: Boolean = false
     private var currentHideCrypto: Boolean = false
@@ -83,7 +87,6 @@ class HomeViewModel(
         }
     }
 
-
     private fun filterBanned(streams: List<StreamUiModel>): List<StreamUiModel> {
         if (!currentHideSlots && !currentHidePools && !currentHideCrypto) return streams
 
@@ -97,16 +100,15 @@ class HomeViewModel(
         }
     }
 
-
     init {
         viewModelScope.launch {
-            settingsRepository.homeGridModeFlow.collectLatest { isGrid ->
-                _isGridMode.value = isGrid
+            settingsRepository.homeGridModeFlow.collectLatest { gridMode ->
+                _isGridMode.value = gridMode
             }
         }
         viewModelScope.launch {
-            settingsRepository.homeStreamSortFlow.collectLatest { newSort ->
-                _sort.value = newSort
+            settingsRepository.homeStreamSortFlow.collectLatest { storedSort ->
+                _sort.value = storedSort
             }
         }
         viewModelScope.launch {
@@ -119,7 +121,6 @@ class HomeViewModel(
             ) { langs, hideSlots, hidePools, hideCrypto ->
                 CombinedState(langs, hideSlots, hidePools, hideCrypto)
             }.distinctUntilChanged().collectLatest { state ->
-                currentLanguages = state.langs
                 if (_selectedFilterLanguages.value.isEmpty()) {
                     _selectedFilterLanguages.update { state.langs }
                 }
@@ -132,6 +133,7 @@ class HomeViewModel(
     }
 
     fun fetchHomeData() {
+        homeLoadJob?.cancel()
         val langs = _selectedFilterLanguages.value
 
         _uiState.update { HomeUiState.Loading }
@@ -140,7 +142,7 @@ class HomeViewModel(
         isStreamsEnd = false
         isClipsEnd = false
 
-        viewModelScope.launch {
+        homeLoadJob = viewModelScope.launch {
             try {
                 val streamsDeferred = async {
                     repository.fetchLivestreams(
@@ -178,6 +180,8 @@ class HomeViewModel(
                         )
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     HomeUiState.Error(e.message?.let { UiText.DynamicString(it) }
@@ -191,9 +195,10 @@ class HomeViewModel(
         val langs = _selectedFilterLanguages.value
         if (_isRefreshing.value) return
 
+        homeLoadJob?.cancel()
         _isRefreshing.update { true }
 
-        viewModelScope.launch {
+        homeLoadJob = viewModelScope.launch {
             try {
                 val streamsDeferred = async {
                     repository.fetchLivestreams(
@@ -250,7 +255,6 @@ class HomeViewModel(
             if (result.isSuccess) {
                 val (newStreams, nextCursor) = result.getOrThrow()
                 streamsCursor = nextCursor
-
 
                 val filteredNewStreams = filterBanned(newStreams)
 

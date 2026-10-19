@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile
+
 
 import android.os.Build
 import androidx.compose.foundation.clickable
@@ -48,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.datastore.AppAccent
 import com.gallbladderz.openkick.core.datastore.AppTheme
+import com.gallbladderz.openkick.core.ui.theme.catppuccinPaletteFor
 import com.shifthackz.catppuccin.palette.Catppuccin
 import org.koin.androidx.compose.koinViewModel
 
@@ -156,7 +160,7 @@ fun ThemeSettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text(
-                    text = "Catppuccin",
+                    text = stringResource(R.string.theme_catppuccin),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = if (isDynamicColorsActive) disabledAlpha else 1f),
                     fontWeight = FontWeight.Bold,
@@ -175,10 +179,10 @@ fun ThemeSettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val catppuccinThemes = listOf(
-                        AppTheme.CATPPUCCIN_LATTE to ("Latte" to Catppuccin.Latte.Base),
-                        AppTheme.CATPPUCCIN_FRAPPE to ("Frappe" to Catppuccin.Frappe.Base),
-                        AppTheme.CATPPUCCIN_MACCHIATO to ("Macchiato" to Catppuccin.Macchiato.Base),
-                        AppTheme.CATPPUCCIN_MOCHA to ("Mocha" to Catppuccin.Mocha.Base)
+                        AppTheme.CATPPUCCIN_LATTE to (stringResource(R.string.theme_latte) to Catppuccin.Latte.Base),
+                        AppTheme.CATPPUCCIN_FRAPPE to (stringResource(R.string.theme_frappe) to Catppuccin.Frappe.Base),
+                        AppTheme.CATPPUCCIN_MACCHIATO to (stringResource(R.string.theme_macchiato) to Catppuccin.Macchiato.Base),
+                        AppTheme.CATPPUCCIN_MOCHA to (stringResource(R.string.theme_mocha) to Catppuccin.Mocha.Base)
                     )
 
                     catppuccinThemes.forEach { (theme, info) ->
@@ -210,7 +214,7 @@ fun ThemeSettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
-                        text = "Accent Color",
+                        text = stringResource(R.string.accent_color),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = if (isDynamicColorsActive) disabledAlpha else 1f),
                         fontWeight = FontWeight.Bold,
@@ -228,23 +232,22 @@ fun ThemeSettingsScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val isDark = appTheme != AppTheme.CATPPUCCIN_LATTE
-                        val palette = if (isDark) Catppuccin.Mocha else Catppuccin.Latte
+                        val palette = catppuccinPaletteFor(appTheme)
                         val accents = listOf(
-                            AppAccent.ROSEWATER to ("Rosewater" to palette.Rosewater),
-                            AppAccent.FLAMINGO to ("Flamingo" to palette.Flamingo),
-                            AppAccent.PINK to ("Pink" to palette.Pink),
-                            AppAccent.MAUVE to ("Mauve" to palette.Mauve),
-                            AppAccent.RED to ("Red" to palette.Red),
-                            AppAccent.MAROON to ("Maroon" to palette.Maroon),
-                            AppAccent.PEACH to ("Peach" to palette.Peach),
-                            AppAccent.YELLOW to ("Yellow" to palette.Yellow),
-                            AppAccent.GREEN to ("Green" to palette.Green),
-                            AppAccent.TEAL to ("Teal" to palette.Teal),
-                            AppAccent.SKY to ("Sky" to palette.Sky),
-                            AppAccent.SAPPHIRE to ("Sapphire" to palette.Sapphire),
-                            AppAccent.BLUE to ("Blue" to palette.Blue),
-                            AppAccent.LAVENDER to ("Lavender" to palette.Lavender)
+                            AppAccent.ROSEWATER to (stringResource(R.string.accent_rosewater) to palette.Rosewater),
+                            AppAccent.FLAMINGO to (stringResource(R.string.accent_flamingo) to palette.Flamingo),
+                            AppAccent.PINK to (stringResource(R.string.accent_pink) to palette.Pink),
+                            AppAccent.MAUVE to (stringResource(R.string.accent_mauve) to palette.Mauve),
+                            AppAccent.RED to (stringResource(R.string.accent_red) to palette.Red),
+                            AppAccent.MAROON to (stringResource(R.string.accent_maroon) to palette.Maroon),
+                            AppAccent.PEACH to (stringResource(R.string.accent_peach) to palette.Peach),
+                            AppAccent.YELLOW to (stringResource(R.string.accent_yellow) to palette.Yellow),
+                            AppAccent.GREEN to (stringResource(R.string.accent_green) to palette.Green),
+                            AppAccent.TEAL to (stringResource(R.string.accent_teal) to palette.Teal),
+                            AppAccent.SKY to (stringResource(R.string.accent_sky) to palette.Sky),
+                            AppAccent.SAPPHIRE to (stringResource(R.string.accent_sapphire) to palette.Sapphire),
+                            AppAccent.BLUE to (stringResource(R.string.accent_blue) to palette.Blue),
+                            AppAccent.LAVENDER to (stringResource(R.string.accent_lavender) to palette.Lavender)
                         )
 
                         accents.forEach { (accent, info) ->

@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.components
+
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.player.models.ChannelLink
+import com.gallbladderz.openkick.core.domain.model.ChannelLink
 
 @Composable
 fun InfoTabContent(links: List<ChannelLink>) {

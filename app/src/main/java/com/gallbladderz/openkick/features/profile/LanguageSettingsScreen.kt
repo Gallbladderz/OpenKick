@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile
+
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
@@ -80,19 +83,18 @@ fun LanguageSettingsScreen(
     val configuration = LocalConfiguration.current
     val appLanguage = configuration.locales[0].language
 
-
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showLanguageSheet by remember { mutableStateOf(false) }
 
     val availableStreamLanguages = mapOf(
         "ru" to stringResource(R.string.russian_lang),
-        "en" to "English",
-        "es" to "Español",
-        "pt" to "Português",
-        "de" to "Deutsch",
-        "tr" to "Türkçe",
-        "fr" to "Français",
-        "or" to "Odia"
+        "en" to stringResource(R.string.english_lang),
+        "es" to stringResource(R.string.language_spanish),
+        "pt" to stringResource(R.string.language_portuguese),
+        "de" to stringResource(R.string.language_german),
+        "tr" to stringResource(R.string.language_turkish),
+        "fr" to stringResource(R.string.language_french),
+        "or" to stringResource(R.string.language_odia)
     )
 
     Scaffold(
@@ -135,7 +137,7 @@ fun LanguageSettingsScreen(
                     supportingContent = {
                         val currentLangText = when (appLanguage) {
                             "ru" -> stringResource(R.string.russian_lang)
-                            "es" -> "Español"
+                            "es" -> stringResource(R.string.language_spanish_native)
                             else -> stringResource(R.string.english_lang)
                         }
                         Text(currentLangText)
@@ -151,7 +153,6 @@ fun LanguageSettingsScreen(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
             }
-
 
             item {
                 Text(
@@ -195,7 +196,6 @@ fun LanguageSettingsScreen(
         }
     }
 
-
     if (showLanguageSheet) {
         ModalBottomSheet(
             onDismissRequest = { showLanguageSheet = false },
@@ -224,7 +224,7 @@ fun LanguageSettingsScreen(
                 )
 
                 LanguageOptionItem(
-                    title = "English (English)",
+                    title = stringResource(R.string.language_english_label),
                     isSelected = appLanguage == "en",
                     onClick = {
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
@@ -233,7 +233,7 @@ fun LanguageSettingsScreen(
                 )
 
                 LanguageOptionItem(
-                    title = "Español",
+                    title = stringResource(R.string.language_spanish_native),
                     isSelected = appLanguage == "es",
                     onClick = {
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("es"))
@@ -244,7 +244,6 @@ fun LanguageSettingsScreen(
         }
     }
 }
-
 
 @Composable
 fun LanguageOptionItem(

@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile
+
 
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -40,7 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.home.ClipUiModel
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
 import com.gallbladderz.openkick.features.profile.components.ClipsTab
 import com.gallbladderz.openkick.features.profile.components.DescriptionTab
 import com.gallbladderz.openkick.features.profile.components.ProfileHeader

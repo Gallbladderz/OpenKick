@@ -3,11 +3,14 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.core.datastore
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -23,7 +26,6 @@ class SettingsRepository(private val context: Context) {
         private val HIDE_SLOTS_KEY = booleanPreferencesKey("hide_slots")
         private val HIDE_POOLS_KEY = booleanPreferencesKey("hide_pools")
         private val HIDE_CRYPTO_KEY = booleanPreferencesKey("hide_crypto")
-        private val FOLLOWED_CHANNELS = stringSetPreferencesKey("followed_channels")
         private val SELECTED_LANGUAGES = stringSetPreferencesKey("selected_languages")
         private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val APP_THEME = stringPreferencesKey("app_theme")
@@ -31,6 +33,31 @@ class SettingsRepository(private val context: Context) {
         private val USE_DYNAMIC_COLORS = booleanPreferencesKey("use_dynamic_colors")
         private val HOME_GRID_MODE = booleanPreferencesKey("home_grid_mode")
         private val HOME_STREAM_SORT = stringPreferencesKey("home_stream_sort")
+        private val CHAT_TEXT_SCALE = intPreferencesKey("chat_text_scale_percent")
+        private val CHAT_GLOBAL_BADGES = booleanPreferencesKey("chat_global_badges")
+        private val CHAT_CHANNEL_BADGES = booleanPreferencesKey("chat_channel_badges")
+        private val CHAT_OFFICIAL_NAME_COLOR = booleanPreferencesKey("chat_official_name_color")
+        private val CHAT_ANIMATED_EMOTES = booleanPreferencesKey("chat_animated_emotes")
+    }
+
+    val chatSettingsFlow: Flow<ChatSettings> = context.dataStore.data.map { preferences ->
+        ChatSettings(
+            textScale = ((preferences[CHAT_TEXT_SCALE] ?: 100) / 100f).coerceIn(0.85f, 1.3f),
+            showGlobalBadges = preferences[CHAT_GLOBAL_BADGES] ?: true,
+            showChannelBadges = preferences[CHAT_CHANNEL_BADGES] ?: true,
+            useOfficialNameColor = preferences[CHAT_OFFICIAL_NAME_COLOR] ?: true,
+            animatedEmotes = preferences[CHAT_ANIMATED_EMOTES] ?: true
+        )
+    }
+
+    suspend fun setChatSettings(settings: ChatSettings) {
+        context.dataStore.edit {
+            it[CHAT_TEXT_SCALE] = (settings.textScale * 100).toInt().coerceIn(85, 130)
+            it[CHAT_GLOBAL_BADGES] = settings.showGlobalBadges
+            it[CHAT_CHANNEL_BADGES] = settings.showChannelBadges
+            it[CHAT_OFFICIAL_NAME_COLOR] = settings.useOfficialNameColor
+            it[CHAT_ANIMATED_EMOTES] = settings.animatedEmotes
+        }
     }
 
     val homeGridModeFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -92,7 +119,6 @@ class SettingsRepository(private val context: Context) {
         preferences[NOTIFICATIONS_ENABLED] ?: true
     }
 
-
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[NOTIFICATIONS_ENABLED] = enabled
@@ -126,22 +152,6 @@ class SettingsRepository(private val context: Context) {
     suspend fun setHideCrypto(hide: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[HIDE_CRYPTO_KEY] = hide
-        }
-    }
-
-    val followedChannelsFlow: Flow<Set<String>> = context.dataStore.data.map { preferences ->
-        preferences[FOLLOWED_CHANNELS] ?: emptySet()
-    }
-
-    suspend fun toggleFollow(slug: String) {
-        context.dataStore.edit { preferences ->
-            val current = preferences[FOLLOWED_CHANNELS] ?: emptySet()
-
-            if (current.contains(slug)) {
-                preferences[FOLLOWED_CHANNELS] = current - slug
-            } else {
-                preferences[FOLLOWED_CHANNELS] = current + slug
-            }
         }
     }
 

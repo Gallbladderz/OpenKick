@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -12,10 +14,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun OpenKickNavHost(navController: NavHostController = rememberNavController()) {
+fun OpenKickNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,

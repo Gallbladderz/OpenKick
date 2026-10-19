@@ -5,6 +5,7 @@
 
 package com.gallbladderz.openkick.features.following
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -85,8 +86,8 @@ fun AllFollowsScreen(
     val kickGradient = remember {
         Brush.linearGradient(
             colors = listOf(
-                com.gallbladderz.openkick.ui.theme.KickGradientStart,
-                com.gallbladderz.openkick.ui.theme.KickGradientEnd
+                com.gallbladderz.openkick.core.ui.theme.KickGradientStart,
+                com.gallbladderz.openkick.core.ui.theme.KickGradientEnd
             )
         )
     }
@@ -161,7 +162,6 @@ fun AllFollowsScreen(
 
                                 Spacer(modifier = Modifier.width(16.dp))
 
-
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = streamer.username,
@@ -178,7 +178,6 @@ fun AllFollowsScreen(
                                         )
                                     }
                                 }
-
 
                                 Button(
                                     onClick = { onUnfollowStreamer(streamer.slug) },

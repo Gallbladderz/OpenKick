@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
 @file:Suppress("DEPRECATION")
 @file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 
 package com.gallbladderz.openkick.features.player
+
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -55,16 +57,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.C
 import androidx.media3.common.Format
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.core.ui.utils.findActivity
-import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
+import com.gallbladderz.openkick.core.player.LocalGlobalPlayerController
+import com.gallbladderz.openkick.core.player.VideoQuality
 import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
+import com.gallbladderz.openkick.core.ui.utils.findActivity
 import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
+import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
 import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
 import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
@@ -79,6 +82,12 @@ fun ClipPlayerRoute(
     viewModel: PlayerViewModel = koinViewModel(),
     clipPlayerViewModel: ClipPlayerViewModel = koinViewModel()
 ) {
+    val globalPlayerController = LocalGlobalPlayerController.current
+
+    LaunchedEffect(Unit) {
+        globalPlayerController.hidePlayer()
+    }
+
     LaunchedEffect(clipId) {
         clipPlayerViewModel.loadClip(clipId)
     }
@@ -86,12 +95,20 @@ fun ClipPlayerRoute(
     val activeClip by clipPlayerViewModel.activeClip.collectAsStateWithLifecycle()
     val fetchedAvatarUrl by clipPlayerViewModel.avatarUrl.collectAsStateWithLifecycle()
 
+    DisposableEffect(clipId) {
+        onDispose { clipPlayerViewModel.stopAndRelease() }
+    }
+
+    val closeClip = {
+        clipPlayerViewModel.stopAndRelease()
+        onBackClick()
+    }
+
     val safeStreamerName = activeClip?.streamerName ?: ""
     val isFollowed by viewModel.isStreamerFollowed(safeStreamerName)
         .collectAsStateWithLifecycle(initialValue = false)
 
-    if (activeClip != null) {
-        val clip = activeClip!!
+    activeClip?.let { clip ->
         ClipPlayerScreen(
             clipId = clipId,
             title = clip.title,
@@ -104,14 +121,14 @@ fun ClipPlayerRoute(
             exoPlayer = clipPlayerViewModel.player,
             onToggleFollow = { viewModel.toggleFollow(clip.streamerName, isFollowed) },
             onLoadAvatar = { },
-            onBackClick = onBackClick,
+            onBackClick = closeClip,
             onStreamerClick = onStreamerClick
         )
-    } else {
+    } ?: run {
 
         Box(modifier = Modifier.fillMaxSize()) {
             IconButton(
-                onClick = onBackClick,
+                onClick = closeClip,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(8.dp)
@@ -280,10 +297,19 @@ fun ClipPlayerScreen(
     }
 
     DisposableEffect(lifecycleOwner) {
+        var wasPlayingBeforePause = false
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
-                Lifecycle.Event.ON_RESUME -> exoPlayer.play()
+                Lifecycle.Event.ON_PAUSE -> {
+                    wasPlayingBeforePause = exoPlayer.isPlaying
+                    exoPlayer.pause()
+                }
+
+                Lifecycle.Event.ON_RESUME -> {
+                    if (wasPlayingBeforePause) exoPlayer.play()
+                    wasPlayingBeforePause = false
+                }
+
                 else -> {}
             }
         }

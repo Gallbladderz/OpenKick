@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile.components
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,7 +48,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.gallbladderz.openkick.R
@@ -62,8 +64,8 @@ fun ProfileHeader(
     val kickGradient = remember {
         Brush.linearGradient(
             colors = listOf(
-                com.gallbladderz.openkick.ui.theme.KickGradientStart,
-                com.gallbladderz.openkick.ui.theme.KickGradientEnd
+                com.gallbladderz.openkick.core.ui.theme.KickGradientStart,
+                com.gallbladderz.openkick.core.ui.theme.KickGradientEnd
             )
         )
     }
@@ -161,7 +163,7 @@ fun ProfileHeader(
                 if (info.isVerified) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Verified",
+                        contentDescription = stringResource(R.string.verified_desc),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -207,7 +209,6 @@ fun ProfileHeader(
                     style = MaterialTheme.typography.labelLarge
                 )
             }
-
 
         }
 

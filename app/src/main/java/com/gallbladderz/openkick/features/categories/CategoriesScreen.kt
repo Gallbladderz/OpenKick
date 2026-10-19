@@ -3,8 +3,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.categories
 
+
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +50,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -62,6 +67,13 @@ fun CategoriesRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val followedSlugs by viewModel.followedSlugs.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshFollowedCategories() }
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.followErrors.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     CategoriesScreen(
         modifier = modifier,
@@ -111,14 +123,13 @@ fun CategoriesScreen(
 
                     itemsIndexed(uiState.categories, key = { _, it -> it.id }) { index, category ->
 
-
                         if (index == uiState.categories.lastIndex) {
                             LaunchedEffect(category.id) {
                                 onLoadMoreCategories()
                             }
                         }
 
-                        val isFollowed = followedSlugs.contains(category.slug)
+                        val isFollowed = followedSlugs.contains(category.slug.lowercase())
 
                         CategoryCard(
                             category = category,
@@ -237,7 +248,7 @@ fun CategoryCard(
                         .weight(1f, fill = false)
                         .padding(end = if (index == 0 && category.tags.size > 1) 4.dp else 0.dp)
                 ) {
-               Text(
+                    Text(
                         text = tag,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

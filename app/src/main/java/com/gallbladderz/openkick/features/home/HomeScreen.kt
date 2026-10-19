@@ -49,10 +49,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.ui.components.StreamFilterBottomSheet
 import com.gallbladderz.openkick.features.home.components.HomeFilterChipsRow
 import com.gallbladderz.openkick.features.home.components.homeClipsList
 import com.gallbladderz.openkick.features.home.components.homeStreamsList
-import com.gallbladderz.openkick.ui.components.StreamFilterBottomSheet
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,6 +61,7 @@ import org.koin.androidx.compose.koinViewModel
 fun HomeRoute(
     viewModel: HomeViewModel = koinViewModel(),
     onStreamClick: (String) -> Unit = {},
+    onProfileClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit = {},
     onSearchClick: () -> Unit = {}
@@ -81,6 +83,7 @@ fun HomeRoute(
         onLoadMoreClips = { viewModel.loadMoreClips() },
         onFetchHomeData = { viewModel.fetchHomeData() },
         onStreamClick = onStreamClick,
+        onProfileClick = onProfileClick,
         onCategoryClick = onCategoryClick,
         onClipClick = onClipClick,
         onSearchClick = onSearchClick,
@@ -113,6 +116,7 @@ fun HomeScreen(
     onLoadMoreClips: () -> Unit,
     onFetchHomeData: () -> Unit,
     onStreamClick: (String) -> Unit = {},
+    onProfileClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     onClipClick: (ClipUiModel) -> Unit = {},
     onSearchClick: () -> Unit,
@@ -152,7 +156,7 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "OpenKick",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
@@ -181,7 +185,6 @@ fun HomeScreen(
                 onFilterClick = onFilterClick
             )
         }
-
 
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
             isRefreshing = isRefreshing,
@@ -236,14 +239,15 @@ fun HomeScreen(
                                 homeClipsList(
                                     clips = uiState.clips,
                                     onClipClick = onClipClick,
-                                    onProfileClick = onStreamClick
+                                    onProfileClick = onProfileClick
                                 )
                             } else {
                                 homeStreamsList(
                                     streams = uiState.streams,
                                     isGridMode = isGridMode,
                                     liveFilterText = liveFilter,
-                                    onStreamClick = onStreamClick
+                                    onStreamClick = onStreamClick,
+                                    onProfileClick = onProfileClick
                                 )
                             }
                         }

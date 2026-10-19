@@ -3,11 +3,17 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.vod
 
+
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gallbladderz.openkick.features.player.PlayerManager
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
+import com.gallbladderz.openkick.core.player.PlayerManager
 import com.gallbladderz.openkick.features.profile.StreamerProfileRepository
 import com.gallbladderz.openkick.features.profile.VideoUiModel
 import kotlinx.coroutines.async
@@ -23,11 +29,15 @@ sealed class VodPlayerUiState {
     data class Error(val message: String) : VodPlayerUiState()
 }
 
+@UnstableApi
 class VodPlayerViewModel(
     private val videoId: String,
-    val playerManager: PlayerManager,
+    context: Context,
+    dataSourceFactory: DataSource.Factory,
     private val repository: StreamerProfileRepository
 ) : ViewModel() {
+
+    val playerManager = PlayerManager(context, dataSourceFactory)
 
     private val _uiState = MutableStateFlow<VodPlayerUiState>(VodPlayerUiState.Loading)
     val uiState: StateFlow<VodPlayerUiState> = _uiState.asStateFlow()
@@ -60,7 +70,8 @@ class VodPlayerViewModel(
                     videoUrl = url,
                     title = metadata.title,
                     streamerName = metadata.channelUsername,
-                    avatarUrl = ""
+                    avatarUrl = "",
+                    isLive = false
                 )
             } else {
                 val errorMessage = urlResult.exceptionOrNull()?.message

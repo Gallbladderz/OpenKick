@@ -3,11 +3,17 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.search
+
 
 import com.gallbladderz.openkick.core.domain.DomainError
 import com.gallbladderz.openkick.core.domain.toDomainError
-import com.gallbladderz.openkick.core.network.KickApiService
+import com.gallbladderz.openkick.core.network.api.KickApiService
+import com.gallbladderz.openkick.core.network.dto.search.SearchCategoryDto
+import com.gallbladderz.openkick.core.network.dto.search.SearchChannelDto
+import com.gallbladderz.openkick.core.network.dto.search.SearchLivestreamDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

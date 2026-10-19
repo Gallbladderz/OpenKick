@@ -5,9 +5,14 @@
 
 package com.gallbladderz.openkick.features.home
 
+
+import com.gallbladderz.openkick.core.data.mapper.toUiModel
+import com.gallbladderz.openkick.core.data.repository.ClipRepository
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 import com.gallbladderz.openkick.core.domain.toDomainError
-import com.gallbladderz.openkick.core.network.KickApiService
-import com.gallbladderz.openkick.features.player.ClipRepository
+import com.gallbladderz.openkick.core.network.api.KickApiService
+import com.gallbladderz.openkick.core.network.dto.home.HomeLivestreamItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

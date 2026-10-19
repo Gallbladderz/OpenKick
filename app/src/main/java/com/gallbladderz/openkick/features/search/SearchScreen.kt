@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.gallbladderz.openkick.features.search
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

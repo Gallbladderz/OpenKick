@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.notifications
 
 import android.app.NotificationChannel
@@ -18,8 +20,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.gallbladderz.openkick.MainActivity
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.data.local.FollowType
-import com.gallbladderz.openkick.data.local.FollowsDao
+import com.gallbladderz.openkick.core.data.local.FollowType
+import com.gallbladderz.openkick.core.data.local.FollowsDao
 import com.gallbladderz.openkick.features.following.FollowingRepository
 import kotlinx.coroutines.flow.first
 
@@ -47,7 +49,6 @@ class StreamCheckWorker(
                 sendNotification(details.username, details.streamTitle, details.slug)
             }
 
-
             if (details.isLive != entity.isLive) {
                 followsDao.updateLiveStatus(entity.slug, FollowType.STREAMER, details.isLive)
             }
@@ -68,7 +69,6 @@ class StreamCheckWorker(
         val channelId = "openkick_streams"
         val notificationManager = NotificationManagerCompat.from(context)
 
-
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -77,7 +77,6 @@ class StreamCheckWorker(
             )
             notificationManager.createNotificationChannel(channel)
         }
-
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

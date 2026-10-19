@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.models
+
+import com.gallbladderz.openkick.core.domain.chat.ChatMode
 
 data class StreamInfo(
     val playbackUrl: String,
@@ -13,5 +17,7 @@ data class StreamInfo(
     val chatroomId: String?,
     val categoryName: String?,
     val categorySlug: String?,
-    val isVerified: Boolean
+    val isVerified: Boolean,
+    val subscriberBadges: Map<Int, String> = emptyMap(),
+    val chatMode: ChatMode = ChatMode()
 )

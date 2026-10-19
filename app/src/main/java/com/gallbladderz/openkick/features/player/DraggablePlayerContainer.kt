@@ -3,8 +3,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player
 
+
+import android.content.res.Configuration
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -29,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import android.content.res.Configuration
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
@@ -40,6 +43,8 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.core.app.PictureInPictureModeChangedInfo
 import androidx.core.util.Consumer
+import com.gallbladderz.openkick.core.player.GlobalPlayerController
+import com.gallbladderz.openkick.core.player.PlayerExpandedState
 import com.gallbladderz.openkick.core.ui.utils.findActivity
 import kotlin.math.roundToInt
 
@@ -70,7 +75,6 @@ fun DraggablePlayerContainer(
             activity?.removeOnPictureInPictureModeChangedListener(pipListener)
         }
     }
-
 
     val currentPipMode by rememberUpdatedState(isInPipMode)
 
@@ -105,7 +109,6 @@ fun DraggablePlayerContainer(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeightPx = constraints.maxHeight.toFloat()
 
-
         val miniPlayerHeightPx = with(density) { 64.dp.toPx() }
         LaunchedEffect(maxHeightPx, bottomOffsetPx) {
             if (maxHeightPx > 10f) {
@@ -116,9 +119,6 @@ fun DraggablePlayerContainer(
                     )
                     PlayerExpandedState.HIDDEN at maxHeightPx
                 }
-
-
-
 
                 state.updateAnchors(newAnchors, state.targetValue)
             }
@@ -179,7 +179,6 @@ fun DraggablePlayerContainer(
         }
 
         val rawOffset = if (state.offset.isNaN()) maxHeightPx else state.offset
-
 
         val finalOffset = if (isInPipMode || isLandscape) 0f else rawOffset
 

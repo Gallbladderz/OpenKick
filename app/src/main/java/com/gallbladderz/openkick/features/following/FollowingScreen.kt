@@ -5,6 +5,7 @@
 
 package com.gallbladderz.openkick.features.following
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,10 +15,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,7 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -93,6 +96,8 @@ fun FollowingScreen(
     onProfileClick: (String) -> Unit,
     onCategoryClick: (String) -> Unit = {}
 ) {
+    val bottomBarPadding =
+        80.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Scaffold(
         topBar = {
@@ -114,7 +119,6 @@ fun FollowingScreen(
         }
     ) { paddingValues ->
 
-
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
@@ -133,7 +137,7 @@ fun FollowingScreen(
 
                 is FollowingUiState.Error -> {
                     Text(
-                        text = uiState.message,
+                        text = uiState.message.asString(),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -146,7 +150,7 @@ fun FollowingScreen(
                             .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(
                             top = 8.dp,
-                            bottom = 8.dp
+                            bottom = bottomBarPadding
                         ),
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
@@ -271,8 +275,8 @@ private fun StoryAvatarItem(streamer: FollowedStreamerUi, onClick: () -> Unit) {
     val kickGradient = remember {
         Brush.linearGradient(
             colors = listOf(
-                com.gallbladderz.openkick.ui.theme.KickGradientStart,
-                com.gallbladderz.openkick.ui.theme.KickGradientEnd
+                com.gallbladderz.openkick.core.ui.theme.KickGradientStart,
+                com.gallbladderz.openkick.core.ui.theme.KickGradientEnd
             )
         )
     }
@@ -326,10 +330,14 @@ private fun LiveStreamCard(
         colors = CardDefaults.elevatedCardColors(containerColor = Color.Transparent)
     ) {
         Column {
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            ) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(streamer.streamThumbnailUrl.ifEmpty { streamer.avatarUrl })
+                        .data(streamer.streamThumbnailUrl.takeIf { it.isNotBlank() })
                         .build(),
                     contentDescription = stringResource(R.string.thumbnail_desc),
                     contentScale = ContentScale.Crop,
@@ -421,8 +429,7 @@ private fun FollowedCategoryItem(category: FollowedCategoryUi, onClick: () -> Un
                     text = formatShortViewers(category.viewers),
                     color = Color.White,
 
-
-style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -431,8 +438,7 @@ style = MaterialTheme.typography.labelSmall,
         Text(
             text = category.name,
 
-
-                    style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

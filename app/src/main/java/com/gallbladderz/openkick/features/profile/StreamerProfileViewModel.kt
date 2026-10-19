@@ -3,17 +3,20 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile
+
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.data.repository.ClipRepository
 import com.gallbladderz.openkick.core.domain.DomainError
+import com.gallbladderz.openkick.core.domain.model.ChannelLink
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
 import com.gallbladderz.openkick.core.ui.UiText
-import com.gallbladderz.openkick.data.local.FollowsRepository
-import com.gallbladderz.openkick.features.home.ClipUiModel
-import com.gallbladderz.openkick.features.player.ClipRepository
-import com.gallbladderz.openkick.features.player.models.ChannelLink
+import com.gallbladderz.openkick.features.following.FollowingRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,7 +39,7 @@ sealed interface ProfileUiState {
 
 class StreamerProfileViewModel(
     private val repository: StreamerProfileRepository,
-    private val followsRepository: FollowsRepository,
+    private val followingRepository: FollowingRepository,
     private val clipRepository: ClipRepository
 ) : ViewModel() {
 
@@ -86,7 +89,9 @@ class StreamerProfileViewModel(
             val clipsDeferred = viewModelScope.async { repository.fetchClips(profile.slug) }
             val linksDeferred = viewModelScope.async { repository.fetchChannelLinks(profile.slug) }
             val isFollowingDeferred =
-                viewModelScope.async { followsRepository.isStreamerFollowed(profile.slug).first() }
+                viewModelScope.async {
+                    followingRepository.isStreamerFollowed(profile.slug).first()
+                }
 
             val videos = videosDeferred.await().getOrDefault(emptyList())
             val clipsResult = clipsDeferred.await().getOrNull()
@@ -130,12 +135,14 @@ class StreamerProfileViewModel(
                 val currentlyFollowing = currentState.isFollowing
                 val slug = currentState.info.slug
 
-                followsRepository.toggleStreamerFollow(slug, currentlyFollowing)
-
-                _uiState.update { state ->
-                    if (state is ProfileUiState.Success) {
-                        state.copy(isFollowing = !currentlyFollowing)
-                    } else state
+                runCatching {
+                    followingRepository.toggleStreamerFollow(slug, currentlyFollowing)
+                }.onSuccess {
+                    _uiState.update { state ->
+                        if (state is ProfileUiState.Success) {
+                            state.copy(isFollowing = !currentlyFollowing)
+                        } else state
+                    }
                 }
             }
         }

@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.vod
+
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -58,12 +61,13 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.player.LocalGlobalPlayerController
+import com.gallbladderz.openkick.core.player.VideoQuality
+import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
 import com.gallbladderz.openkick.core.ui.utils.findActivity
-import com.gallbladderz.openkick.features.player.VideoQuality
+import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
 import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
 import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
-import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
-import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
 import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
 import kotlinx.coroutines.delay
@@ -76,14 +80,27 @@ fun VodPlayerRoute(
     onBackClick: () -> Unit,
     onStreamerClick: (String) -> Unit
 ) {
+    val globalPlayerController = LocalGlobalPlayerController.current
+
+    LaunchedEffect(Unit) {
+        globalPlayerController.hidePlayer()
+    }
+
     val viewModel: VodPlayerViewModel = koinViewModel(parameters = { parametersOf(videoId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    DisposableEffect(videoId) {
+        onDispose { viewModel.playerManager.release() }
+    }
 
     VodPlayerScreen(
         uiState = uiState,
         videoId = videoId,
         exoPlayer = viewModel.playerManager.player,
-        onBackClick = onBackClick,
+        onBackClick = {
+            viewModel.playerManager.release()
+            onBackClick()
+        },
         onStreamerClick = onStreamerClick
     )
 }
@@ -113,11 +130,9 @@ fun VodPlayerScreen(
     val deviceOrientation = rememberDeviceOrientation()
     var isFullscreen by remember { mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) }
 
-
     var showSettingsSheet by remember { mutableStateOf(false) }
     var availableQualities by remember { mutableStateOf<List<VideoQuality>>(emptyList()) }
     var selectedQuality by remember { mutableStateOf<VideoQuality?>(null) }
-
 
     fun setQuality(quality: VideoQuality) {
         selectedQuality = quality
@@ -224,10 +239,19 @@ fun VodPlayerScreen(
     BackHandler(enabled = isFullscreen) { isFullscreen = false }
 
     DisposableEffect(lifecycleOwner) {
+        var wasPlayingBeforePause = false
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_PAUSE -> exoPlayer?.pause()
-                Lifecycle.Event.ON_RESUME -> exoPlayer?.play()
+                Lifecycle.Event.ON_PAUSE -> {
+                    wasPlayingBeforePause = exoPlayer?.isPlaying == true
+                    exoPlayer?.pause()
+                }
+
+                Lifecycle.Event.ON_RESUME -> {
+                    if (wasPlayingBeforePause) exoPlayer?.play()
+                    wasPlayingBeforePause = false
+                }
+
                 else -> {}
             }
         }
@@ -346,7 +370,12 @@ fun VodPlayerScreen(
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, shareText)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share VOD"))
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    context.getString(R.string.share_vod)
+                                )
+                            )
                         },
                         onStreamerClick = { onStreamerClick(uiState.metadata.channelSlug) }
                     )

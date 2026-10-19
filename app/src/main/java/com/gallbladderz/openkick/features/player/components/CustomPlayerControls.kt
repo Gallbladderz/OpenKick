@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.components
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,12 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.ui.utils.formatTime
@@ -71,7 +73,7 @@ fun CustomPlayerControls(
                 IconButton(onClick = onToggleChat) {
                     Icon(
                         Icons.AutoMirrored.Filled.Message,
-                        contentDescription = "Toggle Chat",
+                        contentDescription = stringResource(R.string.toggle_chat_desc),
                         tint = Color.White
                     )
                 }
@@ -144,7 +146,11 @@ fun CustomPlayerControls(
                         .weight(1f)
                         .padding(end = 8.dp)
                 ) {
-                    Text(text = formatTime(currentPosition), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        text = formatTime(currentPosition),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                     Slider(
                         value = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f,
                         onValueChange = { value -> onSeek((value * duration).toLong()) },
@@ -157,7 +163,11 @@ fun CustomPlayerControls(
                             inactiveTrackColor = Color.White.copy(alpha = 0.3f)
                         )
                     )
-                    Text(text = formatTime(duration), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        text = formatTime(duration),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
 

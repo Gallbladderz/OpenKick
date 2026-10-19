@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.categories.components
+
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.home.StreamUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 import com.gallbladderz.openkick.features.home.components.StreamCard
 
 @Composable
@@ -30,6 +33,7 @@ fun CategoryStreamsGrid(
     viewers: Int,
     gridState: LazyGridState,
     onStreamClick: (String) -> Unit,
+    onProfileClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (viewers == 0) {
@@ -68,7 +72,7 @@ fun CategoryStreamsGrid(
                 StreamCard(
                     stream = stream,
                     onClick = { onStreamClick(stream.streamerName) },
-                    onProfileClick = { onStreamClick(stream.streamerName) }
+                    onProfileClick = { onProfileClick(stream.streamerName) }
                 )
             }
         }

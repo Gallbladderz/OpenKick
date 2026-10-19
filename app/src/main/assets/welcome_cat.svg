@@ -1,0 +1,15 @@
+<!--
+  - SPDX-FileCopyrightText: 2026 Gallbladderz
+  - SPDX-License-Identifier: GPL-3.0-or-later
+  -->
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" fill="none">
+  <g stroke="#7CFC00" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 79 39 31c0-8 6-11 13-6l32 28c22-10 50-10 72 0l32-28c7-5 13-2 13 6l-1 48c10 27 9 53-3 72-15 24-44 37-77 37s-62-13-77-37c-12-19-13-45-3-72Z" stroke-width="8"/>
+    <path d="m55 55 1-14 17 17m112-3-1-14-17 17" stroke-width="5"/>
+    <path d="M74 100c9-12 22-12 31 0m30 0c9-12 22-12 31 0" stroke-width="7"/>
+    <path d="m112 121 8 7 8-7-8-3-8 3Z" fill="#7CFC00" stroke-width="3"/>
+    <path d="M120 130v7m0 0c-6 9-14 10-21 4m21-4c6 9 14 10 21 4" stroke-width="5"/>
+    <path d="M85 128 24 118m61 18-64 4m64 4-56 17m126-33 61-10m-61 18 64 4m-64 4 56 17" stroke-width="4"/>
+  </g>
+</svg>

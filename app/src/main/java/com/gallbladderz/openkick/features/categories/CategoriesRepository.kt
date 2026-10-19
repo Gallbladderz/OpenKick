@@ -3,15 +3,20 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.categories
 
+
+import com.gallbladderz.openkick.core.data.mapper.toUiModel
+import com.gallbladderz.openkick.core.data.repository.ClipRepository
+import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 import com.gallbladderz.openkick.core.domain.toDomainError
-import com.gallbladderz.openkick.core.network.KickApiService
-import com.gallbladderz.openkick.features.home.ClipUiModel
-import com.gallbladderz.openkick.features.home.StreamUiModel
+import com.gallbladderz.openkick.core.network.api.KickApiService
+import com.gallbladderz.openkick.core.network.dto.categories.CategoryDetailsResponse
+import com.gallbladderz.openkick.core.network.dto.categories.CategoryDto
 import com.gallbladderz.openkick.features.home.toDomain
-import com.gallbladderz.openkick.features.home.toUiModel
-import com.gallbladderz.openkick.features.player.ClipRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

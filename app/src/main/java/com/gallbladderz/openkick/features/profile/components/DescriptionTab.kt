@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.profile.components
+
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,21 +18,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.features.player.models.ChannelLink
+import com.gallbladderz.openkick.core.domain.model.ChannelLink
 
 @Composable
 fun DescriptionTab(bio: String, links: List<ChannelLink>) {
@@ -45,7 +55,7 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Text(
+                    LinkifiedText(
                         text = bio,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -90,27 +100,81 @@ fun DescriptionTab(bio: String, links: List<ChannelLink>) {
                             )
                         }
                         if (link.description.isNotEmpty()) {
-                            SelectionContainer {
-                                Text(text = link.description, modifier = Modifier.padding(16.dp))
-                            }
+                            LinkifiedText(
+                                text = link.description,
+                                modifier = Modifier.padding(16.dp)
+                            )
                         }
                         if (link.link.isNotEmpty()) {
-                            SelectionContainer {
-                                Text(
-                                    text = link.link,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(
-                                        start = 16.dp,
-                                        end = 16.dp,
-                                        bottom = 16.dp
-                                    )
+                            LinkifiedText(
+                                text = link.link,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    bottom = 16.dp
                                 )
-                            }
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun LinkifiedText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface
+) {
+    val uriHandler = LocalUriHandler.current
+    val linkColor = MaterialTheme.colorScheme.primary
+    val annotatedText = remember(text, color, style, linkColor) {
+        val urlRegex = Regex("(?i)(https?://[^\\s<>]+|www\\.[^\\s<>]+)")
+        buildAnnotatedString {
+            var cursor = 0
+            urlRegex.findAll(text).forEach { match ->
+                append(text.substring(cursor, match.range.first))
+                val rawUrl = match.value.trimEnd('.', ',', '!', '?', ';', ':', ')', ']')
+                val start = length
+                withStyle(
+                    SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline
+                    )
+                ) {
+                    append(rawUrl)
+                }
+                addStringAnnotation(
+                    tag = "URL",
+                    annotation = if (rawUrl.startsWith(
+                            "www.",
+                            ignoreCase = true
+                        )
+                    ) "https://$rawUrl" else rawUrl,
+                    start = start,
+                    end = length
+                )
+                if (rawUrl.length < match.value.length) append(match.value.drop(rawUrl.length))
+                cursor = match.range.last + 1
+            }
+            append(text.substring(cursor))
+        }
+    }
+
+    ClickableText(
+        text = annotatedText,
+        modifier = modifier,
+        style = style.copy(color = color),
+        onClick = { offset ->
+            annotatedText
+                .getStringAnnotations("URL", offset, offset)
+                .firstOrNull()
+                ?.let { uriHandler.openUri(it.item) }
+        }
+    )
 }
 

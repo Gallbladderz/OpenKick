@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+
+
 package com.gallbladderz.openkick.features.player.components
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,8 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.gallbladderz.openkick.features.player.models.ChannelLink
-import com.gallbladderz.openkick.features.player.models.ChatMessage
+import com.gallbladderz.openkick.core.datastore.ChatSettings
+import com.gallbladderz.openkick.core.domain.chat.ChatEmoteSet
+import com.gallbladderz.openkick.core.domain.chat.ChatMessage
+import com.gallbladderz.openkick.core.domain.chat.ChatMode
+import com.gallbladderz.openkick.core.domain.model.ChannelLink
+import com.gallbladderz.openkick.features.player.ChatSendState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +37,14 @@ fun PlayerTabs(
     tabs: List<String>,
     chatMessages: List<ChatMessage>,
     channelLinks: List<ChannelLink>,
+    onSendMessage: (String, ChatMessage?) -> Unit,
+    chatSendState: ChatSendState,
+    chatEmoteSets: List<ChatEmoteSet> = emptyList(),
+    chatMode: ChatMode = ChatMode(),
+    isAuthenticated: Boolean,
+    chatSettings: ChatSettings = ChatSettings(),
+    onChatSettingsClick: () -> Unit = {},
+    onProfileClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -58,7 +73,18 @@ fun PlayerTabs(
                     .navigationBarsPadding()
             ) {
                 when (selectedTabIndex) {
-                    0 -> ChatList(chatMessages = chatMessages)
+                    0 -> ChatList(
+                        chatMessages = chatMessages,
+                        onSendMessage = onSendMessage,
+                        chatSendState = chatSendState,
+                        emoteSets = chatEmoteSets,
+                        chatMode = chatMode,
+                        isAuthenticated = isAuthenticated,
+                        chatSettings = chatSettings,
+                        onSettingsClick = onChatSettingsClick,
+                        onProfileClick = onProfileClick
+                    )
+
                     1 -> InfoTabContent(links = channelLinks)
                 }
             }
