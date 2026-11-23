@@ -8,29 +8,22 @@
 package com.gallbladderz.openkick.features.player.components
 
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import com.gallbladderz.openkick.R
+import androidx.media3.common.Player
+import com.gallbladderz.openkick.features.player.models.LivePlaybackState
 
 @Composable
 fun PlayerControlsOverlay(
     playWhenReady: Boolean,
     playbackState: Int,
     isFullscreen: Boolean,
-    isAtLiveEdge: Boolean,
+    livePlaybackState: LivePlaybackState,
+    player: Player?,
+    liveTimelineInteractions: MutableInteractionSource,
+    onSeekLiveTimeline: (Long) -> Unit,
     onSeekToLiveEdge: () -> Unit,
     onPlayerManagerResume: () -> Unit,
     onPlayerManagerPause: () -> Unit,
@@ -39,38 +32,22 @@ fun PlayerControlsOverlay(
     onBackClick: () -> Unit,
     onToggleChat: () -> Unit = {}
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        CustomPlayerControls(
-            playWhenReady = playWhenReady,
-            playbackState = playbackState,
-            isFullscreen = isFullscreen,
-            isAtLiveEdge = isAtLiveEdge,
-            onSeekToLive = onSeekToLiveEdge,
-            onPlayPause = {
-                if (playWhenReady) onPlayerManagerPause() else onPlayerManagerResume()
-            },
-            onFullscreen = onFullscreenToggle,
-            onSettings = onShowSettings,
-            onToggleChat = onToggleChat,
-            modifier = Modifier.fillMaxSize()
-        )
-        IconButton(
-            onClick = {
-                if (isFullscreen) onFullscreenToggle() else onBackClick()
-            },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp)
-                .background(
-                    Color.Black.copy(alpha = 0.5f),
-                    shape = MaterialTheme.shapes.small
-                )
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.back),
-                tint = Color.White
-            )
-        }
-    }
+    CustomPlayerControls(
+        playWhenReady = playWhenReady,
+        playbackState = playbackState,
+        isFullscreen = isFullscreen,
+        livePlaybackState = livePlaybackState,
+        livePlayer = player,
+        liveTimelineInteractions = liveTimelineInteractions,
+        onSeekLiveTimeline = onSeekLiveTimeline,
+        onSeekToLive = onSeekToLiveEdge,
+        onPlayPause = {
+            if (playWhenReady) onPlayerManagerPause() else onPlayerManagerResume()
+        },
+        onFullscreen = onFullscreenToggle,
+        onSettings = onShowSettings,
+        onBack = { if (isFullscreen) onFullscreenToggle() else onBackClick() },
+        onToggleChat = onToggleChat,
+        modifier = Modifier.fillMaxSize()
+    )
 }

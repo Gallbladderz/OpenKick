@@ -30,7 +30,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.ui.components.KickPullToRefreshBox
 import com.gallbladderz.openkick.features.profile.components.ClipsTab
 import com.gallbladderz.openkick.features.profile.components.DescriptionTab
 import com.gallbladderz.openkick.features.profile.components.ProfileHeader
@@ -102,7 +102,7 @@ fun StreamerProfileScreen(
             ProfileTopAppBar(state = state, onBackClick = onBackClick)
         }
     ) { paddingValues ->
-        PullToRefreshBox(
+        KickPullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
             modifier = Modifier
@@ -129,12 +129,9 @@ fun ProfileTopAppBar(state: ProfileUiState, onBackClick: () -> Unit) {
 
     TopAppBar(
         title = {
-            Text(
-                text = if (state is ProfileUiState.Success) state.info.username else stringResource(
-                    R.string.profile_title
-                ),
-                fontWeight = FontWeight.Bold
-            )
+            if (state !is ProfileUiState.Success) {
+                Text(stringResource(R.string.profile_title), fontWeight = FontWeight.Bold)
+            }
         },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
@@ -232,7 +229,7 @@ fun ProfileSuccessContent(
             info = uiState.info,
             isFollowing = uiState.isFollowing,
             onFollowClick = onToggleFollow,
-            onAvatarClick = { onStreamClick(uiState.info.slug) }
+            onWatchClick = { onStreamClick(uiState.info.slug) }
         )
         PrimaryTabRow(
             selectedTabIndex = pagerState.currentPage,
@@ -247,6 +244,8 @@ fun ProfileSuccessContent(
                             pagerState.animateScrollToPage(index)
                         }
                     },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = { Text(title, fontWeight = FontWeight.SemiBold) }
                 )
             }
@@ -259,7 +258,11 @@ fun ProfileSuccessContent(
                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
         ) { page ->
             when (page) {
-                0 -> DescriptionTab(uiState.info.bio, uiState.links)
+                0 -> DescriptionTab(
+                    bio = uiState.info.bio,
+                    socialLinks = uiState.info.socialLinks,
+                    panels = uiState.links
+                )
                 1 -> VideosTab(
                     videos = uiState.videos,
                     onVideoClick = { video -> onVideoClick(video.id) }

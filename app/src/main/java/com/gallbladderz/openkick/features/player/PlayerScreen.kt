@@ -26,6 +26,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -73,6 +75,7 @@ import com.gallbladderz.openkick.core.datastore.ChatSettings
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
 import com.gallbladderz.openkick.core.domain.chat.ChatEmoteSet
 import com.gallbladderz.openkick.core.domain.chat.ChatMessage
+import com.gallbladderz.openkick.core.domain.chat.PinnedChatMessage
 import com.gallbladderz.openkick.core.domain.model.ChannelLink
 import com.gallbladderz.openkick.core.player.PlaybackService
 import com.gallbladderz.openkick.core.player.PlayerExpandedState
@@ -80,10 +83,12 @@ import com.gallbladderz.openkick.core.player.VideoQuality
 import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
 import com.gallbladderz.openkick.core.ui.utils.findActivity
 import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
+import com.gallbladderz.openkick.features.player.components.SevenTvChat
 import com.gallbladderz.openkick.features.player.components.PlayerContent
 import com.gallbladderz.openkick.features.player.components.PlayerTabs
 import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
 import com.gallbladderz.openkick.features.player.components.StreamerInfoOverlay
+import com.gallbladderz.openkick.features.player.models.LivePlaybackState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -102,22 +107,24 @@ fun PlayerRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
+    val pinnedMessage by viewModel.pinnedMessage.collectAsStateWithLifecycle()
     val chatSendState by viewModel.chatSendState.collectAsStateWithLifecycle()
     val chatEmoteSets by viewModel.chatEmoteSets.collectAsStateWithLifecycle()
     val chatMode by viewModel.chatMode.collectAsStateWithLifecycle()
     val channelLinks by viewModel.channelLinks.collectAsStateWithLifecycle()
-    val isFollowed by viewModel.isStreamerFollowed(streamerName)
+    val isFollowed by remember(viewModel, streamerName) { viewModel.isStreamerFollowed(streamerName) }
         .collectAsStateWithLifecycle(initialValue = false)
 
     val playWhenReady by viewModel.playerManager.playWhenReady.collectAsStateWithLifecycle()
     val playbackState by viewModel.playerManager.playbackState.collectAsStateWithLifecycle()
+    val livePlaybackState by viewModel.livePlaybackState.collectAsStateWithLifecycle()
     val availableQualities by viewModel.availableQualities.collectAsStateWithLifecycle()
     val selectedQuality by viewModel.selectedQuality.collectAsStateWithLifecycle()
 
     val isAuthenticated by viewModel.isAuthenticated.collectAsStateWithLifecycle()
     val settingsRepository: SettingsRepository = koinInject()
     val chatSettings by settingsRepository.chatSettingsFlow.collectAsStateWithLifecycle(
-        initialValue = ChatSettings(),
+        initialValue = ChatSettings(sevenTvEmotes = false),
         lifecycle = LocalLifecycleOwner.current.lifecycle
     )
     val settingsScope = rememberCoroutineScope()
@@ -139,48 +146,57 @@ fun PlayerRoute(
         }
     }
 
-    PlayerScreen(
-        streamerName = streamerName,
-        uiState = uiState,
-        dragState = dragState,
-        chatMessages = chatMessages,
-        chatSendState = chatSendState,
-        chatEmoteSets = chatEmoteSets,
-        chatMode = chatMode,
-        isAuthenticated = isAuthenticated,
-        chatSettings = displayedChatSettings,
-        channelLinks = channelLinks,
-        isFollowed = isFollowed,
-        playWhenReady = playWhenReady,
-        playbackState = playbackState,
-        availableQualities = availableQualities,
-        selectedQuality = selectedQuality,
-        player = viewModel.playerManager.player,
-        onLoadStreamInfo = { viewModel.loadStreamInfo(it) },
-        onLoadChannelLinks = { viewModel.loadChannelLinks(it) },
-        onPlayerManagerInitialize = { viewModel.playerManager.initializePlayer() },
-        onPlayerManagerPause = { viewModel.playerManager.pause() },
-        onPlayerManagerResume = { viewModel.playerManager.resume() },
-        onPlayerManagerRelease = {
-            viewModel.playerManager.release()
-            viewModel.disconnectChat()
-        },
-        onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
-        onSetVideoQuality = { viewModel.setVideoQuality(it) },
-        onBackClick = closePlayer,
-        onAvatarClick = onAvatarClick,
-        onCategoryClick = { slug -> onCategoryClick(slug) },
-        onSeekToLiveEdge = { viewModel.playerManager.seekToLiveEdge() },
-        onSendChatMessage = { content, replyTo -> viewModel.sendChatMessage(content, replyTo) },
-        onChatSettingsChange = { updated ->
-            displayedChatSettings = updated
-            settingsScope.launch {
-                settingsWriteMutex.withLock {
-                    settingsRepository.setChatSettings(updated)
+    SevenTvChat(
+        enabled = displayedChatSettings.sevenTvEmotes,
+        kickUserId = (uiState as? PlayerUiState.Playing)?.kickUserId
+    ) {
+        PlayerScreen(
+            streamerName = streamerName,
+            uiState = uiState,
+            dragState = dragState,
+            chatMessages = chatMessages,
+            pinnedMessage = pinnedMessage,
+            onTogglePinnedMessage = viewModel::togglePinnedMessageVisibility,
+            chatSendState = chatSendState,
+            chatEmoteSets = chatEmoteSets,
+            chatMode = chatMode.copy(isFollower = isFollowed),
+            isAuthenticated = isAuthenticated,
+            chatSettings = displayedChatSettings,
+            channelLinks = channelLinks,
+            isFollowed = isFollowed,
+            playWhenReady = playWhenReady,
+            playbackState = playbackState,
+            availableQualities = availableQualities,
+            selectedQuality = selectedQuality,
+            player = viewModel.playerManager.player,
+            onLoadStreamInfo = { viewModel.loadStreamInfo(it) },
+            onLoadChannelLinks = { viewModel.loadChannelLinks(it) },
+            onPlayerManagerInitialize = { viewModel.playerManager.initializePlayer() },
+            onPlayerManagerPause = { viewModel.playerManager.pause() },
+            onPlayerManagerResume = viewModel::play,
+            onPlayerManagerRelease = {
+                viewModel.playerManager.release()
+                viewModel.disconnectChat()
+            },
+            onToggleFollow = { streamer, followed -> viewModel.toggleFollow(streamer, followed) },
+            onSetVideoQuality = { viewModel.setVideoQuality(it) },
+            onBackClick = closePlayer,
+            onAvatarClick = onAvatarClick,
+            onCategoryClick = { slug -> onCategoryClick(slug) },
+            livePlaybackState = livePlaybackState,
+            onSeekLiveTimeline = viewModel::seekLiveTimeline,
+            onSeekToLiveEdge = viewModel::seekToLiveEdge,
+            onSendChatMessage = { content, replyTo -> viewModel.sendChatMessage(content, replyTo) },
+            onChatSettingsChange = { updated ->
+                displayedChatSettings = updated
+                settingsScope.launch {
+                    settingsWriteMutex.withLock {
+                        settingsRepository.setChatSettings(updated)
+                    }
                 }
             }
-        }
-    )
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -190,6 +206,8 @@ fun PlayerScreen(
     uiState: PlayerUiState,
     dragState: AnchoredDraggableState<PlayerExpandedState>,
     chatMessages: List<ChatMessage>,
+    pinnedMessage: PinnedChatMessage?,
+    onTogglePinnedMessage: () -> Unit,
     chatSendState: ChatSendState,
     chatEmoteSets: List<ChatEmoteSet> = emptyList(),
     chatMode: com.gallbladderz.openkick.core.domain.chat.ChatMode = com.gallbladderz.openkick.core.domain.chat.ChatMode(),
@@ -213,6 +231,8 @@ fun PlayerScreen(
     onBackClick: () -> Unit,
     onAvatarClick: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
+    livePlaybackState: LivePlaybackState = LivePlaybackState(),
+    onSeekLiveTimeline: (Long) -> Unit = {},
     onSeekToLiveEdge: () -> Unit = {},
     onSendChatMessage: (String, ChatMessage?) -> Unit = { _, _ -> },
     onChatSettingsChange: (ChatSettings) -> Unit = {}
@@ -230,17 +250,13 @@ fun PlayerScreen(
 
     val fraction by remember {
         derivedStateOf {
-            if (isInPipMode) return@derivedStateOf 0f
-
-            val offset = if (dragState.offset.isNaN()) 0f else dragState.requireOffset()
-            val expandedOffset = dragState.anchors.positionOf(PlayerExpandedState.EXPANDED)
-            val miniOffset = dragState.anchors.positionOf(PlayerExpandedState.MINI)
-            if (miniOffset == expandedOffset || offset.isNaN()) 0f
-            else ((offset - expandedOffset) / (miniOffset - expandedOffset)).coerceIn(0f, 1f)
+            if (isInPipMode) 0f else dragState.collapseFraction()
         }
     }
 
     var showControls by remember { mutableStateOf(false) }
+    val liveTimelineInteractions = remember { MutableInteractionSource() }
+    val isSeekingLive by liveTimelineInteractions.collectIsDraggedAsState()
     var isChatExpanded by remember { mutableStateOf(false) }
     var playerInteractionTick by remember { mutableIntStateOf(0) }
     var showSettingsSheet by remember { mutableStateOf(false) }
@@ -250,12 +266,13 @@ fun PlayerScreen(
     var isFullscreen by remember {
         mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
     }
+    var portraitExit by remember { mutableStateOf(false) }
+    val toggleFullscreen = {
+        portraitExit = isFullscreen
+        isFullscreen = !isFullscreen
+    }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-
-    var isAtLiveEdge by remember { mutableStateOf(true) }
-    var baselineOffset by remember { mutableStateOf(-1L) }
-    var hasFallenBehind by remember { mutableStateOf(false) }
 
     DisposableEffect(context) {
         val activity = context.findActivity()
@@ -341,8 +358,8 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(showControls, playWhenReady) {
-        if (showControls && playWhenReady) {
+    LaunchedEffect(showControls, playWhenReady, isSeekingLive) {
+        if (showControls && playWhenReady && !isSeekingLive) {
             delay(3000)
             showControls = false
         }
@@ -358,33 +375,11 @@ fun PlayerScreen(
         isChatExpanded = true
     }
 
-    LaunchedEffect(playWhenReady, playbackState, player) {
-        while (player != null) {
-            val currentPlayer = player ?: break
-            if (currentPlayer.isCurrentMediaItemLive) {
-                val liveOffset = currentPlayer.currentLiveOffset
-                if (liveOffset != androidx.media3.common.C.TIME_UNSET) {
-                    if (baselineOffset == -1L || liveOffset < baselineOffset) {
-                        baselineOffset = liveOffset
-                    }
-                    if (playbackState == Player.STATE_READY && !playWhenReady) {
-                        hasFallenBehind = true
-                    }
-                    isAtLiveEdge =
-                        playWhenReady && !hasFallenBehind && (liveOffset <= baselineOffset + 4000L)
-                }
-            } else {
-                isAtLiveEdge = true
-            }
-            delay(500)
-        }
-    }
-
     LaunchedEffect(deviceOrientation) {
         if (!isInPipMode) {
             when (deviceOrientation) {
                 DeviceOrientation.LANDSCAPE -> {
-                    if (dragState.currentValue == PlayerExpandedState.EXPANDED) {
+                    if (!portraitExit && dragState.currentValue == PlayerExpandedState.EXPANDED) {
                         isFullscreen = true
                     }
                 }
@@ -395,24 +390,37 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(isFullscreen) {
-        val activity = context.findActivity() ?: return@LaunchedEffect
-        val window = activity.window
-        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+    LaunchedEffect(deviceOrientation, configuration.orientation, portraitExit) {
+        if (portraitExit && deviceOrientation == DeviceOrientation.PORTRAIT &&
+            configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+        ) portraitExit = false
+    }
+
+    DisposableEffect(isFullscreen, portraitExit) {
+        val activity = context.findActivity()
+        val insetsController = activity?.window?.let { WindowCompat.getInsetsController(it, it.decorView) }
+        val managesOrientation = isFullscreen || portraitExit
         if (isFullscreen) {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            insetsController.hide(WindowInsetsCompat.Type.systemBars())
-            insetsController.systemBarsBehavior =
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            insetsController?.hide(WindowInsetsCompat.Type.systemBars())
+            insetsController?.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
+            activity?.requestedOrientation = if (portraitExit) ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            insetsController?.show(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose {
+            if (managesOrientation) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                insetsController?.show(WindowInsetsCompat.Type.systemBars())
+            }
         }
     }
 
     BackHandler(enabled = isFullscreen || dragState.currentValue == PlayerExpandedState.EXPANDED) {
         if (isFullscreen) {
-            isFullscreen = false
+            toggleFullscreen()
         } else {
             coroutineScope.launch { dragState.animateTo(PlayerExpandedState.MINI) }
         }
@@ -433,9 +441,6 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(streamerName) {
-        baselineOffset = -1L
-        hasFallenBehind = false
-        isAtLiveEdge = true
         onLoadStreamInfo(streamerName)
         onLoadChannelLinks(streamerName)
     }
@@ -443,8 +448,7 @@ fun PlayerScreen(
     val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val animatedTopPadding = lerp(statusBarHeight, 0.dp, fraction)
     val screenHeight = configuration.screenHeightDp.dp
-    val miniPlayerHeight = 64.dp
-    val currentHeight = lerp(screenHeight, miniPlayerHeight, fraction)
+    val currentHeight = lerp(screenHeight, MiniPlayerHeight, fraction)
 
     val rootModifier = Modifier
         .fillMaxWidth()
@@ -470,31 +474,28 @@ fun PlayerScreen(
                     isFullscreen = isFullscreen,
                     showControls = showControls,
                     onShowControlsChange = { showControls = it },
-                    isChatExpanded = isChatExpanded,
                     onPlayerInteraction = {
                         isChatExpanded = false
                         playerInteractionTick++
                     },
                     playWhenReady = playWhenReady,
                     playbackState = playbackState,
-                    isAtLiveEdge = isAtLiveEdge,
-                    onSeekToLiveEdge = {
-                        onSeekToLiveEdge()
-                        baselineOffset = -1L
-                        hasFallenBehind = false
-                        isAtLiveEdge = true
-                        if (!playWhenReady) onPlayerManagerResume()
-                    },
+                    livePlaybackState = livePlaybackState,
+                    liveTimelineInteractions = liveTimelineInteractions,
+                    onSeekLiveTimeline = onSeekLiveTimeline,
+                    onSeekToLiveEdge = onSeekToLiveEdge,
                     onPlayerManagerResume = onPlayerManagerResume,
                     onPlayerManagerPause = onPlayerManagerPause,
                     onPlayerManagerRelease = onPlayerManagerRelease,
-                    onFullscreenToggle = { isFullscreen = !isFullscreen },
+                    onFullscreenToggle = toggleFullscreen,
                     onShowSettings = { showSettingsSheet = true },
                     onBackClick = onBackClick,
                     onUpdateVideoBounds = { videoViewBounds = it },
                     dragState = dragState,
                     coroutineScope = coroutineScope,
                     chatMessages = chatMessages,
+                    pinnedMessage = pinnedMessage,
+                    onTogglePinnedMessage = onTogglePinnedMessage,
                     onSendMessage = onSendChatMessage,
                     chatSendState = chatSendState,
                     chatEmoteSets = chatEmoteSets,
@@ -546,6 +547,8 @@ fun PlayerScreen(
                         stringResource(R.string.description)
                     ),
                     chatMessages = chatMessages,
+                    pinnedMessage = pinnedMessage,
+                    onTogglePinnedMessage = onTogglePinnedMessage,
                     channelLinks = channelLinks,
                     onSendMessage = onSendChatMessage,
                     chatSendState = chatSendState,

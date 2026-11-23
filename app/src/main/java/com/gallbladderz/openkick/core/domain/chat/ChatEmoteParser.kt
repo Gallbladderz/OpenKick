@@ -7,10 +7,10 @@ package com.gallbladderz.openkick.core.domain.chat
 
 
 object ChatEmoteParser {
-    private val EMOTE_REGEX = Regex("\\[emote:(\\d+):([^\\]]+)\\]")
+    internal val tokenPattern = Regex("\\[emote:(\\d+):([^\\]]+)\\]")
 
     fun parseEmotes(content: String): List<ChatToken> {
-        val emotesMatches = EMOTE_REGEX.findAll(content).toList()
+        val emotesMatches = tokenPattern.findAll(content)
         val tokens = mutableListOf<ChatToken>()
         var currentIndex = 0
 

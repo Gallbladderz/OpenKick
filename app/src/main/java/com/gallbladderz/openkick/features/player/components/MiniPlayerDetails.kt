@@ -47,7 +47,8 @@ fun MiniPlayerDetails(
     onPlayerManagerResume: () -> Unit,
     onExpand: () -> Unit,
     onClose: () -> Unit,
-    miniPlayerWidth: Dp
+    miniPlayerWidth: Dp,
+    showPlaybackControls: Boolean = true
 ) {
     AnimatedVisibility(
         visible = fraction > 0.5f,
@@ -98,18 +99,20 @@ fun MiniPlayerDetails(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            IconButton(
-                onClick = {
-                    if (playWhenReady) onPlayerManagerPause() else onPlayerManagerResume()
-                },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = if (playWhenReady) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = stringResource(R.string.play_pause_desc),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(20.dp)
-                )
+            if (showPlaybackControls) {
+                IconButton(
+                    onClick = {
+                        if (playWhenReady) onPlayerManagerPause() else onPlayerManagerResume()
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = if (playWhenReady) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = stringResource(R.string.play_pause_desc),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
                 Icon(

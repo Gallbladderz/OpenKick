@@ -18,8 +18,11 @@ import com.gallbladderz.openkick.core.network.dto.player.ChatroomDto
 import com.gallbladderz.openkick.core.network.dto.profile.ChannelInfoV2Response
 import com.gallbladderz.openkick.core.network.dto.profile.ChannelV1Response
 import com.gallbladderz.openkick.core.network.dto.profile.VideoItemDto
+import com.gallbladderz.openkick.core.network.dto.profile.VideoPlaybackResponse
+import com.gallbladderz.openkick.core.network.dto.profile.WebVideoPlaybackResponse
 import com.gallbladderz.openkick.core.network.dto.search.SearchResponse
-import kotlinx.serialization.json.JsonElement
+import com.gallbladderz.openkick.core.network.chat.ChatHistoryResponseDto
+import com.gallbladderz.openkick.core.network.chat.ChatReplayResponseDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -47,7 +50,8 @@ interface KickApiService {
 
     @GET("https://search.kick.com/api/v1/search/enriched")
     suspend fun searchChannels(
-        @Query("query") query: String
+        @Query("query") query: String,
+        @Query("limit") limit: Int = 20
     ): SearchResponse
 
     @GET("https://mobile.kick.com/api/v1/livestreams")
@@ -74,6 +78,15 @@ interface KickApiService {
     suspend fun getChannelStreamInfo(
         @Path("slug") slug: String
     ): ChannelStreamInfoResponse
+
+    @GET("api/v2/channels/{channelId}/messages")
+    suspend fun getChannelChatHistory(@Path("channelId") channelId: Long): ChatHistoryResponseDto
+
+    @GET("api/v2/channels/{channelId}/messages")
+    suspend fun getChatReplay(
+        @Path("channelId") channelId: Long,
+        @Query("start_time") startTime: String
+    ): ChatReplayResponseDto
 
     @GET("api/v2/channels/{slug}/chatroom")
     suspend fun getChannelChatroom(
@@ -123,7 +136,13 @@ interface KickApiService {
     @GET("api/v1/video/{videoId}")
     suspend fun getVideoPlayback(
         @Path("videoId") videoId: String
-    ): JsonElement
+    ): VideoPlaybackResponse
+
+    @GET("https://web.kick.com/api/v1/channels/{channelId}/videos/{videoId}")
+    suspend fun getWebVideoPlayback(
+        @Path("channelId") channelId: Int,
+        @Path("videoId") videoId: String
+    ): WebVideoPlaybackResponse
 
 }
 

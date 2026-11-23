@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,6 +42,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +62,7 @@ import com.gallbladderz.openkick.features.categories.components.CategoryClipsLis
 import com.gallbladderz.openkick.features.categories.components.CategoryHeader
 import com.gallbladderz.openkick.features.categories.components.CategoryStreamsGrid
 import com.gallbladderz.openkick.features.categories.components.CategoryTabs
+import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -227,12 +236,33 @@ fun CategoryDetailsScreen(
                 }
 
                 is CategoryDetailsUiState.Success -> {
+                    var headerHeightPx by remember(slug) { mutableIntStateOf(0) }
+                    var headerOffsetPx by remember(slug, selectedTabIndex) { mutableFloatStateOf(0f) }
+                    val headerScrollConnection = remember(slug, selectedTabIndex) {
+                        object : NestedScrollConnection {
+                            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                                headerOffsetPx = (headerOffsetPx + available.y)
+                                    .coerceIn(-headerHeightPx.toFloat(), 0f)
+                                return Offset.Zero
+                            }
+                        }
+                    }
                     CategoryHeader(
                         bannerUrl = currentState.bannerUrl,
                         viewers = currentState.viewers,
                         tags = currentState.tags,
                         isFollowed = isFollowed,
-                        onFollowClick = onToggleFollow
+                        onFollowClick = onToggleFollow,
+                        modifier = Modifier
+                            .clipToBounds()
+                            .layout { measurable, constraints ->
+                                val header = measurable.measure(constraints)
+                                val hiddenHeight = (-headerOffsetPx).roundToInt().coerceIn(0, header.height)
+                                layout(header.width, header.height - hiddenHeight) {
+                                    header.placeRelative(0, -hiddenHeight)
+                                }
+                            }
+                            .onSizeChanged { headerHeightPx = it.height }
                     )
 
                     CategoryTabs(
@@ -246,6 +276,7 @@ fun CategoryDetailsScreen(
                             .fillMaxWidth()
                             .weight(1f)
                             .background(MaterialTheme.colorScheme.surface)
+                            .nestedScroll(headerScrollConnection)
                     ) {
                         if (selectedTabIndex == 0) {
                             CategoryStreamsGrid(

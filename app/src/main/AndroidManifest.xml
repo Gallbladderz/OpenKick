@@ -44,6 +44,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="openkick" android:host="oauth" android:path="/callback" />
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="kick.com" />
+                <data android:host="www.kick.com" />
+            </intent-filter>
         </activity>
 
         <provider
@@ -60,6 +69,17 @@
         </provider>
 
         <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.downloads"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/download_paths" />
+        </provider>
+        <service
             android:name=".core.player.PlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
@@ -70,7 +90,8 @@
         <activity
             android:name=".core.auth.KickWebLoginActivity"
             android:exported="false"
-            android:theme="@style/Theme.OpenKick" />
+            android:theme="@style/Theme.OpenKick"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

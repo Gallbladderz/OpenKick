@@ -3,35 +3,29 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-
-
 package com.gallbladderz.openkick.features.profile.components
 
-
+import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,177 +36,204 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.gallbladderz.openkick.R
+import com.gallbladderz.openkick.core.ui.components.KickAvatar
+import com.gallbladderz.openkick.features.player.components.CompactFollowButton
+import com.gallbladderz.openkick.features.profile.LastBroadcastTime
 import com.gallbladderz.openkick.features.profile.ProfileInfoUi
+import com.gallbladderz.openkick.features.profile.lastBroadcastTime
+import java.text.NumberFormat
+import java.time.Instant
+import java.time.ZoneId
 
 @Composable
 fun ProfileHeader(
     info: ProfileInfoUi,
     isFollowing: Boolean,
     onFollowClick: () -> Unit,
-    onAvatarClick: () -> Unit = {}
+    onWatchClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    val kickGradient = remember {
-        Brush.linearGradient(
-            colors = listOf(
-                com.gallbladderz.openkick.core.ui.theme.KickGradientStart,
-                com.gallbladderz.openkick.core.ui.theme.KickGradientEnd
-            )
-        )
-    }
+    val colors = MaterialTheme.colorScheme
+    val locale = LocalConfiguration.current.locales[0]
+    val numberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-        ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context).data(info.bannerUrl).crossfade(true).build(),
-                contentDescription = stringResource(R.string.banner_desc),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(
+    Column(Modifier.fillMaxWidth().background(colors.background)) {
+        Box(Modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().height(128.dp).background(colors.surfaceContainer)) {
+                if (info.bannerUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = info.bannerUrl,
+                        contentDescription = stringResource(R.string.banner_desc),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Box(
+                    Modifier.fillMaxSize().background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f)),
-                            startY = 60f
+                            0f to Color.Transparent,
+                            0.48f to Color.Transparent,
+                            1f to colors.background
                         )
                     )
-            )
-
-            Box(
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .align(Alignment.BottomStart)
-                    .clickable { if (info.isLive) onAvatarClick() }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 100.dp, end = 16.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
                 Box(
-                    modifier = Modifier
-                        .size(88.dp)
-                        .background(MaterialTheme.colorScheme.background, CircleShape)
-                )
-                AsyncImage(
-                    model = ImageRequest.Builder(context).data(info.avatarUrl).crossfade(true)
-                        .build(),
-                    contentDescription = stringResource(R.string.avatar_desc),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .border(
-                            width = 4.dp,
-                            brush = if (info.isLive) kickGradient else SolidColor(MaterialTheme.colorScheme.background),
-                            shape = CircleShape
-                        )
-                        .padding(if (info.isLive) 6.dp else 0.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
+                    Modifier.size(72.dp).clip(CircleShape).background(colors.background)
+                        .border(2.dp, if (info.isLive) colors.primary else colors.outlineVariant, CircleShape)
+                        .then(if (info.isLive) Modifier.clickable(role = Role.Button, onClick = onWatchClick) else Modifier)
+                        .padding(4.dp)
+                ) {
+                    KickAvatar(info.avatarUrl, info.username, size = 64.dp)
+                }
+                Spacer(Modifier.weight(1f))
                 if (info.isLive) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .offset(y = 8.dp)
-                            .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    Button(
+                        onClick = onWatchClick,
+                        modifier = Modifier.height(36.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.live).uppercase(),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black
-                        )
+                        Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.size(4.dp))
+                        Text(stringResource(R.string.profile_watch), style = MaterialTheme.typography.labelMedium, maxLines = 1)
                     }
                 }
+                CompactFollowButton(isFollowing, onFollowClick)
             }
         }
 
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = info.username,
+                    info.username,
+                    modifier = Modifier.weight(1f, fill = false),
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (info.isVerified) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        Icons.Default.CheckCircle,
                         contentDescription = stringResource(R.string.verified_desc),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                        tint = colors.primary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = stringResource(R.string.followers_count, info.followers),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = onFollowClick,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
-                    contentColor = if (isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(
-                    imageVector = if (isFollowing) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (isFollowing) stringResource(R.string.unfollow_action) else stringResource(
-                        R.string.follow_action
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelLarge
-                )
+            if (info.isLive) {
+                ProfileLiveStatus(info, numberFormat, onWatchClick)
+            } else {
+                ProfileOfflineStatus(info.lastBroadcastAt)
             }
 
+            Text(
+                stringResource(R.string.followers_count, numberFormat.format(info.followers)),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
+@Composable
+private fun ProfileLiveStatus(info: ProfileInfoUi, numberFormat: NumberFormat, onWatchClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val locale = LocalConfiguration.current.locales[0]
+    val streamDetails = listOfNotNull(info.liveCategory, info.liveTitle).distinct().joinToString(" · ")
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
+            .clickable(role = Role.Button, onClick = onWatchClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                stringResource(R.string.live).uppercase(locale),
+                modifier = Modifier.background(colors.error.copy(alpha = 0.14f), RoundedCornerShape(5.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.error,
+                fontWeight = FontWeight.Bold
+            )
+            info.liveViewers?.let {
+                Text(
+                    stringResource(R.string.viewers_count, numberFormat.format(it)),
+                    color = colors.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        if (streamDetails.isNotEmpty()) {
+            Text(
+                streamDetails,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileOfflineStatus(endedAt: Instant?) {
+    val colors = MaterialTheme.colorScheme
+    val locale = LocalConfiguration.current.locales[0]
+    val last = when (val time = lastBroadcastTime(endedAt, Instant.now(), ZoneId.systemDefault())) {
+        null -> null
+        LastBroadcastTime.JustNow -> stringResource(R.string.profile_last_live_now)
+        is LastBroadcastTime.Minutes ->
+            pluralStringResource(R.plurals.profile_last_live_minutes, time.amount, time.amount)
+        is LastBroadcastTime.Hours ->
+            pluralStringResource(R.plurals.profile_last_live_hours, time.amount, time.amount)
+        is LastBroadcastTime.Days ->
+            pluralStringResource(R.plurals.profile_last_live_days, time.amount, time.amount)
+        is LastBroadcastTime.Date -> {
+            val pattern = DateFormat.getBestDateTimePattern(locale, if (time.includeYear) "yMMMd" else "MMMd")
+            stringResource(R.string.profile_last_live_date, time.format(pattern, locale))
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(Modifier.size(6.dp).background(colors.onSurfaceVariant, CircleShape))
+        Text(
+            stringResource(R.string.profile_offline),
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.onSurfaceVariant
+        )
+        if (last != null) {
+            Text(
+                "· $last",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+        }
+    }
+}

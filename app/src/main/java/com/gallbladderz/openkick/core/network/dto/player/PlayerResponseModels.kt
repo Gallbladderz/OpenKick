@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class ChannelStreamInfoResponse(
+    val id: Long? = null,
     val playback_url: String? = null,
     val livestream: LivestreamDto? = null,
     val user: UserDto? = null,
@@ -20,8 +21,12 @@ data class ChannelStreamInfoResponse(
     val chatroom_id: Int? = null,
     val subscriber_badges: List<SubscriberBadgeDto> = emptyList(),
     val recent_categories: List<CategoryDto> = emptyList(),
-    val verified: Boolean = false
-)
+    val verified: Boolean = false,
+    val user_id: Long? = null
+) {
+    val kickUserId: Long?
+        get() = user_id?.takeIf { it > 0 } ?: user?.id?.takeIf { it > 0 }
+}
 
 @Serializable
 data class SubscriberBadgeDto(
@@ -44,7 +49,8 @@ data class LivestreamDto(
     val playback_url: String? = null,
     val viewer_count: Int = 0,
     val session_title: String = "Stream",
-    val category: CategoryDto? = null
+    val category: CategoryDto? = null,
+    val start_time: String? = null
 ) {
     val parsedId: String?
         get() = (id as? kotlinx.serialization.json.JsonPrimitive)?.content
@@ -52,7 +58,8 @@ data class LivestreamDto(
 
 @Serializable
 data class UserDto(
-    val profile_pic: String? = null
+    val profile_pic: String? = null,
+    val id: Long? = null
 )
 
 @Serializable

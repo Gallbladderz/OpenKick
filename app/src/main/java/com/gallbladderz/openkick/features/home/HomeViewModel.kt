@@ -53,15 +53,12 @@ class HomeViewModel(
 
     private var streamsCursor: String? = null
     private var clipsCursor: String? = null
-    private var isStreamsLoading = false
     private var isClipsLoading = false
-    private var isStreamsEnd = false
     private var isClipsEnd = false
     private var homeLoadJob: Job? = null
+    private var streamsPageJob: Job? = null
 
-    private var currentHideSlots: Boolean = false
-    private var currentHidePools: Boolean = false
-    private var currentHideCrypto: Boolean = false
+    private var hiddenCategories: Set<String> = emptySet()
 
     private val _sort = MutableStateFlow("viewer_count_desc")
     val sort = _sort.asStateFlow()
@@ -87,16 +84,16 @@ class HomeViewModel(
         }
     }
 
-    private fun filterBanned(streams: List<StreamUiModel>): List<StreamUiModel> {
-        if (!currentHideSlots && !currentHidePools && !currentHideCrypto) return streams
-
-        val bannedSlugs = mutableSetOf<String>()
-        if (currentHideSlots) bannedSlugs.add("slots")
-        if (currentHidePools) bannedSlugs.add("pools-hot-tubs-bikinis")
-        if (currentHideCrypto) bannedSlugs.add("crypto-and-trading")
-
-        return streams.filter { stream ->
-            stream.categorySlug.lowercase() !in bannedSlugs
+    private suspend fun fetchVisibleStreams(
+        cursor: String? = null,
+        existingIds: Set<String> = emptySet()
+    ): Result<Pair<List<StreamUiModel>, String?>> {
+        val sort = _sort.value
+        val languages = _selectedFilterLanguages.value
+        val hidden = hiddenCategories
+        val minimumStreams = if (hidden.isEmpty()) 1 else if (cursor == null) 12 else 6
+        return loadVisibleStreamPages(cursor, hidden, minimumStreams, existingIds) { after ->
+            repository.fetchLivestreams(cursor = after, sort = sort, languages = languages)
         }
     }
 
@@ -124,9 +121,11 @@ class HomeViewModel(
                 if (_selectedFilterLanguages.value.isEmpty()) {
                     _selectedFilterLanguages.update { state.langs }
                 }
-                currentHideSlots = state.hideSlots
-                currentHidePools = state.hidePools
-                currentHideCrypto = state.hideCrypto
+                hiddenCategories = buildSet {
+                    if (state.hideSlots) add("slots")
+                    if (state.hidePools) add("pools-hot-tubs-bikinis")
+                    if (state.hideCrypto) add("crypto-and-trading")
+                }
                 fetchHomeData()
             }
         }
@@ -134,23 +133,16 @@ class HomeViewModel(
 
     fun fetchHomeData() {
         homeLoadJob?.cancel()
-        val langs = _selectedFilterLanguages.value
+        streamsPageJob?.cancel()
 
         _uiState.update { HomeUiState.Loading }
         streamsCursor = null
         clipsCursor = null
-        isStreamsEnd = false
         isClipsEnd = false
 
         homeLoadJob = viewModelScope.launch {
             try {
-                val streamsDeferred = async {
-                    repository.fetchLivestreams(
-                        cursor = null,
-                        sort = _sort.value,
-                        languages = langs
-                    )
-                }
+                val streamsDeferred = async { fetchVisibleStreams() }
                 val clipsDeferred = async { repository.fetchTopClips(null) }
 
                 val streamsResult = streamsDeferred.await()
@@ -172,10 +164,9 @@ class HomeViewModel(
                     }
                 } else {
 
-                    val filteredStreams = filterBanned(streamsList)
                     _uiState.update {
                         HomeUiState.Success(
-                            streams = filteredStreams,
+                            streams = streamsList,
                             clips = clipsList
                         )
                     }
@@ -192,21 +183,15 @@ class HomeViewModel(
     }
 
     fun refresh() {
-        val langs = _selectedFilterLanguages.value
         if (_isRefreshing.value) return
 
         homeLoadJob?.cancel()
+        streamsPageJob?.cancel()
         _isRefreshing.update { true }
 
         homeLoadJob = viewModelScope.launch {
             try {
-                val streamsDeferred = async {
-                    repository.fetchLivestreams(
-                        cursor = null,
-                        sort = _sort.value,
-                        languages = langs
-                    )
-                }
+                val streamsDeferred = async { fetchVisibleStreams() }
                 val clipsDeferred = async { repository.fetchTopClips(null) }
 
                 val streamsResult = streamsDeferred.await()
@@ -216,17 +201,17 @@ class HomeViewModel(
                 val clipsPair = clipsResult.getOrNull()
 
                 if (streamsPair != null || clipsPair != null) {
-                    streamsCursor = streamsPair?.second ?: streamsCursor
-                    clipsCursor = clipsPair?.second ?: clipsCursor
+                    if (streamsPair != null) streamsCursor = streamsPair.second
+                    if (clipsPair != null) {
+                        clipsCursor = clipsPair.second
+                        isClipsEnd = false
+                    }
 
-                    isStreamsEnd = false
-                    isClipsEnd = false
-
-                    _uiState.update {
+                    _uiState.update { state ->
+                        val previous = state as? HomeUiState.Success
                         HomeUiState.Success(
-
-                            streams = filterBanned(streamsPair?.first ?: emptyList()),
-                            clips = clipsPair?.first ?: emptyList()
+                            streams = streamsPair?.first ?: previous?.streams.orEmpty(),
+                            clips = clipsPair?.first ?: previous?.clips.orEmpty()
                         )
                     }
                 }
@@ -237,44 +222,19 @@ class HomeViewModel(
     }
 
     fun loadMoreStreams() {
-        val langs = _selectedFilterLanguages.value
+        val cursor = streamsCursor ?: return
+        val current = _uiState.value as? HomeUiState.Success ?: return
+        if (streamsPageJob?.isActive == true || homeLoadJob?.isActive == true) return
 
-        if (isStreamsLoading || isStreamsEnd || _uiState.value !is HomeUiState.Success) {
-            return
-        }
-
-        isStreamsLoading = true
-
-        viewModelScope.launch {
-            val result = repository.fetchLivestreams(
-                cursor = streamsCursor,
-                sort = _sort.value,
-                languages = langs
-            )
-
-            if (result.isSuccess) {
-                val (newStreams, nextCursor) = result.getOrThrow()
-                streamsCursor = nextCursor
-
-                val filteredNewStreams = filterBanned(newStreams)
-
-                if (newStreams.isEmpty()) {
-                    isStreamsEnd = true
-                } else {
-                    if (nextCursor.isNullOrBlank()) {
-                        isStreamsEnd = true
-                    }
-                    _uiState.update { state ->
-                        if (state is HomeUiState.Success) {
-                            val merged = (state.streams + filteredNewStreams).distinctBy { it.id }
-                            state.copy(streams = merged)
-                        } else state
-                    }
-                }
-            } else {
-                isStreamsEnd = true
+        streamsPageJob = viewModelScope.launch {
+            val existingIds = current.streams.mapTo(mutableSetOf()) { it.id }
+            val (newStreams, nextCursor) = fetchVisibleStreams(cursor, existingIds).getOrNull()
+                ?: return@launch
+            streamsCursor = nextCursor
+            _uiState.update { state ->
+                if (state is HomeUiState.Success) state.copy(streams = state.streams + newStreams)
+                else state
             }
-            isStreamsLoading = false
         }
     }
 

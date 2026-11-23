@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gallbladderz.openkick.R
 import com.gallbladderz.openkick.core.domain.model.ClipUiModel
+import com.gallbladderz.openkick.core.ui.components.KickPullToRefreshBox
 import com.gallbladderz.openkick.core.ui.components.StreamFilterBottomSheet
 import com.gallbladderz.openkick.features.home.components.HomeFilterChipsRow
 import com.gallbladderz.openkick.features.home.components.homeClipsList
@@ -186,7 +187,7 @@ fun HomeScreen(
             )
         }
 
-        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        KickPullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
             modifier = Modifier
@@ -216,12 +217,12 @@ fun HomeScreen(
 
                         LaunchedEffect(listState, selectedFilter) {
                             snapshotFlow {
-                                listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                            }.collect { lastVisible ->
-                                val totalItems = listState.layoutInfo.totalItemsCount
-                                if (lastVisible != null && totalItems > 3 && lastVisible >= totalItems - 2) {
+                                val layout = listState.layoutInfo
+                                layout.visibleItemsInfo.lastOrNull()?.index to layout.totalItemsCount
+                            }.collect { (lastVisible, totalItems) ->
+                                if (lastVisible != null && lastVisible >= totalItems - 2) {
                                     if (selectedFilter == clipsFilter) {
-                                        onLoadMoreClips()
+                                        if (totalItems > 3) onLoadMoreClips()
                                     } else {
                                         onLoadMoreStreams()
                                     }

@@ -11,7 +11,6 @@ package com.gallbladderz.openkick.core.player
 import android.content.Context
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
-import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
@@ -73,37 +72,7 @@ class PlayerManager(
         }
 
         override fun onTracksChanged(tracks: Tracks) {
-            val parsedQualities = mutableListOf<VideoQuality>()
-
-            for (group in tracks.groups) {
-                if (group.type == C.TRACK_TYPE_VIDEO) {
-                    for (i in 0 until group.length) {
-                        val format = group.getTrackFormat(i)
-                        if (format.height != Format.NO_VALUE) {
-                            val fps = if (format.frameRate > 0) format.frameRate.toInt()
-                                .toString() else ""
-                            val name = "${format.height}p${if (fps == "60") "60" else ""}"
-                            parsedQualities.add(VideoQuality(name, group.mediaTrackGroup, i))
-                        }
-                    }
-                }
-            }
-
-            val sortedQualities = parsedQualities
-                .distinctBy { it.name }
-                .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
-
-            _availableQualities.update {
-                listOf(
-                    VideoQuality(appContext.getString(R.string.auto_quality), null, null),
-                    VideoQuality(
-                        appContext.getString(R.string.audio_only),
-                        null,
-                        null,
-                        isAudioOnly = true
-                    )
-                ) + sortedQualities
-            }
+            _availableQualities.value = tracks.toVideoQualityOptions(appContext)
         }
     }
 
@@ -186,12 +155,22 @@ class PlayerManager(
         player?.seekToDefaultPosition()
     }
 
+    fun replaceLivePlaybackSource(url: String, positionMs: Long = C.TIME_UNSET) {
+        val currentPlayer = player ?: return
+        val item = currentPlayer.currentMediaItem ?: return
+        val source = HlsMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(item.buildUpon().setUri(url).build())
+        currentPlayer.setMediaSource(source, positionMs)
+        currentPlayer.prepare()
+    }
+
     fun play(
         videoUrl: String,
         title: String,
         streamerName: String,
         avatarUrl: String,
-        isLive: Boolean = true
+        isLive: Boolean = true,
+        startPositionMs: Long = C.TIME_UNSET
     ) {
         val currentPlayer = player ?: return
         isExplicitlyPausedByUser = false
@@ -207,7 +186,7 @@ class PlayerManager(
         } else {
             ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
         }
-        currentPlayer.setMediaSource(mediaSource)
+        currentPlayer.setMediaSource(mediaSource, startPositionMs)
         currentPlayer.prepare()
         if (!isExplicitlyPausedByUser) {
             currentPlayer.playWhenReady = true

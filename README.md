@@ -7,7 +7,7 @@
 
 <p align="center">
   An open-source Android client for <a href="https://kick.com">Kick.com</a> with account sign-in, live chat, streams, clips, and VODs.<br />
-  Available in English, Spanish, and Russian.
+  Available in English, Spanish, Russian, and Simplified Chinese (简体中文).
 </p>
 
 <div align="center">
@@ -18,41 +18,47 @@
 
 ## Features
 
-- **Kick account sign-in:** Authenticate through Kick and use your account from the app.
-- **Guest mode:** Browse Kick and keep local follows without signing in.
-- **Live streams, VODs, and clips:** Watch content with Media3/ExoPlayer playback.
-- **Live chat:** Read and send messages, use replies and emotes, and view badges and name colors.
-- **Following sync:** Keep followed channels and categories in sync with Kick after signing in, or manage them locally in guest mode.
-- **Background playback and PiP:** Continue listening or watching while using other apps.
-- **Notifications:** Receive notifications when followed channels go live.
-- **Search and discovery:** Find channels, streams, clips, categories, and category details.
-- **Personalization:** Use dynamic colors, Catppuccin themes, language settings, and chat display controls.
+- **Kick account and guest mode.** Sign in to sync followed channels and categories and write in chat. Guest mode keeps follows on your device and lets you read chat.
+- **Live streams, VODs, and clips.** Rewind live streams when a DVR window or archive is available, jump back to live, and resume VODs where you stopped. The player includes quality selection and fullscreen gestures for brightness and volume.
+- **Mini-player, background playback, and picture-in-picture.** Minimize streams, clips, and VODs inside the app or keep watching or listening while using other apps.
+- **Downloads and offline playback.** Download clips and VODs in the background, choose a quality and time range for supported VODs, and play saved media offline. Manage downloads from Settings.
+- **Live chat and chat replay.** Swipe to reply, view pinned messages and badges, and see unread counts when scrolling is paused. Watch synchronized chat replay on supported clips and VODs.
+- **Kick and 7TV emotes.** Search the emote picker, browse channel and global 7TV sets, and view animated, wide, and overlapping emotes. Toggle 7TV in chat settings.
+- **Following and notifications.** See which followed channels are live, search your follows, and receive alerts when followed channels go live.
+- **Search, discovery, and Kick links.** Search channels, streams, and categories, browse category feeds and streamer profiles, and open Kick links to channels, categories, clips, and VODs in the app.
+- **Personalization.** Use dynamic colors or Catppuccin themes and adjust chat text size, name colors, badges, and emote animation with a live preview.
 
 ## Build
 
-OpenKick is an Android Studio project built with Kotlin, Jetpack Compose, and Gradle. Use JDK 17 or newer.
+Use JDK 17 for Gradle and install Android SDK Platform 36 in Android Studio's SDK Manager. To run the app, use a device or emulator with Android 8.0 (API 26) or later.
 
 ```bash
 git clone https://github.com/Gallbladderz/OpenKick.git
 cd OpenKick
 ```
 
-Open the project in Android Studio, allow Gradle to sync, and run the `app` configuration.
+Open the project in Android Studio, sync Gradle, and run the `app` configuration. To build a debug APK from the terminal, use the Gradle wrapper from the project root.
+
+```bash
+./gradlew :app:assembleDebug
+```
+
+On Windows (PowerShell), run `.\gradlew.bat :app:assembleDebug`. The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### Authentication configuration
 
-The app can be built and used in guest mode without additional configuration. To enable OAuth sign-in in a custom build, provide the Kick client identifier as a Gradle property:
+Guest mode and Kick account sign-in work with the default build configuration. Choose **Sign in to Kick** on the welcome screen or in Settings, confirm the prompt, and sign in on the Kick website inside the app. OpenKick picks up your session and returns you to the app.
 
-```properties
-kickClientId=your_kick_client_id
-```
-
-Keep local or environment-specific values outside the repository. The default BFF endpoint is `https://kick.com/`; it can be overridden with the `bffBaseUrl` Gradle property when needed.
+The channel-follow and OAuth API clients use `https://kick.com/` by default. For development against a compatible backend, set the optional `bffBaseUrl` in your user-level Gradle properties.
 
 ## Privacy
 
 Guest follows and app settings are stored locally on the device. When you sign in, OpenKick stores the session required to access your Kick account and synchronizes account follows with Kick.
 
+When 7TV emotes are enabled, OpenKick fetches global and channel emote sets from `7tv.io`.
+
 ## License
 
 OpenKick is distributed under the **GPL-3.0 License**. See [LICENSE](LICENSE) for the full license text.
+
+OpenKick is not affiliated with Kick.com.

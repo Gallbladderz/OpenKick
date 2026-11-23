@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.gallbladderz.openkick.LocalBottomBarOffset
 import com.gallbladderz.openkick.core.player.LocalGlobalPlayerController
+import com.gallbladderz.openkick.core.player.PlayerMedia
 import com.gallbladderz.openkick.features.search.SearchScreen
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -59,11 +60,7 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
                                     navController.navigate(CategoryDetailsRoute(slug))
                                 },
                                 onClipClick = { clip ->
-                                    navController.navigate(
-                                        ClipPlayerRoute(
-                                            clipId = clip.id
-                                        )
-                                    )
+                                    globalPlayerController.openRecording(PlayerMedia.Recording.Clip(clip.id))
                                 },
                                 onSearchClick = { navController.navigate(SearchRoute) }
                             )
@@ -93,6 +90,7 @@ fun NavGraphBuilder.mainTabsScreen(navController: NavController) {
                                 onNotificationSettingsClick = {
                                     navController.navigate(NotificationSettingsRoute)
                                 },
+                                onDownloadsClick = { navController.navigate(DownloadsRoute) },
                                 onContentSettingsClick = {
                                     navController.navigate(ContentSettingsRoute)
                                 },
@@ -138,23 +136,8 @@ fun NavGraphBuilder.categoryDetailsScreen(navController: NavController) {
             },
             onProfileClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) },
             onClipClick = { clip ->
-                navController.navigate(
-                    ClipPlayerRoute(
-                        clipId = clip.id
-                    )
-                )
+                globalPlayerController.openRecording(PlayerMedia.Recording.Clip(clip.id))
             }
-        )
-    }
-}
-
-fun NavGraphBuilder.clipPlayerScreen(navController: NavController) {
-    composable<ClipPlayerRoute> { backStackEntry ->
-        val route = backStackEntry.toRoute<ClipPlayerRoute>()
-        com.gallbladderz.openkick.features.player.ClipPlayerRoute(
-            clipId = route.clipId,
-            onBackClick = { navController.popBackStack() },
-            onStreamerClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
         )
     }
 }
@@ -193,6 +176,16 @@ fun NavGraphBuilder.notificationSettingsScreen(navController: NavController) {
     }
 }
 
+fun NavGraphBuilder.downloadsScreen(navController: NavController) {
+    composable<DownloadsRoute> {
+        val player = LocalGlobalPlayerController.current
+        com.gallbladderz.openkick.features.downloads.DownloadsScreen(
+            onBack = { navController.popBackStack() },
+            onPlay = { id -> player.openRecording(PlayerMedia.Recording.Download(id)) }
+        )
+    }
+}
+
 fun NavGraphBuilder.allFollowsScreen(navController: NavController) {
     composable<AllFollowsRoute> {
         val globalPlayerController = LocalGlobalPlayerController.current
@@ -213,30 +206,11 @@ fun NavGraphBuilder.streamerProfileScreen(navController: NavController) {
             onBackClick = { navController.popBackStack() },
             onStreamClick = { slug -> globalPlayerController.expandPlayer(slug) },
             onVideoClick = { videoId: String ->
-                navController.navigate(
-                    VodPlayerRoute(
-                        videoId = videoId
-                    )
-                )
+                globalPlayerController.openRecording(PlayerMedia.Recording.Vod(videoId, route.slug))
             },
             onClipClick = { clip ->
-                navController.navigate(
-                    ClipPlayerRoute(
-                        clipId = clip.id
-                    )
-                )
+                globalPlayerController.openRecording(PlayerMedia.Recording.Clip(clip.id))
             }
-        )
-    }
-}
-
-fun NavGraphBuilder.vodPlayerScreen(navController: NavController) {
-    composable<VodPlayerRoute> { backStackEntry ->
-        val route = backStackEntry.toRoute<VodPlayerRoute>()
-        com.gallbladderz.openkick.features.player.vod.VodPlayerRoute(
-            videoId = route.videoId,
-            onBackClick = { navController.popBackStack() },
-            onStreamerClick = { slug -> navController.navigate(StreamerProfileRoute(slug)) }
         )
     }
 }

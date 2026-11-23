@@ -8,6 +8,7 @@
 package com.gallbladderz.openkick
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
@@ -17,11 +18,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,19 +57,29 @@ import com.gallbladderz.openkick.core.auth.OAuthManager
 import com.gallbladderz.openkick.core.auth.SessionManager
 import com.gallbladderz.openkick.core.player.GlobalPlayerController
 import com.gallbladderz.openkick.core.player.LocalGlobalPlayerController
+import com.gallbladderz.openkick.core.player.PlayerMedia
 import com.gallbladderz.openkick.core.player.PlaybackService
 import com.gallbladderz.openkick.core.player.PlayerExpandedState
 import com.gallbladderz.openkick.core.player.PlayerManager
 import com.gallbladderz.openkick.core.ui.theme.OpenKickTheme
 import com.gallbladderz.openkick.features.following.FollowingRepository
 import com.gallbladderz.openkick.features.onboarding.WelcomeScreen
+import com.gallbladderz.openkick.core.ui.components.KickSignInPrompt
 import com.gallbladderz.openkick.features.player.DraggablePlayerContainer
 import com.gallbladderz.openkick.features.player.PlayerRoute
+import com.gallbladderz.openkick.features.player.RecordedPlayerOverlay
 import com.gallbladderz.openkick.features.profile.MainViewModel
 import com.gallbladderz.openkick.navigation.CategoryDetailsRoute
+import com.gallbladderz.openkick.navigation.ClipPlayerRoute
+import com.gallbladderz.openkick.navigation.KickLinkDestination
+import com.gallbladderz.openkick.navigation.KickWebLink
 import com.gallbladderz.openkick.navigation.OpenKickNavHost
 import com.gallbladderz.openkick.navigation.StreamerProfileRoute
+import com.gallbladderz.openkick.navigation.VodPlayerRoute
+import com.gallbladderz.openkick.navigation.parseKickWebLink
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -73,6 +87,7 @@ import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 val LocalBottomBarOffset = compositionLocalOf<() -> Float> { { 0f } }
+private const val PendingKickLinkKey = "pendingKickLink"
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class MainActivity : AppCompatActivity() {
@@ -85,19 +100,26 @@ class MainActivity : AppCompatActivity() {
     private val authError = mutableStateOf<String?>(null)
     private val offerMigration = mutableStateOf(false)
     private val isMigrating = mutableStateOf(false)
+    private var pendingKickLink by mutableStateOf<KickWebLink?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleAuthIntent(intent)
         handlePipAudioIntent(intent)
+        if (savedInstanceState == null) {
+            handleKickLinkIntent(intent)
+        } else {
+            pendingKickLink = savedInstanceState.getString(PendingKickLinkKey)?.let(::parseKickWebLink)
+        }
         lifecycleScope.launch {
             combine(
                 sessionManager.mode,
                 sessionManager.sessionGeneration
             ) { mode, generation -> mode to generation }
                 .distinctUntilChanged()
-                .collect { (mode, _) ->
-                    if (mode == AppMode.AUTHENTICATED) syncAuthenticatedFollowing()
+                .collectLatest { (mode, generation) ->
+                    if (mode == AppMode.AUTHENTICATED) syncAuthenticatedFollowing(generation)
+                    else offerMigration.value = false
                 }
         }
         enableEdgeToEdge()
@@ -117,7 +139,9 @@ class MainActivity : AppCompatActivity() {
                     authError.value, { authError.value = null },
                     offerMigration.value, { offerMigration.value = false },
                     isMigrating.value, { isMigrating.value = it },
-                    { authError.value = it }
+                    { authError.value = it },
+                    kickDestination = pendingKickLink?.destination,
+                    onKickDestinationOpened = { pendingKickLink = null }
                 )
             }
         }
@@ -128,6 +152,28 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         handleAuthIntent(intent)
         handlePipAudioIntent(intent)
+        handleKickLinkIntent(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(PendingKickLinkKey, pendingKickLink?.url)
+    }
+
+    private fun handleKickLinkIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val uri = intent.data ?: return
+        val link = parseKickWebLink(uri.toString()) ?: return
+        intent.data = null
+        if (link.destination != null) {
+            pendingKickLink = link
+        } else {
+            val viewInBrowser = Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)
+            val chooser = Intent.createChooser(viewInBrowser, null).apply {
+                putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(this@MainActivity, MainActivity::class.java)))
+            }
+            startActivity(chooser)
+        }
     }
 
     private fun handlePipAudioIntent(intent: Intent?) {
@@ -143,21 +189,30 @@ class MainActivity : AppCompatActivity() {
         intent.data = null
         lifecycleScope.launch {
             val result = oauthManager.handleCallback(callback)
-            if (result.isSuccess) {
-                syncAuthenticatedFollowing()
-            } else {
+            if (result.isFailure) {
                 authError.value =
                     result.exceptionOrNull()?.message ?: getString(R.string.auth_error)
             }
         }
     }
 
-    private suspend fun syncAuthenticatedFollowing() {
-        offerMigration.value = followingRepository.localStreamers().first().isNotEmpty()
-        runCatching { followingRepository.refreshFollowing() }
-            .onFailure {
-                authError.value = it.message ?: getString(R.string.could_not_load_subscriptions)
+    private suspend fun syncAuthenticatedFollowing(generation: Long) {
+        offerMigration.value = false
+        try {
+            followingRepository.refreshFollowing()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            if (sessionManager.sessionGeneration.value == generation) {
+                authError.value = getString(R.string.could_not_load_subscriptions)
             }
+        }
+        val hasLocalFollows = followingRepository.localStreamers().first().isNotEmpty()
+        if (sessionManager.sessionGeneration.value == generation &&
+            sessionManager.mode.value == AppMode.AUTHENTICATED
+        ) {
+            offerMigration.value = hasLocalFollows
+        }
     }
 }
 
@@ -185,15 +240,21 @@ fun OpenKickAppContent(
     dismissMigration: () -> Unit,
     migrating: Boolean,
     setMigrating: (Boolean) -> Unit,
-    showError: (String?) -> Unit
+    showError: (String?) -> Unit,
+    kickDestination: KickLinkDestination? = null,
+    onKickDestinationOpened: () -> Unit = {}
 ) {
     val mode by session.mode.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     if (mode == AppMode.UNDECIDED) {
-        WelcomeScreen(
-            onSignIn = { runCatching { oauth.beginLogin() }.onFailure { showError(it.message) } },
-            onAutonomous = { runCatching { session.selectAutonomous() }.onFailure { showError(it.message) } }
-        )
+        KickSignInPrompt(
+            onContinue = { runCatching { oauth.beginLogin() }.onFailure { showError(it.message) } }
+        ) { requestSignIn ->
+            WelcomeScreen(
+                onSignIn = requestSignIn,
+                onAutonomous = { runCatching { session.selectAutonomous() }.onFailure { showError(it.message) } }
+            )
+        }
     } else {
         RequestPermissions()
         val globalPlayerController = remember { GlobalPlayerController() }
@@ -213,24 +274,58 @@ fun OpenKickAppContent(
                 PlayerOverlay(globalPlayerController, navController, bottomBarState)
             }
         }
+        LaunchedEffect(kickDestination, navController) {
+            if (kickDestination == null) return@LaunchedEffect
+            when (kickDestination) {
+                is ClipPlayerRoute -> globalPlayerController.openRecording(
+                    PlayerMedia.Recording.Clip(kickDestination.clipId)
+                )
+                is VodPlayerRoute -> globalPlayerController.openRecording(
+                    PlayerMedia.Recording.Vod(kickDestination.videoId, kickDestination.channelSlug)
+                )
+                is CategoryDetailsRoute, is StreamerProfileRoute -> {
+                    globalPlayerController.minimizePlayer()
+                    navController.navigate(kickDestination)
+                }
+            }
+            onKickDestinationOpened()
+        }
     }
     if (showMigration && mode == AppMode.AUTHENTICATED) {
+        var migrationFailed by remember { mutableStateOf(false) }
         AlertDialog(
-            onDismissRequest = dismissMigration,
+            onDismissRequest = { if (!migrating) dismissMigration() },
             title = { Text(stringResource(R.string.migrate_follows_title)) },
-            text = { Text(stringResource(R.string.migrate_follows_description)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.migrate_follows_description))
+                    if (migrationFailed) {
+                        Text(stringResource(R.string.migrate_follows_error), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(enabled = !migrating, onClick = {
+                    migrationFailed = false
                     setMigrating(true)
                     scope.launch {
-                        runCatching { following.migrateLocalToRemote() }
-                            .onSuccess { dismissMigration() }
-                            .onFailure { showError(it.message) }
-                        setMigrating(false)
+                        val generation = session.sessionGeneration.value
+                        try {
+                            following.migrateLocalToRemote()
+                            if (session.sessionGeneration.value == generation) dismissMigration()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            if (session.sessionGeneration.value == generation) migrationFailed = true
+                        } finally {
+                            setMigrating(false)
+                        }
                     }
                 }) { Text(stringResource(R.string.migrate)) }
             },
-            dismissButton = { TextButton(onClick = dismissMigration) { Text(stringResource(R.string.not_now)) } })
+            dismissButton = {
+                TextButton(enabled = !migrating, onClick = dismissMigration) { Text(stringResource(R.string.not_now)) }
+            })
     }
     if (error != null) {
         AlertDialog(
@@ -248,9 +343,9 @@ fun PlayerOverlay(
     bottomBarState: BottomBarState
 ) {
     val playerState = globalPlayerController.playerState
-    val streamerName = globalPlayerController.currentStreamerName
+    val media = globalPlayerController.currentMedia
 
-    if (playerState != PlayerExpandedState.HIDDEN && streamerName != null) {
+    if (playerState != PlayerExpandedState.HIDDEN && media != null) {
         val density = LocalDensity.current
         val bottomOffsetPx = remember(
             density,
@@ -268,19 +363,28 @@ fun PlayerOverlay(
             globalPlayerController = globalPlayerController,
             bottomOffsetPx = bottomOffsetPx
         ) { dragState ->
-            PlayerRoute(
-                streamerName = streamerName,
-                dragState = dragState,
-                onBackClick = { globalPlayerController.hidePlayer() },
-                onAvatarClick = { slug ->
-                    globalPlayerController.minimizePlayer()
-                    navController.navigate(StreamerProfileRoute(slug))
-                },
-                onCategoryClick = { slug ->
-                    globalPlayerController.minimizePlayer()
-                    navController.navigate(CategoryDetailsRoute(slug))
-                }
-            )
+            val openProfile: (String) -> Unit = { slug ->
+                globalPlayerController.minimizePlayer()
+                navController.navigate(StreamerProfileRoute(slug))
+            }
+            when (media) {
+                is PlayerMedia.Live -> PlayerRoute(
+                    streamerName = media.streamerName,
+                    dragState = dragState,
+                    onBackClick = globalPlayerController::hidePlayer,
+                    onAvatarClick = openProfile,
+                    onCategoryClick = { slug ->
+                        globalPlayerController.minimizePlayer()
+                        navController.navigate(CategoryDetailsRoute(slug))
+                    }
+                )
+                is PlayerMedia.Recording -> RecordedPlayerOverlay(
+                    recording = media,
+                    dragState = dragState,
+                    onClose = globalPlayerController::hidePlayer,
+                    onProfileClick = openProfile
+                )
+            }
         }
     }
 }

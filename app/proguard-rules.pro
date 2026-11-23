@@ -1,6 +1,7 @@
 -keepattributes Signature, InnerClasses, EnclosingMethod, Exceptions
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
 -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-keep,allowoptimization,allowshrinking,allowobfuscation class retrofit2.Response
 -keepclassmembers,allowshrinking,allowobfuscation interface * {
     @retrofit2.http.* <methods>;
 }

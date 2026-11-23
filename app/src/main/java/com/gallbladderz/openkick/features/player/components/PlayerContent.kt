@@ -48,11 +48,14 @@ import androidx.media3.common.Player
 import com.gallbladderz.openkick.core.datastore.ChatSettings
 import com.gallbladderz.openkick.core.domain.chat.ChatEmoteSet
 import com.gallbladderz.openkick.core.domain.chat.ChatMessage
+import com.gallbladderz.openkick.core.domain.chat.PinnedChatMessage
 import com.gallbladderz.openkick.core.domain.chat.ChatMode
 import com.gallbladderz.openkick.core.player.PlayerExpandedState
-import com.gallbladderz.openkick.core.ui.components.ViewerCountBadge
+import com.gallbladderz.openkick.features.player.MiniPlayerHeight
+import com.gallbladderz.openkick.features.player.MiniPlayerWidth
 import com.gallbladderz.openkick.features.player.ChatSendState
 import com.gallbladderz.openkick.features.player.PlayerUiState
+import com.gallbladderz.openkick.features.player.models.LivePlaybackState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -68,7 +71,9 @@ fun PlayerContent(
     onShowControlsChange: (Boolean) -> Unit,
     playWhenReady: Boolean,
     playbackState: Int,
-    isAtLiveEdge: Boolean,
+    livePlaybackState: LivePlaybackState,
+    liveTimelineInteractions: MutableInteractionSource,
+    onSeekLiveTimeline: (Long) -> Unit,
     onSeekToLiveEdge: () -> Unit,
     onPlayerManagerResume: () -> Unit,
     onPlayerManagerPause: () -> Unit,
@@ -80,6 +85,8 @@ fun PlayerContent(
     dragState: AnchoredDraggableState<PlayerExpandedState>,
     coroutineScope: CoroutineScope,
     chatMessages: List<ChatMessage>,
+    pinnedMessage: PinnedChatMessage?,
+    onTogglePinnedMessage: () -> Unit,
     onSendMessage: (String, ChatMessage?) -> Unit,
     chatSendState: ChatSendState,
     chatEmoteSets: List<ChatEmoteSet> = emptyList(),
@@ -88,7 +95,6 @@ fun PlayerContent(
     chatSettings: ChatSettings = ChatSettings(),
     onChatSettingsClick: () -> Unit = {},
     onProfileClick: (String) -> Unit = {},
-    isChatExpanded: Boolean = false,
     onPlayerInteraction: () -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
@@ -101,8 +107,8 @@ fun PlayerContent(
         }
     }
     val screenWidth = configuration.screenWidthDp.dp
-    val miniPlayerWidth = 120.dp
-    val miniPlayerHeight = 64.dp
+    val miniPlayerWidth = MiniPlayerWidth
+    val miniPlayerHeight = MiniPlayerHeight
     val expandedHeight = minOf(screenWidth * (9f / 16f), configuration.screenHeightDp.dp)
     val playerBgColor = androidx.compose.ui.graphics.lerp(
         Color.Black,
@@ -151,7 +157,11 @@ fun PlayerContent(
                     .align(Alignment.CenterStart)
             }
         ) {
-            Box(
+            PlayerGestureArea(
+                player = player,
+                fullscreen = isFullscreen,
+                enabled = !isInPipMode && fraction < 0.1f && uiState is PlayerUiState.Playing,
+                onToggleFullscreen = onFullscreenToggle,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -205,7 +215,10 @@ fun PlayerContent(
                                 playWhenReady = playWhenReady,
                                 playbackState = playbackState,
                                 isFullscreen = isFullscreen,
-                                isAtLiveEdge = isAtLiveEdge,
+                                livePlaybackState = livePlaybackState,
+                                player = player,
+                                liveTimelineInteractions = liveTimelineInteractions,
+                                onSeekLiveTimeline = onSeekLiveTimeline,
                                 onSeekToLiveEdge = onSeekToLiveEdge,
                                 onPlayerManagerResume = onPlayerManagerResume,
                                 onPlayerManagerPause = onPlayerManagerPause,
@@ -213,19 +226,6 @@ fun PlayerContent(
                                 onShowSettings = onShowSettings,
                                 onBackClick = onBackClick,
                                 onToggleChat = { isLandscapeChatOpen = !isLandscapeChatOpen }
-                            )
-                        }
-
-                        if (isChatExpanded) {
-                            ViewerCountBadge(
-                                viewers = uiState.viewers,
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .background(
-                                        Color.Black.copy(alpha = 0.55f),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 10.dp, vertical = 7.dp)
                             )
                         }
                     }
@@ -261,6 +261,8 @@ fun PlayerContent(
                 ) {
                     ChatList(
                         chatMessages = chatMessages,
+                        pinnedMessage = pinnedMessage,
+                        onTogglePinnedMessage = onTogglePinnedMessage,
                         onSendMessage = onSendMessage,
                         chatSendState = chatSendState,
                         emoteSets = chatEmoteSets,
@@ -268,7 +270,8 @@ fun PlayerContent(
                         isAuthenticated = isAuthenticated,
                         chatSettings = chatSettings,
                         onSettingsClick = onChatSettingsClick,
-                        onProfileClick = onProfileClick
+                        onProfileClick = onProfileClick,
+                        isCompactOverlay = true
                     )
                 }
             }

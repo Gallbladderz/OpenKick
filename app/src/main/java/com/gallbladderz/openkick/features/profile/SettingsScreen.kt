@@ -27,9 +27,10 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -63,6 +64,7 @@ import com.gallbladderz.openkick.core.auth.OAuthManager
 import com.gallbladderz.openkick.core.auth.SessionManager
 import com.gallbladderz.openkick.core.datastore.AppTheme
 import com.gallbladderz.openkick.core.network.api.AccountApi
+import com.gallbladderz.openkick.core.ui.components.KickSignInPrompt
 import com.gallbladderz.openkick.core.ui.components.KickAvatar
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -72,6 +74,7 @@ fun SettingsRoute(
     onProfileClick: (String) -> Unit,
     onLanguageSettingsClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
+    onDownloadsClick: () -> Unit,
     onContentSettingsClick: () -> Unit,
     onThemeSettingsClick: () -> Unit,
     onAboutAppClick: () -> Unit,
@@ -127,24 +130,29 @@ fun SettingsRoute(
         }
     }
 
-    SettingsScreen(
-        mode = mode,
-        account = account,
-        accountLoading = accountLoading,
-        accountLoadFailed = accountLoadFailed,
-        selectedLanguages = selectedLanguages,
-        appTheme = appTheme,
-        useDynamicColors = useDynamicColors,
-        onLanguageSettingsClick = onLanguageSettingsClick,
-        onNotificationSettingsClick = onNotificationSettingsClick,
-        onContentSettingsClick = onContentSettingsClick,
-        onThemeSettingsClick = onThemeSettingsClick,
-        onAboutAppClick = onAboutAppClick,
-        onProfileClick = onProfileClick,
-        onRetryAccount = { refreshAccount++ },
-        onSignIn = { runCatching { oauth.beginLogin() }.onFailure { authError = it.message } },
-        onSignOut = { runCatching { session.signOut() }.onFailure { authError = it.message } }
-    )
+    KickSignInPrompt(
+        onContinue = { runCatching { oauth.beginLogin() }.onFailure { authError = it.message } }
+    ) { requestSignIn ->
+        SettingsScreen(
+            mode = mode,
+            account = account,
+            accountLoading = accountLoading,
+            accountLoadFailed = accountLoadFailed,
+            selectedLanguages = selectedLanguages,
+            appTheme = appTheme,
+            useDynamicColors = useDynamicColors,
+            onLanguageSettingsClick = onLanguageSettingsClick,
+            onNotificationSettingsClick = onNotificationSettingsClick,
+            onDownloadsClick = onDownloadsClick,
+            onContentSettingsClick = onContentSettingsClick,
+            onThemeSettingsClick = onThemeSettingsClick,
+            onAboutAppClick = onAboutAppClick,
+            onProfileClick = onProfileClick,
+            onRetryAccount = { refreshAccount++ },
+            onSignIn = requestSignIn,
+            onSignOut = { runCatching { session.signOut() }.onFailure { authError = it.message } }
+        )
+    }
 
     authError?.let { message ->
         AlertDialog(
@@ -172,6 +180,7 @@ fun SettingsScreen(
     useDynamicColors: Boolean,
     onLanguageSettingsClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
+    onDownloadsClick: () -> Unit,
     onContentSettingsClick: () -> Unit,
     onThemeSettingsClick: () -> Unit,
     onAboutAppClick: () -> Unit,
@@ -272,6 +281,13 @@ fun SettingsScreen(
         }
 
         item {
+            SettingsListItem(
+                headline = stringResource(R.string.downloads),
+                supporting = null,
+                icon = Icons.Rounded.Download,
+                onClick = onDownloadsClick
+            )
+
             SettingsListItem(
                 headline = stringResource(R.string.notifications),
                 supporting = stringResource(R.string.notifications_settings_desc),
@@ -393,7 +409,7 @@ private fun SettingsAccountCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Login,
+                    imageVector = Icons.AutoMirrored.Filled.Login,
                     contentDescription = null,
                     modifier = Modifier.size(28.dp),
                     tint = MaterialTheme.colorScheme.primary

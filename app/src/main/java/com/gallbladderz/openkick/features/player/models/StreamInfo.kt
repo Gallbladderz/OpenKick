@@ -19,5 +19,9 @@ data class StreamInfo(
     val categorySlug: String?,
     val isVerified: Boolean,
     val subscriberBadges: Map<Int, String> = emptyMap(),
-    val chatMode: ChatMode = ChatMode()
+    val chatMode: ChatMode = ChatMode(),
+    val channelId: Long? = null,
+    val streamId: String? = null,
+    val startedAtMs: Long? = null,
+    val kickUserId: Long? = null
 )

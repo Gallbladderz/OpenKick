@@ -50,6 +50,10 @@ class PlayerViewModel(
     val channelLinks = _channelLinks.asStateFlow()
 
     val chatMessages = chatRepository.chatMessages
+    val pinnedMessage = chatRepository.pinnedMessage
+
+    fun togglePinnedMessageVisibility() = chatRepository.togglePinnedMessageVisibility()
+
     val chatSendState = chatRepository.chatSendState
     val chatEmoteSets = chatRepository.chatEmoteSets
     private val _chatMode = MutableStateFlow(ChatMode())
@@ -76,10 +80,16 @@ class PlayerViewModel(
     val selectedQuality = playerManager.selectedQuality
 
     private var currentPlaybackUrl: String? = null
+    private val livePlayback = LiveStreamPlayback(playerManager, repository, viewModelScope)
+    val livePlaybackState = livePlayback.state
     private var streamInfoJob: Job? = null
     private var channelLinksJob: Job? = null
 
-    fun play() = playerManager.resume()
+    fun play() = livePlayback.resume()
+
+    fun seekLiveTimeline(positionMs: Long) = livePlayback.seekTo(positionMs)
+
+    fun seekToLiveEdge() = livePlayback.goLive()
 
     fun pause() = playerManager.pause()
 
@@ -90,6 +100,7 @@ class PlayerViewModel(
     fun disconnectChat() {
         streamInfoJob?.cancel()
         channelLinksJob?.cancel()
+        livePlayback.close()
         currentPlaybackUrl = null
         currentStreamerName = null
         _uiState.update { PlayerUiState.Loading }
@@ -123,6 +134,10 @@ class PlayerViewModel(
 
     fun loadStreamInfo(streamerName: String) {
         streamInfoJob?.cancel()
+        if (currentStreamerName != streamerName) {
+            livePlayback.close()
+            currentPlaybackUrl = null
+        }
         currentStreamerName = streamerName
         _chatMode.update { ChatMode() }
         chatRepository.setChatMode(ChatMode())
@@ -142,7 +157,8 @@ class PlayerViewModel(
                                 title = streamInfo.title,
                                 categoryName = streamInfo.categoryName,
                                 categorySlug = streamInfo.categorySlug,
-                                isVerified = streamInfo.isVerified
+                                isVerified = streamInfo.isVerified,
+                                kickUserId = streamInfo.kickUserId
                             )
                         }
 
@@ -161,10 +177,11 @@ class PlayerViewModel(
                                 streamerName,
                                 streamInfo.avatarUrl
                             )
+                            livePlayback.open(streamerName, streamInfo)
                         }
 
                         if (!streamInfo.chatroomId.isNullOrBlank()) {
-                            chatRepository.connectToChat(streamInfo.chatroomId)
+                            chatRepository.connectToChat(streamInfo.chatroomId, streamInfo.channelId)
                         } else {
                             chatRepository.reportSystemMessage(
                                 UiText.StringResource(R.string.chatroom_id_missing, streamerName)
@@ -194,6 +211,7 @@ class PlayerViewModel(
     }
 
     override fun onCleared() {
+        livePlayback.close()
         playerManager.release()
         super.onCleared()
         chatRepository.disconnect()

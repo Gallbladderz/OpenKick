@@ -104,7 +104,9 @@ class StreamerProfileViewModel(
 
             _uiState.update {
                 ProfileUiState.Success(
-                    info = profile,
+                    info = if (!profile.isLive && profile.lastBroadcastAt == null) {
+                        profile.copy(lastBroadcastAt = videos.mapNotNull { it.broadcastEndedAt }.maxOrNull())
+                    } else profile,
                     videos = videos,
                     clips = clips,
                     links = links,

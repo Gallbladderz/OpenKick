@@ -13,6 +13,7 @@ import com.gallbladderz.openkick.core.domain.model.StreamUiModel
 import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.api.KickApiService
 import com.gallbladderz.openkick.core.network.dto.home.HomeLivestreamItem
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -38,6 +39,8 @@ class HomeRepository(
             val nextCursor = response.data?.pagination?.nextCursor
 
             Result.success(Pair(uiModels, if (nextCursor.isNullOrBlank()) null else nextCursor))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e.toDomainError())
         }

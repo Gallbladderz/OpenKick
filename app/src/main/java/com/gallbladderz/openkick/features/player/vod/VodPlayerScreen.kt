@@ -3,396 +3,98 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-
-
 package com.gallbladderz.openkick.features.player.vod
 
-
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.res.Configuration
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.media3.common.C
-import androidx.media3.common.Format
-import androidx.media3.common.Player
-import androidx.media3.common.TrackSelectionOverride
-import androidx.media3.common.Tracks
 import com.gallbladderz.openkick.R
-import com.gallbladderz.openkick.core.player.LocalGlobalPlayerController
-import com.gallbladderz.openkick.core.player.VideoQuality
-import com.gallbladderz.openkick.core.ui.utils.DeviceOrientation
-import com.gallbladderz.openkick.core.ui.utils.findActivity
-import com.gallbladderz.openkick.core.ui.utils.rememberDeviceOrientation
-import com.gallbladderz.openkick.features.player.components.ClipInfoPanel
-import com.gallbladderz.openkick.features.player.components.CustomPlayerControls
-import com.gallbladderz.openkick.features.player.components.KickStreamPlayer
-import com.gallbladderz.openkick.features.player.components.QualitySelectionSheet
-import kotlinx.coroutines.delay
+import com.gallbladderz.openkick.core.data.local.DownloadMediaType
+import com.gallbladderz.openkick.core.player.PlayerExpandedState
+import com.gallbladderz.openkick.features.downloads.DownloadSource
+import com.gallbladderz.openkick.features.downloads.VodDownloadAction
+import com.gallbladderz.openkick.features.player.components.ChatReplayPanel
+import com.gallbladderz.openkick.features.player.components.RecordedFollowButton
+import com.gallbladderz.openkick.features.player.components.RecordedInfoPanel
+import com.gallbladderz.openkick.features.player.components.RecordedPlayerPlaceholder
+import com.gallbladderz.openkick.features.player.components.RecordedPlayerScreen
+import com.gallbladderz.openkick.features.player.components.RecordedShareButton
+import com.gallbladderz.openkick.features.player.components.recordedMetadata
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
-fun VodPlayerRoute(
+internal fun VodPlayerRoute(
     videoId: String,
+    channelSlug: String?,
+    dragState: AnchoredDraggableState<PlayerExpandedState>,
     onBackClick: () -> Unit,
     onStreamerClick: (String) -> Unit
 ) {
-    val globalPlayerController = LocalGlobalPlayerController.current
-
-    LaunchedEffect(Unit) {
-        globalPlayerController.hidePlayer()
-    }
-
-    val viewModel: VodPlayerViewModel = koinViewModel(parameters = { parametersOf(videoId) })
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    DisposableEffect(videoId) {
-        onDispose { viewModel.playerManager.release() }
-    }
-
-    VodPlayerScreen(
-        uiState = uiState,
-        videoId = videoId,
-        exoPlayer = viewModel.playerManager.player,
-        onBackClick = {
-            viewModel.playerManager.release()
-            onBackClick()
-        },
-        onStreamerClick = onStreamerClick
+    val viewModel: VodPlayerViewModel = koinViewModel(
+        parameters = { parametersOf(videoId, channelSlug.orEmpty()) }
     )
-}
-
-@Composable
-fun VodPlayerScreen(
-    uiState: VodPlayerUiState,
-    videoId: String,
-    exoPlayer: Player?,
-    onBackClick: () -> Unit,
-    onStreamerClick: (String) -> Unit
-) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val configuration = LocalConfiguration.current
+    val label = stringResource(R.string.vod_desc)
 
-    var isPlaying by remember { mutableStateOf(exoPlayer?.isPlaying == true) }
-    var playbackState by remember {
-        mutableIntStateOf(
-            exoPlayer?.playbackState ?: Player.STATE_IDLE
-        )
-    }
-    var currentPosition by remember { mutableLongStateOf(0L) }
-    var duration by remember { mutableLongStateOf(0L) }
-    var showControls by remember { mutableStateOf(true) }
-
-    val deviceOrientation = rememberDeviceOrientation()
-    var isFullscreen by remember { mutableStateOf(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) }
-
-    var showSettingsSheet by remember { mutableStateOf(false) }
-    var availableQualities by remember { mutableStateOf<List<VideoQuality>>(emptyList()) }
-    var selectedQuality by remember { mutableStateOf<VideoQuality?>(null) }
-
-    fun setQuality(quality: VideoQuality) {
-        selectedQuality = quality
-        val builder = exoPlayer?.trackSelectionParameters?.buildUpon() ?: return
-        if (quality.isAudioOnly) {
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
-            builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
-        } else {
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
-            if (quality.trackGroup == null || quality.trackIndex == null) {
-                builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO)
-            } else {
-                builder.setOverrideForType(
-                    TrackSelectionOverride(quality.trackGroup, listOf(quality.trackIndex))
-                )
+    when (val state = uiState) {
+        VodPlayerUiState.Loading -> RecordedPlayerPlaceholder(dragState, label, onBackClick)
+        is VodPlayerUiState.Error -> RecordedPlayerPlaceholder(dragState, label, onBackClick, message = state.message)
+        is VodPlayerUiState.Success -> {
+            val player = viewModel.playerManager.player
+            if (player == null) {
+                RecordedPlayerPlaceholder(dragState, label, onBackClick, error = R.string.load_error)
+                return
             }
-        }
-        exoPlayer.trackSelectionParameters = builder.build()
-    }
-
-    DisposableEffect(exoPlayer) {
-        val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(play: Boolean) {
-                isPlaying = play
-            }
-
-            override fun onPlaybackStateChanged(state: Int) {
-                playbackState = state
-                if (state == Player.STATE_READY) {
-                    duration = exoPlayer?.duration?.coerceAtLeast(0L) ?: 0L
+            val metadata = state.metadata
+            val slug = metadata.channelSlug
+            RecordedPlayerScreen(
+                player,
+                dragState = dragState,
+                title = metadata.title,
+                channelName = metadata.channelUsername,
+                onBack = onBackClick,
+                chat = { playback, modifier ->
+                    ChatReplayPanel(metadata.chatReplay, playback, modifier, channelSlug = slug)
                 }
-            }
-
-            override fun onTracksChanged(tracks: Tracks) {
-                val parsedQualities = mutableListOf<VideoQuality>()
-                for (group in tracks.groups) {
-                    if (group.type == C.TRACK_TYPE_VIDEO) {
-                        for (i in 0 until group.length) {
-                            val format = group.getTrackFormat(i)
-                            if (format.height != Format.NO_VALUE) {
-                                val fps = if (format.frameRate > 0) format.frameRate.toInt()
-                                    .toString() else ""
-                                val name = "${format.height}p${if (fps == "60") "60" else ""}"
-                                parsedQualities.add(VideoQuality(name, group.mediaTrackGroup, i))
-                            }
-                        }
-                    }
-                }
-                val sortedQualities = parsedQualities
-                    .distinctBy { it.name }
-                    .sortedByDescending { it.name.substringBefore("p").toIntOrNull() ?: 0 }
-                availableQualities = listOf(
-                    VideoQuality(context.getString(R.string.auto_quality), null, null),
-                    VideoQuality(
-                        context.getString(R.string.audio_only),
-                        null,
-                        null,
-                        isAudioOnly = true
-                    )
-                ) + sortedQualities
-            }
-        }
-        exoPlayer?.addListener(listener)
-        onDispose { exoPlayer?.removeListener(listener) }
-    }
-
-    LaunchedEffect(isPlaying, playbackState) {
-        while (isPlaying && playbackState == Player.STATE_READY) {
-            currentPosition = exoPlayer?.currentPosition ?: 0L
-            duration = exoPlayer?.duration?.coerceAtLeast(0L) ?: 0L
-            delay(500)
-        }
-    }
-
-    LaunchedEffect(showControls, isPlaying) {
-        if (showControls && isPlaying) {
-            delay(3000)
-            showControls = false
-        }
-    }
-
-    LaunchedEffect(deviceOrientation) {
-        when (deviceOrientation) {
-            DeviceOrientation.LANDSCAPE -> isFullscreen = true
-            DeviceOrientation.PORTRAIT -> isFullscreen = false
-            DeviceOrientation.UNKNOWN -> {}
-        }
-    }
-
-    LaunchedEffect(isFullscreen) {
-        val activity = context.findActivity() ?: return@LaunchedEffect
-        val window = activity.window
-        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        if (isFullscreen) {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            insetsController.hide(WindowInsetsCompat.Type.systemBars())
-            insetsController.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } else {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
-        }
-    }
-    BackHandler(enabled = isFullscreen) { isFullscreen = false }
-
-    DisposableEffect(lifecycleOwner) {
-        var wasPlayingBeforePause = false
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> {
-                    wasPlayingBeforePause = exoPlayer?.isPlaying == true
-                    exoPlayer?.pause()
-                }
-
-                Lifecycle.Event.ON_RESUME -> {
-                    if (wasPlayingBeforePause) exoPlayer?.play()
-                    wasPlayingBeforePause = false
-                }
-
-                else -> {}
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val rootModifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)
-        .let { if (!isFullscreen) it.statusBarsPadding() else it }
-
-    Column(modifier = rootModifier) {
-        when (uiState) {
-            is VodPlayerUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            }
-
-            is VodPlayerUiState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = uiState.message, color = MaterialTheme.colorScheme.error)
-                }
-            }
-
-            is VodPlayerUiState.Success -> {
-                Box(
-                    modifier = if (isFullscreen) {
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color.Black)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { showControls = !showControls }
-                    } else {
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .background(Color.Black)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { showControls = !showControls }
-                    }
+            ) { playback ->
+                RecordedInfoPanel(
+                    title = metadata.title,
+                    channelName = metadata.channelUsername,
+                    avatarUrl = metadata.channelAvatarUrl,
+                    metadata = recordedMetadata(metadata.views, metadata.durationFormatted, metadata.createdAt),
+                    categoryName = metadata.categoryName,
+                    onProfile = slug.takeIf { it.isNotBlank() }?.let { { onStreamerClick(it) } }
                 ) {
-                    if (exoPlayer != null) {
-                        KickStreamPlayer(player = exoPlayer, modifier = Modifier.fillMaxSize())
-
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = showControls,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                CustomPlayerControls(
-                                    playWhenReady = isPlaying,
-                                    playbackState = playbackState,
-                                    isFullscreen = isFullscreen,
-                                    isLive = false,
-                                    currentPosition = currentPosition,
-                                    duration = duration,
-                                    onSeek = {
-                                        exoPlayer.seekTo(it)
-                                        currentPosition = it
-                                    },
-                                    onPlayPause = {
-                                        if (isPlaying) exoPlayer.pause() else exoPlayer.play()
-                                    },
-                                    onFullscreen = { isFullscreen = !isFullscreen },
-                                    onSettings = { showSettingsSheet = true },
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                IconButton(
-                                    onClick = {
-                                        if (isFullscreen) isFullscreen = false else onBackClick()
-                                    },
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .padding(8.dp)
-                                        .background(
-                                            Color.Black.copy(alpha = 0.5f),
-                                            shape = CircleShape
-                                        )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(R.string.back_button),
-                                        tint = Color.White
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (!isFullscreen) {
-                    ClipInfoPanel(
-                        title = uiState.metadata.title,
-                        streamerName = uiState.metadata.channelUsername,
-                        streamerAvatarUrl = "",
-                        views = uiState.metadata.views,
-                        durationFormatted = uiState.metadata.durationFormatted,
-                        isFollowed = false,
-                        onToggleFollow = { },
-                        onShareClick = {
-                            val slug = uiState.metadata.channelSlug
-                            val shareText = listOf(
-                                "https://kick.com/video",
-                                slug,
-                                videoId
-                            ).filter { it.isNotBlank() }.joinToString("/")
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, shareText)
-                            }
-                            context.startActivity(
-                                Intent.createChooser(
-                                    intent,
-                                    context.getString(R.string.share_vod)
-                                )
-                            )
-                        },
-                        onStreamerClick = { onStreamerClick(uiState.metadata.channelSlug) }
+                    VodDownloadAction(
+                        source = DownloadSource(
+                            DownloadMediaType.VOD, videoId, metadata.title, metadata.channelUsername,
+                            metadata.thumbnailUrl, (playback.durationMs / 1000).takeIf { it > 0 },
+                            metadata.channelAvatarUrl
+                        ),
+                        playbackUrl = state.playbackUrl,
+                        durationMs = playback.durationMs,
+                        positionMs = playback.positionMs,
+                        currentQuality = playback.quality
                     )
+                    RecordedShareButton(onShare = {
+                        val url = if (slug.isBlank()) "https://kick.com/video/$videoId"
+                        else "https://kick.com/$slug/videos/$videoId"
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, url)
+                        }
+                        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_vod)))
+                    })
+                    RecordedFollowButton(slug)
                 }
             }
         }
-    }
-
-    if (showSettingsSheet) {
-        QualitySelectionSheet(
-            qualities = availableQualities,
-            selectedQuality = selectedQuality,
-            onQualitySelect = { quality ->
-                setQuality(quality)
-                showSettingsSheet = false
-            },
-            onDismiss = { showSettingsSheet = false }
-        )
     }
 }

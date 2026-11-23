@@ -8,6 +8,9 @@ package com.gallbladderz.openkick.core.network.chat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNames
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @Serializable
 data class PusherEventDto(
@@ -23,7 +26,35 @@ data class ChatMessageDataDto(
     val content: String? = null,
     val type: String? = null,
     val metadata: JsonElement? = null,
-    val replies_to: JsonElement? = null
+    val replies_to: JsonElement? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class ChatHistoryResponseDto(val data: ChatHistoryDto)
+
+@Serializable
+data class ChatHistoryDto(
+    @SerialName("pinned_message") val pinnedMessage: PinnedChatMessageDto? = null
+)
+
+@Serializable
+data class ChatReplayResponseDto(val data: ChatReplayPageDto)
+
+@Serializable
+data class ChatReplayPageDto(
+    val messages: List<ChatMessageDataDto> = emptyList(),
+    val cursor: String? = null
+)
+
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class PinnedChatMessageDto(
+    val message: ChatMessageDataDto? = null,
+    @SerialName("pinned_by") @JsonNames("pinnedBy") val pinnedBy: ChatSenderDto? = null,
+    @SerialName("finish_at") val finishAt: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    val duration: JsonPrimitive? = null
 )
 
 @Serializable

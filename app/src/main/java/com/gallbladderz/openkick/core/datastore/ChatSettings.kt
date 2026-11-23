@@ -12,5 +12,6 @@ data class ChatSettings(
     val showGlobalBadges: Boolean = true,
     val showChannelBadges: Boolean = true,
     val useOfficialNameColor: Boolean = true,
-    val animatedEmotes: Boolean = true
+    val animatedEmotes: Boolean = true,
+    val sevenTvEmotes: Boolean = true
 )

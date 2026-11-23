@@ -16,6 +16,7 @@ import com.gallbladderz.openkick.core.auth.OAuthManager
 import com.gallbladderz.openkick.core.auth.SessionManager
 import com.gallbladderz.openkick.core.data.local.AppDatabase
 import com.gallbladderz.openkick.core.datastore.SettingsRepository
+import com.gallbladderz.openkick.core.network.chat.SevenTvRepository
 import com.gallbladderz.openkick.core.network.AuthInterceptor
 import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.core.network.MobileHeadersInterceptor
@@ -28,6 +29,7 @@ import com.gallbladderz.openkick.core.network.api.KickApiService
 import com.gallbladderz.openkick.core.network.api.OAuthApi
 import com.gallbladderz.openkick.core.network.api.RealtimeApi
 import com.gallbladderz.openkick.core.player.PlayerManager
+import com.gallbladderz.openkick.core.player.VodPlaybackProgress
 import com.gallbladderz.openkick.features.categories.CategoriesRepository
 import com.gallbladderz.openkick.features.categories.CategoriesViewModel
 import com.gallbladderz.openkick.features.categories.CategoryDetailsViewModel
@@ -39,6 +41,9 @@ import com.gallbladderz.openkick.features.following.RemoteFollowingDataSource
 import com.gallbladderz.openkick.features.home.HomeRepository
 import com.gallbladderz.openkick.features.home.HomeViewModel
 import com.gallbladderz.openkick.features.notifications.StreamCheckWorker
+import com.gallbladderz.openkick.features.downloads.DownloadEngine
+import com.gallbladderz.openkick.features.downloads.DownloadWorker
+import com.gallbladderz.openkick.features.downloads.DownloadsRepository
 import com.gallbladderz.openkick.features.player.ChatRepository
 import com.gallbladderz.openkick.features.player.ClipPlayerViewModel
 import com.gallbladderz.openkick.features.player.PlayerRepository
@@ -62,7 +67,9 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 
 val appModule = module {
+    single { SevenTvRepository() }
     single<SettingsRepository> { SettingsRepository(androidContext()) }
+    single { VodPlaybackProgress(androidContext()) }
     single<SessionManager> { SessionManager(androidContext()) }
     single<Retrofit>(named("bffRetrofit")) {
         val json = Json {
@@ -118,6 +125,7 @@ val appModule = module {
     }
     single<LocalFollowingDataSource> { LocalFollowingDataSource(get<com.gallbladderz.openkick.core.data.local.FollowsDao>()) }
     workerOf(::StreamCheckWorker)
+    workerOf(::DownloadWorker)
 
     single<okhttp3.OkHttpClient> {
         okhttp3.OkHttpClient.Builder()
@@ -138,12 +146,11 @@ val appModule = module {
 
     single<KickApiService> { get<Retrofit>().create(KickApiService::class.java) }
     single<KickApiService>(named("authKickApi")) {
+        val json = Json { ignoreUnknownKeys = true }
         Retrofit.Builder()
             .baseUrl(KickApiConstants.KICK_BASE_URL + "/")
             .client(get<okhttp3.OkHttpClient>(named("authClient")))
-            .addConverterFactory(Json {
-                ignoreUnknownKeys = true
-            }.asConverterFactory("application/json".toMediaType()))
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(KickApiService::class.java)
     }
@@ -215,6 +222,7 @@ val appModule = module {
             get<RealtimeApi>(),
             get<ChatSendApi>(),
             get<ChatEmotesApi>(),
+            get<KickApiService>(),
             get<SessionManager>(),
             CoroutineScope(SupervisorJob() + Dispatchers.IO)
         )
@@ -241,11 +249,15 @@ val appModule = module {
             AppDatabase::class.java,
             "openkick_db"
         )
+            .addMigrations(AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
     }
 
     single<com.gallbladderz.openkick.core.data.local.FollowsDao> { get<AppDatabase>().followsDao() }
+    single { get<AppDatabase>().downloadDao() }
+    single { DownloadEngine(get()) }
+    single { DownloadsRepository(androidContext(), get()) }
 
     viewModel { MainViewModel(get<SettingsRepository>()) }
     viewModel { HomeViewModel(get<HomeRepository>(), get<SettingsRepository>()) }
@@ -290,12 +302,14 @@ val appModule = module {
             get<com.gallbladderz.openkick.core.data.repository.ClipRepository>()
         )
     }
-    viewModel { (videoId: String) ->
+    viewModel { (videoId: String, channelSlug: String) ->
         com.gallbladderz.openkick.features.player.vod.VodPlayerViewModel(
             videoId = videoId,
+            channelSlug = channelSlug.takeIf { it.isNotBlank() },
             context = androidContext(),
             dataSourceFactory = get(),
-            repository = get()
+            repository = get(),
+            playbackProgress = get()
         )
     }
 }

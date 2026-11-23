@@ -19,10 +19,12 @@ import com.gallbladderz.openkick.core.domain.chat.ChatMessage
 import com.gallbladderz.openkick.core.domain.chat.ChatMode
 import com.gallbladderz.openkick.core.domain.chat.ChatModeType
 import com.gallbladderz.openkick.core.domain.chat.ChatToken
+import com.gallbladderz.openkick.core.domain.chat.PinnedChatMessage
 import com.gallbladderz.openkick.core.domain.chat.ReplyToInfo
 import com.gallbladderz.openkick.core.network.KickApiConstants
 import com.gallbladderz.openkick.core.network.api.ChatEmotesApi
 import com.gallbladderz.openkick.core.network.api.ChatSendApi
+import com.gallbladderz.openkick.core.network.api.KickApiService
 import com.gallbladderz.openkick.core.network.api.RealtimeApi
 import com.gallbladderz.openkick.core.network.chat.CentrifugoErrorDto
 import com.gallbladderz.openkick.core.network.chat.CentrifugoErrors
@@ -30,15 +32,19 @@ import com.gallbladderz.openkick.core.network.chat.CentrifugoFrameDto
 import com.gallbladderz.openkick.core.network.chat.CentrifugoFrameParser
 import com.gallbladderz.openkick.core.network.chat.ChatEmotePayload
 import com.gallbladderz.openkick.core.network.chat.ChatMessageDataDto
+import com.gallbladderz.openkick.core.network.chat.PinnedChatMessageDto
 import com.gallbladderz.openkick.core.network.chat.SendChatMessageRequest
 import com.gallbladderz.openkick.core.network.chat.SendChatMetadata
 import com.gallbladderz.openkick.core.network.chat.SendChatOriginalMessage
 import com.gallbladderz.openkick.core.network.chat.SendChatOriginalSender
 import com.gallbladderz.openkick.core.network.dto.realtime.RealtimeConnectionRequest
 import com.gallbladderz.openkick.core.ui.UiText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -73,11 +79,23 @@ class ChatRepository(
     private val realtimeApi: RealtimeApi,
     private val chatSendApi: ChatSendApi,
     private val chatEmotesApi: ChatEmotesApi,
+    private val kickApi: KickApiService,
     private val sessionManager: SessionManager,
     private val coroutineScope: CoroutineScope
 ) {
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages = _chatMessages.asStateFlow()
+
+    private val _pinnedMessage = MutableStateFlow<PinnedChatMessage?>(null)
+    val pinnedMessage = _pinnedMessage.asStateFlow()
+    private var pinUpdateVersion = 0L
+    private var pinExpiryJob: Job? = null
+
+    fun togglePinnedMessageVisibility() {
+        synchronized(lock) {
+            _pinnedMessage.update { pin -> pin?.copy(isHidden = !pin.isHidden) }
+        }
+    }
 
     private val _chatSendState = MutableStateFlow<ChatSendState>(ChatSendState.Idle)
     val chatSendState = _chatSendState.asStateFlow()
@@ -91,6 +109,7 @@ class ChatRepository(
     @Volatile
     private var webSocket: WebSocket? = null
     private var reconnectJob: Job? = null
+    private var connectionJob: Job? = null
     private var emoteLoadJob: Job? = null
 
     @Volatile
@@ -325,18 +344,17 @@ class ChatRepository(
         chatMode = mode
     }
 
-    fun connectToChat(chatroomId: String) {
+    fun connectToChat(chatroomId: String, channelId: Long?) {
         if (currentChatroomId == chatroomId && webSocket != null) return
         reconnectAttempt = 0
-        openConnection(chatroomId)
+        openConnection(chatroomId, channelId)
     }
 
-    private fun openConnection(chatroomId: String) {
+    private fun openConnection(chatroomId: String, channelId: Long?) = synchronized(lock) {
         if (currentChatroomId != chatroomId) {
-            synchronized(lock) {
-                internalDeque.clear()
-                _chatMessages.value = emptyList()
-            }
+            internalDeque.clear()
+            _chatMessages.value = emptyList()
+            setPinnedMessage(null)
         }
 
         currentChatroomId = chatroomId
@@ -347,9 +365,9 @@ class ChatRepository(
         webSocket = null
         oldSocket?.cancel()
 
-        coroutineScope.launch {
+        connectionJob?.cancel()
+        connectionJob = coroutineScope.launch {
             try {
-
                 val connectionClientId =
                     clientId ?: UUID.randomUUID().toString().replace("-", "").also { clientId = it }
 
@@ -360,7 +378,13 @@ class ChatRepository(
                 centrifugoToken = response.data.token
                 Log.d(TAG, "Received token: ${centrifugoToken?.take(20)}...")
 
-                startWebSocketConnection(chatroomId)
+                val connectionContext = currentCoroutineContext()
+                synchronized(lock) {
+                    connectionContext.ensureActive()
+                    startWebSocketConnection(chatroomId, channelId)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to get token", e)
                 reportSystemMessage(
@@ -369,12 +393,50 @@ class ChatRepository(
                         e.message.orEmpty()
                     )
                 )
-                scheduleReconnect()
+                scheduleReconnect(channelId)
             }
         }
     }
 
-    private fun startWebSocketConnection(chatroomId: String) {
+    private fun refreshPinnedMessage(channelId: Long, socket: WebSocket) {
+        val version = synchronized(lock) { pinUpdateVersion }
+        coroutineScope.launch {
+            try {
+                val pin = kickApi.getChannelChatHistory(channelId).data.pinnedMessage
+                    ?.toDomainModel(channelSubscriberBadges)
+                synchronized(lock) {
+                    if (socket !== webSocket || version != pinUpdateVersion) return@synchronized
+                    val hiddenMessageId = _pinnedMessage.value?.takeIf { it.isHidden }?.message?.id
+                    setPinnedMessage(pin?.copy(isHidden = pin.message.id == hiddenMessageId))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not load the current pinned message", e)
+            }
+        }
+    }
+
+    private fun setPinnedMessage(pin: PinnedChatMessage?) {
+        pinExpiryJob?.cancel()
+        pinExpiryJob = null
+        val expiresAt = pin?.expiresAtMillis
+        val remaining = expiresAt?.minus(System.currentTimeMillis())
+        _pinnedMessage.value = pin.takeIf { remaining == null || remaining > 0 }
+        if (remaining != null && remaining > 0) {
+            pinExpiryJob = coroutineScope.launch {
+                delay(remaining)
+                synchronized(lock) {
+                    val currentPin = _pinnedMessage.value
+                    if (currentPin?.expiresAtMillis == expiresAt && currentPin?.message?.id == pin?.message?.id) {
+                        _pinnedMessage.value = null
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startWebSocketConnection(chatroomId: String, channelId: Long?) {
         val traceId = UUID.randomUUID().toString().replace("-", "")
         val authToken = sessionManager.tokens()?.accessToken ?: "null"
 
@@ -401,6 +463,7 @@ class ChatRepository(
 
                 webSocket.send(buildConnectFrame(centrifugoToken ?: ""))
                 webSocket.send(buildSubscribeFrame("chatrooms.$chatroomId.v2"))
+                channelId?.let { refreshPinnedMessage(it, webSocket) }
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
@@ -436,6 +499,26 @@ class ChatRepository(
                     val eventDto = frame.resolvedEvent ?: return
 
                     when (eventDto.event) {
+                        "App\\Events\\PinnedMessageCreatedEvent", "PinnedMessageCreatedEvent" -> {
+                            val data = eventDto.data ?: return
+                            val payload = if (data is JsonPrimitive) data.content else data.toString()
+                            val pin = json.decodeFromString<PinnedChatMessageDto>(payload)
+                                .toDomainModel(channelSubscriberBadges) ?: return
+                            synchronized(lock) {
+                                if (webSocket !== this@ChatRepository.webSocket) return
+                                pinUpdateVersion++
+                                setPinnedMessage(pin)
+                            }
+                        }
+
+                        "App\\Events\\PinnedMessageDeletedEvent", "PinnedMessageDeletedEvent" -> {
+                            synchronized(lock) {
+                                if (webSocket !== this@ChatRepository.webSocket) return
+                                pinUpdateVersion++
+                                setPinnedMessage(null)
+                            }
+                        }
+
                         "App\\Events\\ChatMessageEvent" -> {
                             val dataElem = eventDto.data ?: return
                             val dataString = if (dataElem is JsonPrimitive) {
@@ -498,7 +581,7 @@ class ChatRepository(
                         reconnectJob?.cancel()
                     }
 
-                    else -> scheduleReconnect()
+                    else -> scheduleReconnect(channelId)
                 }
             }
 
@@ -507,7 +590,7 @@ class ChatRepository(
                 Log.d(TAG, "WebSocket closed: $code - $reason")
                 this@ChatRepository.webSocket = null
                 if (!isManuallyDisconnected) {
-                    scheduleReconnect()
+                    scheduleReconnect(channelId)
                 }
             }
 
@@ -533,7 +616,7 @@ class ChatRepository(
                         )
                     )
                     if (!isManuallyDisconnected) {
-                        scheduleReconnect()
+                        scheduleReconnect(channelId)
                     }
                 }
             }
@@ -595,7 +678,7 @@ class ChatRepository(
         buffer.writeByte(v and 0x7F)
     }
 
-    private fun scheduleReconnect() {
+    private fun scheduleReconnect(channelId: Long?) {
         if (isManuallyDisconnected) return
 
         val attempt = reconnectAttempt
@@ -618,25 +701,24 @@ class ChatRepository(
             if (isManuallyDisconnected) return@launch
 
             reconnectAttempt = attempt + 1
-            currentChatroomId?.let { openConnection(it) }
+            currentChatroomId?.let { openConnection(it, channelId) }
         }
     }
 
     fun disconnect() {
-        isManuallyDisconnected = true
-        currentChatroomId = null
-        channelSubscriberBadges = emptyMap()
-        chatMode = ChatMode()
-        reconnectJob?.cancel()
-        emoteLoadJob?.cancel()
-        val socketToClose = webSocket
-        webSocket = null
-        socketToClose?.close(1000, "Normal closure")
-
-        synchronized(lock) {
+        val socketToClose = synchronized(lock) {
+            isManuallyDisconnected = true
+            currentChatroomId = null
+            channelSubscriberBadges = emptyMap()
+            chatMode = ChatMode()
+            reconnectJob?.cancel()
+            connectionJob?.cancel()
             internalDeque.clear()
             _chatMessages.update { emptyList() }
+            setPinnedMessage(null)
+            webSocket.also { webSocket = null }
         }
+        socketToClose?.close(1000, "Normal closure")
         clearEmotes()
     }
 }

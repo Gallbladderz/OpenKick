@@ -13,6 +13,7 @@ import com.gallbladderz.openkick.core.data.local.FollowedEntity
 import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.api.KickApiService
 import com.gallbladderz.openkick.core.network.dto.categories.CategoryDetailsResponse
+import com.gallbladderz.openkick.core.network.dto.following.RemoteFollowedChannel
 import com.gallbladderz.openkick.core.network.dto.profile.ChannelV1Response
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -117,16 +118,25 @@ class FollowingRepository(
 
     suspend fun saveLocalSnapshot(entity: FollowedEntity) = local.save(entity)
 
-    suspend fun migrateLocalToRemote() {
+    suspend fun migrateLocalToRemote() = refreshMutex.withLock {
         check(session.mode.value == AppMode.AUTHENTICATED) { "Sign in before migrating follows" }
-        remote.refresh()
         val generation = session.sessionGeneration.value
-        val existing = remote.currentChannels().map { it.slug }.toSet()
-        for (entity in local.streamers().first()) {
-            check(session.mode.value == AppMode.AUTHENTICATED && session.sessionGeneration.value == generation) {
-                "Session changed while migrating subscriptions"
-            }
-            if (entity.slug !in existing) remote.follow(entity.slug)
+        val streamers = local.streamers().first()
+        if (streamers.isEmpty()) return@withLock
+        remote.refresh(generation)
+        for (entity in streamers) {
+            remote.followForMigration(
+                RemoteFollowedChannel(
+                    slug = entity.slug,
+                    username = entity.username,
+                    profilePic = entity.avatarUrl,
+                    isLive = entity.isLive,
+                    sessionTitle = entity.streamTitle,
+                    viewerCount = entity.viewers,
+                    categoryName = entity.categoryName
+                ),
+                generation
+            )
             check(session.mode.value == AppMode.AUTHENTICATED && session.sessionGeneration.value == generation) {
                 "Session changed while migrating subscriptions"
             }
@@ -161,8 +171,10 @@ fun ChannelV1Response.toFollowedStreamerDomain(slugFallback: String): FollowedSt
 
     return if (this.livestream != null) {
         val title = this.livestream.sessionTitle ?: "Untitled"
-        val viewers = this.livestream.viewerCount
-        val categoryName = this.livestream.category?.name ?: ""
+        val viewers = this.livestream.viewerCount ?: 0
+        val categoryName = this.livestream.categories.orEmpty().firstNotNullOfOrNull { category ->
+            category.name?.takeIf { it.isNotBlank() }
+        } ?: this.livestream.category?.name.orEmpty()
         val streamThumbnailUrl = this.livestream.thumbnail?.finalUrl ?: ""
 
         FollowedStreamerUi(

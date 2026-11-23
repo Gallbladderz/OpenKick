@@ -17,7 +17,8 @@ sealed interface PlayerUiState {
         val title: String,
         val categoryName: String?,
         val categorySlug: String?,
-        val isVerified: Boolean
+        val isVerified: Boolean,
+        val kickUserId: Long? = null
     ) : PlayerUiState
 
     data class Error(val message: String) : PlayerUiState

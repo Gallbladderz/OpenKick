@@ -15,7 +15,10 @@ import com.gallbladderz.openkick.core.domain.model.ChannelLink
 import com.gallbladderz.openkick.core.domain.toDomainError
 import com.gallbladderz.openkick.core.network.api.KickApiService
 import com.gallbladderz.openkick.core.network.dto.player.ChannelStreamInfoResponse
+import com.gallbladderz.openkick.core.network.dto.profile.VideoItemDto
+import com.gallbladderz.openkick.features.player.models.LiveStreamArchive
 import com.gallbladderz.openkick.features.player.models.StreamInfo
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -23,12 +26,39 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class PlayerRepository(
     private val apiService: KickApiService,
     private val authenticatedApiService: KickApiService? = null,
     private val sessionManager: SessionManager? = null
 ) {
+    internal suspend fun fetchLiveArchive(streamerName: String, streamId: String?): LiveStreamArchive? =
+        try {
+            apiService.getChannelVideos(streamerName).findLiveArchive(streamId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+
+    internal suspend fun refreshLivePlaybackUrl(streamerName: String, streamId: String?): String? =
+        try {
+            val response = apiService.getChannelStreamInfo(streamerName)
+            val livestream = response.livestream
+            if (livestream != null && (streamId == null || livestream.parsedId == streamId)) {
+                response.playback_url ?: livestream.playback_url
+            } else {
+                null
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+
     fun fetchStreamInfo(streamerName: String): Flow<Result<StreamInfo>> = flow {
         try {
             val response = apiService.getChannelStreamInfo(streamerName)
@@ -97,8 +127,29 @@ fun ChannelStreamInfoResponse.toDomain(
         categorySlug = categorySlug,
         isVerified = this.verified,
         subscriberBadges = subscriberBadges,
-        chatMode = chatroom.toChatMode(channelMe)
+        chatMode = chatroom.toChatMode(channelMe),
+        channelId = id,
+        streamId = livestream?.parsedId,
+        startedAtMs = livestream?.start_time.toKickEpochMs(),
+        kickUserId = kickUserId
     )
+}
+
+internal fun List<VideoItemDto>.findLiveArchive(streamId: String?): LiveStreamArchive? {
+    val video = firstOrNull { item ->
+        item.is_live && (streamId == null || item.id?.toString() == streamId)
+    } ?: return null
+    val url = video.source?.takeIf { it.startsWith("https://", ignoreCase = true) } ?: return null
+    val startedAtMs = video.start_time.toKickEpochMs() ?: return null
+    return LiveStreamArchive(url, startedAtMs)
+}
+
+private fun String?.toKickEpochMs(): Long? {
+    val startTime = this?.replace(' ', 'T') ?: return null
+    val startInstant = runCatching { Instant.parse(startTime) }.getOrNull()
+        ?: runCatching { LocalDateTime.parse(startTime).toInstant(ZoneOffset.UTC) }.getOrNull()
+        ?: return null
+    return startInstant.toEpochMilli()
 }
 
 private fun com.gallbladderz.openkick.core.network.dto.player.ChatroomDto?.toChatMode(
@@ -113,6 +164,7 @@ private fun com.gallbladderz.openkick.core.network.dto.player.ChatroomDto?.toCha
         "closed"
     )
     val subscribersOnly = subscribers_mode.asBoolean() == true || mode.contains("subscriber")
+    val followersOnly = followers_mode.asBoolean() == true || mode.contains("follower")
     val slow = slow_mode.asBoolean() == true || mode.contains("slow")
     val type = when {
         disabled -> com.gallbladderz.openkick.core.domain.chat.ChatModeType.DISABLED
@@ -127,7 +179,8 @@ private fun com.gallbladderz.openkick.core.network.dto.player.ChatroomDto?.toCha
         isSubscriber = is_subscriber.asBoolean()
             ?: user_is_subscriber.asBoolean()
             ?: subscribed.asBoolean()
-            ?: channelMe.findBoolean("is_subscriber", "is_subscribed", "subscribed")
+            ?: channelMe.findBoolean("is_subscriber", "is_subscribed", "subscribed"),
+        followersOnly = followersOnly
     )
 }
 

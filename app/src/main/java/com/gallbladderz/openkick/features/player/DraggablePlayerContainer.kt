@@ -48,6 +48,16 @@ import com.gallbladderz.openkick.core.player.PlayerExpandedState
 import com.gallbladderz.openkick.core.ui.utils.findActivity
 import kotlin.math.roundToInt
 
+internal val MiniPlayerHeight = 64.dp
+internal val MiniPlayerWidth = 120.dp
+
+internal fun AnchoredDraggableState<PlayerExpandedState>.collapseFraction(): Float {
+    val expanded = anchors.positionOf(PlayerExpandedState.EXPANDED)
+    val mini = anchors.positionOf(PlayerExpandedState.MINI)
+    if (!offset.isFinite() || !expanded.isFinite() || !mini.isFinite() || mini <= expanded) return 0f
+    return ((offset - expanded) / (mini - expanded)).coerceIn(0f, 1f)
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DraggablePlayerContainer(
@@ -93,23 +103,23 @@ fun DraggablePlayerContainer(
     }
 
     LaunchedEffect(globalPlayerController.playerState) {
-        if (state.currentValue != globalPlayerController.playerState) {
+        if (state.settledValue != globalPlayerController.playerState) {
             state.animateTo(globalPlayerController.playerState)
         }
     }
 
-    LaunchedEffect(state.currentValue) {
-        if (globalPlayerController.playerState != state.currentValue) {
+    LaunchedEffect(state.settledValue) {
+        if (globalPlayerController.playerState != state.settledValue) {
 
-            if (currentPipMode && state.currentValue == PlayerExpandedState.HIDDEN) return@LaunchedEffect
-            globalPlayerController.updatePlayerState(state.currentValue)
+            if (currentPipMode && state.settledValue == PlayerExpandedState.HIDDEN) return@LaunchedEffect
+            globalPlayerController.updatePlayerState(state.settledValue)
         }
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeightPx = constraints.maxHeight.toFloat()
 
-        val miniPlayerHeightPx = with(density) { 64.dp.toPx() }
+        val miniPlayerHeightPx = with(density) { MiniPlayerHeight.toPx() }
         LaunchedEffect(maxHeightPx, bottomOffsetPx) {
             if (maxHeightPx > 10f) {
                 val newAnchors = DraggableAnchors {
@@ -180,7 +190,9 @@ fun DraggablePlayerContainer(
 
         val rawOffset = if (state.offset.isNaN()) maxHeightPx else state.offset
 
-        val finalOffset = if (isInPipMode || isLandscape) 0f else rawOffset
+        val finalOffset = if (isInPipMode ||
+            (isLandscape && globalPlayerController.playerState == PlayerExpandedState.EXPANDED)
+        ) 0f else rawOffset
 
         Box(
             modifier = Modifier

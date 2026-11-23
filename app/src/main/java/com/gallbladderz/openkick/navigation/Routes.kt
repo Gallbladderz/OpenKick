@@ -31,20 +31,26 @@ object AllFollowsRoute
 object AboutAppRoute
 
 @Serializable
+object DownloadsRoute
+
+@Serializable
 object LicensesRoute
 
-@Serializable
-data class CategoryDetailsRoute(val slug: String)
+sealed interface KickLinkDestination
 
 @Serializable
-data class StreamerProfileRoute(val slug: String)
+data class CategoryDetailsRoute(val slug: String) : KickLinkDestination
+
+@Serializable
+data class StreamerProfileRoute(val slug: String) : KickLinkDestination
 
 @Serializable
 data class ClipPlayerRoute(
     val clipId: String
-)
+) : KickLinkDestination
 
 @Serializable
 data class VodPlayerRoute(
-    val videoId: String
-)
+    val videoId: String,
+    val channelSlug: String? = null
+) : KickLinkDestination

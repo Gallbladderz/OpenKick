@@ -18,16 +18,30 @@ enum class PlayerExpandedState {
     HIDDEN, MINI, EXPANDED
 }
 
+sealed interface PlayerMedia {
+    data class Live(val streamerName: String) : PlayerMedia
+
+    sealed interface Recording : PlayerMedia {
+        data class Clip(val id: String) : Recording
+        data class Vod(val id: String, val channelSlug: String?) : Recording
+        data class Download(val id: String) : Recording
+    }
+}
+
 @Stable
 class GlobalPlayerController {
     var playerState by mutableStateOf(PlayerExpandedState.HIDDEN)
         private set
 
-    var currentStreamerName by mutableStateOf<String?>(null)
+    var currentMedia by mutableStateOf<PlayerMedia?>(null)
         private set
 
-    fun expandPlayer(streamerName: String) {
-        currentStreamerName = streamerName
+    fun expandPlayer(streamerName: String) = openPlayer(PlayerMedia.Live(streamerName))
+
+    fun openRecording(recording: PlayerMedia.Recording) = openPlayer(recording)
+
+    private fun openPlayer(media: PlayerMedia) {
+        currentMedia = media
         playerState = PlayerExpandedState.EXPANDED
     }
 
@@ -39,11 +53,11 @@ class GlobalPlayerController {
 
     fun hidePlayer() {
         playerState = PlayerExpandedState.HIDDEN
-        currentStreamerName = null
+        currentMedia = null
     }
 
     fun updatePlayerState(state: PlayerExpandedState) {
-        playerState = state
+        if (state == PlayerExpandedState.HIDDEN) hidePlayer() else playerState = state
     }
 }
 

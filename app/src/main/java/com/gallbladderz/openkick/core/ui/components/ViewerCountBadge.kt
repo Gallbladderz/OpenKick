@@ -23,25 +23,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.gallbladderz.openkick.core.ui.theme.LiveIndicatorRed
 
 @Composable
 fun ViewerCountBadge(
     viewers: Int,
     modifier: Modifier = Modifier,
-    textColor: Color = Color.White
+    textColor: Color = Color.White,
+    dotColor: Color = LiveIndicatorRed
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Box(
             modifier = Modifier
                 .size(6.dp)
                 .clip(CircleShape)
-                .background(com.gallbladderz.openkick.core.ui.theme.LiveIndicatorRed)
+                .background(dotColor)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = "$viewers",
             color = textColor,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
             fontWeight = FontWeight.Bold
         )
     }

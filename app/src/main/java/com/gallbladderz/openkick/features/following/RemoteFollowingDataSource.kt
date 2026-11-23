@@ -10,17 +10,19 @@ import com.gallbladderz.openkick.core.auth.AppMode
 import com.gallbladderz.openkick.core.auth.SessionManager
 import com.gallbladderz.openkick.core.network.api.FollowingApi
 import com.gallbladderz.openkick.core.network.dto.following.RemoteFollowedChannel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
-import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class RemoteFollowingDataSource(
     private val api: FollowingApi,
     private val session: SessionManager
 ) {
     private val loaded = MutableStateFlow<Pair<Long, List<RemoteFollowedChannel>>?>(null)
-    private val requestId = AtomicLong()
+    private val requestMutex = Mutex()
     val channels: Flow<List<RemoteFollowedChannel>> = combine(
         session.mode, session.sessionGeneration, loaded
     ) { mode, generation, result ->
@@ -30,15 +32,15 @@ class RemoteFollowingDataSource(
     fun currentChannels(): List<RemoteFollowedChannel> =
         visibleChannels(session.mode.value, session.sessionGeneration.value, loaded.value)
 
-    suspend fun refresh() {
-        val generation = session.sessionGeneration.value
-        check(session.mode.value == AppMode.AUTHENTICATED) { "Sign in to load subscriptions" }
-        val request = requestId.incrementAndGet()
-        loaded.value = null
+    suspend fun refresh(generation: Long = session.sessionGeneration.value) {
+        requestMutex.withLock { refreshUnderLock(generation) }
+    }
 
+    private suspend fun refreshUnderLock(generation: Long): List<RemoteFollowedChannel> {
         val allChannels = mutableListOf<RemoteFollowedChannel>()
         var cursor: Int? = null
         do {
+            checkSession(generation)
             val response = api.followedChannels(cursor)
             allChannels.addAll(response.channels)
             cursor = response.nextCursor
@@ -48,10 +50,27 @@ class RemoteFollowingDataSource(
             .filter { it.slug.isNotBlank() }
             .distinctBy { it.slug.lowercase() }
 
-        check(session.mode.value == AppMode.AUTHENTICATED && session.sessionGeneration.value == generation && requestId.get() == request) {
-            "Session changed while loading subscriptions"
-        }
+        checkSession(generation)
         loaded.value = generation to result
+        return result
+    }
+
+    internal suspend fun followForMigration(channel: RemoteFollowedChannel, generation: Long) {
+        requestMutex.withLock {
+            checkSession(generation)
+            if (currentChannels().any { it.slug.equals(channel.slug, ignoreCase = true) }) return@withLock
+
+            confirmChannelFollow(
+                slug = channel.slug,
+                follow = { api.follow(channel.slug) },
+                reload = { refreshUnderLock(generation) }
+            )
+            checkSession(generation)
+            val current = currentChannels()
+            if (current.none { it.slug.equals(channel.slug, ignoreCase = true) }) {
+                loaded.value = generation to (current + channel)
+            }
+        }
     }
 
     suspend fun follow(slug: String) {
@@ -64,12 +83,39 @@ class RemoteFollowingDataSource(
 
     private suspend fun mutate(action: suspend () -> Unit) {
         val generation = session.sessionGeneration.value
-        check(session.mode.value == AppMode.AUTHENTICATED) { "Sign in to change subscriptions" }
-        action()
+        requestMutex.withLock {
+            checkSession(generation)
+            action()
+            refreshUnderLock(generation)
+        }
+    }
+
+    private fun checkSession(generation: Long) {
         check(session.mode.value == AppMode.AUTHENTICATED && session.sessionGeneration.value == generation) {
             "Session changed while updating subscriptions"
         }
-        refresh()
+    }
+}
+
+internal suspend fun confirmChannelFollow(
+    slug: String,
+    follow: suspend () -> Unit,
+    reload: suspend () -> List<RemoteFollowedChannel>
+) {
+    try {
+        follow()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (error: Exception) {
+        val channels = try {
+            reload()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (refreshError: Exception) {
+            if (error !== refreshError) error.addSuppressed(refreshError)
+            throw error
+        }
+        if (channels.none { it.slug.equals(slug, ignoreCase = true) }) throw error
     }
 }
 

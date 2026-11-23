@@ -21,7 +21,8 @@ enum class ChatBadgeKind {
 data class ChatBadge(
     val name: String,
     val kind: ChatBadgeKind,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val giftedSubscriptions: Int? = null
 )
 
 data class ReplyToInfo(
@@ -42,6 +43,14 @@ data class ChatMessage(
     val isPending: Boolean = false
 )
 
+data class PinnedChatMessage(
+    val message: ChatMessage,
+    val pinnedBy: String?,
+    val pinnerBadges: List<ChatBadge>,
+    val expiresAtMillis: Long?,
+    val isHidden: Boolean = false
+)
+
 enum class ChatModeType {
     OPEN,
     SLOW,
@@ -52,5 +61,7 @@ enum class ChatModeType {
 data class ChatMode(
     val type: ChatModeType = ChatModeType.OPEN,
     val slowModeSeconds: Int = 0,
-    val isSubscriber: Boolean? = null
+    val isSubscriber: Boolean? = null,
+    val followersOnly: Boolean = false,
+    val isFollower: Boolean? = null
 )

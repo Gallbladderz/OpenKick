@@ -138,6 +138,7 @@ fun LanguageSettingsScreen(
                         val currentLangText = when (appLanguage) {
                             "ru" -> stringResource(R.string.russian_lang)
                             "es" -> stringResource(R.string.language_spanish_native)
+                            "zh" -> stringResource(R.string.language_chinese_native)
                             else -> stringResource(R.string.english_lang)
                         }
                         Text(currentLangText)
@@ -237,6 +238,17 @@ fun LanguageSettingsScreen(
                     isSelected = appLanguage == "es",
                     onClick = {
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("es"))
+                        showLanguageSheet = false
+                    }
+                )
+
+                // Locale option adapted from QuinKick (https://github.com/kaws3664/QuinKick)
+                // by kaws3664, licensed under GPL-3.0-or-later.
+                LanguageOptionItem(
+                    title = stringResource(R.string.language_chinese_native),
+                    isSelected = appLanguage == "zh",
+                    onClick = {
+                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("zh-CN"))
                         showLanguageSheet = false
                     }
                 )

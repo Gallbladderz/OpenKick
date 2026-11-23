@@ -39,25 +39,24 @@ class ClipPlayerViewModel(
         .build()
     private var isReleased = false
 
-    private val _avatarUrl = MutableStateFlow("")
-    val avatarUrl = _avatarUrl.asStateFlow()
-
     private val _activeClip = MutableStateFlow<ClipUiModel?>(null)
     val activeClip = _activeClip.asStateFlow()
+    private val _loadFailed = MutableStateFlow(false)
+    val loadFailed = _loadFailed.asStateFlow()
 
     fun loadClip(clipId: String) {
-        if (isReleased) return
+        if (isReleased || _activeClip.value?.id == clipId) return
+        _loadFailed.value = false
         viewModelScope.launch {
             val result = clipRepository.fetchClip(clipId)
             result.onSuccess { clip ->
                 if (isReleased) return@onSuccess
                 _activeClip.update { clip }
-                _avatarUrl.update { clip.streamerAvatarUrl }
                 player.setMediaItem(MediaItem.fromUri(clip.videoUrl))
                 player.prepare()
                 player.playWhenReady = true
             }.onFailure {
-
+                if (!isReleased) _loadFailed.value = true
             }
         }
     }
