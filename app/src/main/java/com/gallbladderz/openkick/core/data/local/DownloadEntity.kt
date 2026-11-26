@@ -28,7 +28,11 @@ data class DownloadEntity(
     val createdAt: Long = System.currentTimeMillis(),
     val workId: String,
     val durationSec: Long? = null,
-    val channelAvatarUrl: String? = null
+    val channelAvatarUrl: String? = null,
+    /** Kick channel id for chat replay, if known. Null for downloads made before v1.5. */
+    val channelId: Long? = null,
+    /** ISO-8601 start of the broadcast (ChatReplaySource.startedAt), if known. */
+    val chatStartedAt: String? = null
 )
 
 enum class DownloadMediaType { CLIP, VOD }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,12 +54,17 @@ internal fun ChatReplayPanel(
     channelSlug: String = ""
 ) {
     Column(modifier.fillMaxWidth()) {
-        Text(
-            stringResource(R.string.chat_replay),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        // In the fullscreen floating panel the overlay header already
+        // says "Chat replay" — a second title here would waste vertical
+        // space over the video.
+        if (!LocalChatReadableOverVideo.current) {
+            Text(
+                stringResource(R.string.chat_replay),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
         if (source == null) {
             ChatReplayNotice(R.string.chat_replay_unavailable)
         } else {
@@ -162,10 +168,13 @@ private fun ChatReplayMessages(source: ChatReplaySource, playback: RecordedPlayb
 
 @Composable
 private fun ChatReplayNotice(message: Int) {
+    val overVideo = LocalChatReadableOverVideo.current
     Text(
         stringResource(message),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.bodySmall,
+        color = if (overVideo) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodySmall.copy(
+            shadow = if (overVideo) ChatOverVideoShadow else null
+        ),
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }

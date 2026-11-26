@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [FollowedEntity::class, DownloadEntity::class], version = 4, exportSchema = false)
+@Database(entities = [FollowedEntity::class, DownloadEntity::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun followsDao(): FollowsDao
     abstract fun downloadDao(): DownloadDao
@@ -34,6 +34,14 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE downloads ADD COLUMN durationSec INTEGER")
                 db.execSQL("ALTER TABLE downloads ADD COLUMN channelAvatarUrl TEXT")
+            }
+        }
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Nullable: downloads made before offline chat replay keep working,
+                // they simply have no stored chat source (see the online fallback).
+                db.execSQL("ALTER TABLE downloads ADD COLUMN channelId INTEGER")
+                db.execSQL("ALTER TABLE downloads ADD COLUMN chatStartedAt TEXT")
             }
         }
     }

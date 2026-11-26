@@ -79,6 +79,7 @@ import com.gallbladderz.openkick.core.player.VodPlaybackProgress
 import com.gallbladderz.openkick.core.player.PlayerExpandedState
 import com.gallbladderz.openkick.core.player.vodProgressKey
 import com.gallbladderz.openkick.core.ui.utils.formatTime
+import com.gallbladderz.openkick.features.player.components.OfflineChatReplayPanel
 import com.gallbladderz.openkick.features.player.components.RecordedInfoPanel
 import com.gallbladderz.openkick.features.player.components.RecordedPlayerPlaceholder
 import com.gallbladderz.openkick.features.player.components.RecordedPlayerScreen
@@ -350,7 +351,8 @@ internal fun OfflineDownloadScreen(
         }
     }
     RecordedPlayerScreen(
-        player, dragState, entry.title, entry.channelName, onBack, offline = true
+        player, dragState, entry.title, entry.channelName, onBack, offline = true,
+        chat = { playback, modifier -> OfflineChatReplayPanel(entry, playback, modifier) }
     ) { playback ->
         RecordedInfoPanel(
             title = entry.title,
