@@ -66,15 +66,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
@@ -120,6 +123,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
+/**
+ * True while chat is rendered directly over video (fullscreen floating
+ * panel in Transparent or Semi opacity mode). ChatMessageItem then
+ * renders white text with a black drop shadow instead of theme colours,
+ * so messages stay legible over bright frames in either theme.
+ * Defaults to false: portrait chat and the live chat list are untouched.
+ * Provided by FloatingChatOverlay; consumed by ChatMessageItem and by
+ * the replay panels (which skip their duplicate title in this mode).
+ */
+internal val LocalChatReadableOverVideo = compositionLocalOf { false }
+
+/** Black drop shadow used for chat text rendered directly over video. */
+internal val ChatOverVideoShadow = Shadow(
+    color = Color.Black,
+    offset = Offset(1f, 1f),
+    blurRadius = 4f
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -485,9 +506,13 @@ fun ChatMessageItem(
     canReply: Boolean = true,
     onReplyClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    onSwipeReply: (() -> Unit)? = null
+    onSwipeReply: (() -> Unit)? = null,
+    readableOverVideo: Boolean = false
 ) {
     val colors = MaterialTheme.colorScheme
+    // Explicit flag wins; otherwise follow the ambient fullscreen-overlay
+    // local (true only inside the transparent/semi floating panel).
+    val overVideo = readableOverVideo || LocalChatReadableOverVideo.current
 
     if (message.sender == stringResource(R.string.chat_system_sender)) {
         Box(
@@ -498,10 +523,16 @@ fun ChatMessageItem(
         ) {
             Text(
                 text = message.content,
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    shadow = if (overVideo) ChatOverVideoShadow else null
+                ),
+                color = if (overVideo) Color.White else colors.onSurfaceVariant,
                 modifier = Modifier
-                    .background(colors.surface.copy(alpha = 0.9f), RoundedCornerShape(12.dp))
+                    .background(
+                        if (overVideo) Color.Black.copy(alpha = 0.45f)
+                        else colors.surface.copy(alpha = 0.9f),
+                        RoundedCornerShape(12.dp)
+                    )
                     .padding(horizontal = 12.dp, vertical = 7.dp)
             )
         }
@@ -545,8 +576,12 @@ fun ChatMessageItem(
                     prefix = AnnotatedString(prefix),
                     content = reply.content,
                     animateEmotes = animateEmotes,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = colors.onSurfaceVariant.copy(alpha = 0.75f),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        shadow = if (overVideo) ChatOverVideoShadow else null
+                    ),
+                    color = if (overVideo) Color.White.copy(alpha = 0.9f)
+                    else colors.onSurfaceVariant.copy(alpha = 0.75f),
                     emoteSize = 14.sp
                 )
             }
@@ -557,7 +592,8 @@ fun ChatMessageItem(
             settings = settings,
             animateEmotes = animateEmotes,
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = (14f * settings.textScale).sp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            readableOverVideo = overVideo
         )
     }
 }
@@ -727,7 +763,8 @@ private fun ChatMessageRichText(
     showSender: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    onSenderClick: (() -> Unit)? = null
+    onSenderClick: (() -> Unit)? = null,
+    readableOverVideo: Boolean = false
 ) {
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
@@ -744,7 +781,8 @@ private fun ChatMessageRichText(
     val isSenderClickable = onSenderClick != null && message.sender.isNotBlank()
     val (messageText, inlineContentMap) = remember(
         message.id, message.isPending, settings, animateEmotes, nameColor,
-        message, showSender, isSenderClickable, colors.primary, colors.onSurfaceVariant, context, sevenTv
+        message, showSender, isSenderClickable, colors.primary, colors.onSurfaceVariant, context, sevenTv,
+        readableOverVideo
     ) {
         val inlineContent = mutableMapOf<String, InlineTextContent>()
         val tokens = message.tokens.ifEmpty { ChatEmoteParser.parseEmotes(message.content) }
@@ -769,7 +807,8 @@ private fun ChatMessageRichText(
                     SpanStyle(
                         color = if (settings.useOfficialNameColor) nameColor else colors.primary,
                         fontWeight = FontWeight.Bold,
-                        fontSize = (13.5f * settings.textScale).sp
+                        fontSize = (13.5f * settings.textScale).sp,
+                        shadow = if (readableOverVideo) ChatOverVideoShadow else null
                     )
                 ) {
                     if (isSenderClickable) {
@@ -780,7 +819,12 @@ private fun ChatMessageRichText(
                         append(message.sender)
                     }
                 }
-                withStyle(SpanStyle(color = colors.onSurfaceVariant)) {
+                withStyle(
+                    SpanStyle(
+                        color = if (readableOverVideo) Color.White else colors.onSurfaceVariant,
+                        shadow = if (readableOverVideo) ChatOverVideoShadow else null
+                    )
+                ) {
                     append(": ")
                 }
             }
@@ -807,8 +851,11 @@ private fun ChatMessageRichText(
         text = messageText,
         inlineContent = inlineContentMap,
         modifier = modifier,
-        style = style,
-        color = colors.onSurface,
+        style = if (readableOverVideo) style.copy(shadow = ChatOverVideoShadow) else style,
+        // Over video the message body is forced white (the theme's
+        // onSurface can be dark in light theme); the shadow above keeps
+        // it legible over bright frames.
+        color = if (readableOverVideo) Color.White else colors.onSurface,
         maxLines = maxLines,
         overflow = if (maxLines == Int.MAX_VALUE) TextOverflow.Clip else TextOverflow.Ellipsis,
         onTextLayout = onTextLayout

@@ -249,7 +249,7 @@ val appModule = module {
             AppDatabase::class.java,
             "openkick_db"
         )
-            .addMigrations(AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .fallbackToDestructiveMigration()
             .build()
     }

@@ -41,11 +41,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -112,6 +114,17 @@ internal fun RecordedPlayerScreen(
         )
     }
     var portraitExit by remember { mutableStateOf(false) }
+    // Fullscreen floating chat geometry, kept for the session so the panel
+    // stays where the user put it across fullscreen toggles. NaN = not yet
+    // customised: the default (right-docked) geometry is used instead.
+    var floatingChatVisible by rememberSaveable { mutableStateOf(true) }
+    var floatingChatOffsetXDp by rememberSaveable { mutableFloatStateOf(Float.NaN) }
+    var floatingChatOffsetYDp by rememberSaveable { mutableFloatStateOf(Float.NaN) }
+    var floatingChatWidthDp by rememberSaveable { mutableFloatStateOf(Float.NaN) }
+    var floatingChatHeightDp by rememberSaveable { mutableFloatStateOf(Float.NaN) }
+    // Fullscreen chat opacity, kept for the session. Transparent
+    // (TikTok-style) is the default so the video shows through the panel.
+    var floatingChatOpacity by rememberSaveable { mutableStateOf(FloatingChatOpacity.TRANSPARENT) }
     val toggleFullscreen = {
         portraitExit = isFullscreen
         isFullscreen = !isFullscreen
@@ -238,6 +251,14 @@ internal fun RecordedPlayerScreen(
     val videoBackground = androidx.compose.ui.graphics.lerp(
         Color.Black, MaterialTheme.colorScheme.surfaceVariant, fraction
     )
+    // Playback state shared by the portrait chat below and the fullscreen
+    // floating chat overlay, so both stay synchronised while seeking.
+    val format = (player as? ExoPlayer)?.videoFormat
+    val quality = selectedQuality ?: qualities.firstOrNull { option ->
+        val track = option.trackIndex?.let { option.trackGroup?.getFormat(it) }
+        track != null && track.height == format?.height && track.frameRate == format.frameRate
+    }
+    val playback = RecordedPlayback(position, duration, quality)
     Column(recordedFrame(fraction, isFullscreen)) {
         val expandedVideoHeight = configuration.screenWidthDp.dp * (9f / 16f)
         PlayerGestureArea(
@@ -296,14 +317,53 @@ internal fun RecordedPlayerScreen(
                 onClose = close,
                 miniPlayerWidth = MiniPlayerWidth
             )
+            // Fullscreen floating chat: on top of the video, draggable from
+            // its header and resizable from its corner, hideable and
+            // reopenable without stopping playback.
+            if (isFullscreen && chat != null) {
+                val screenWidthDp = configuration.screenWidthDp.toFloat()
+                val screenHeightDp = configuration.screenHeightDp.toFloat()
+                val defaultGeometry = defaultFloatingChatGeometry(screenWidthDp, screenHeightDp)
+                val geometry = if (floatingChatWidthDp.isNaN() || floatingChatHeightDp.isNaN()) {
+                    defaultGeometry
+                } else {
+                    FloatingChatGeometry(
+                        offsetXDp = if (floatingChatOffsetXDp.isNaN()) defaultGeometry.offsetXDp else floatingChatOffsetXDp,
+                        offsetYDp = if (floatingChatOffsetYDp.isNaN()) defaultGeometry.offsetYDp else floatingChatOffsetYDp,
+                        widthDp = floatingChatWidthDp,
+                        heightDp = floatingChatHeightDp
+                    )
+                }
+                if (floatingChatVisible) {
+                    FloatingChatOverlay(
+                        playback = playback,
+                        chat = chat,
+                        screenWidthDp = screenWidthDp,
+                        screenHeightDp = screenHeightDp,
+                        offsetXDp = geometry.offsetXDp,
+                        offsetYDp = geometry.offsetYDp,
+                        widthDp = geometry.widthDp,
+                        heightDp = geometry.heightDp,
+                        opacity = floatingChatOpacity,
+                        onOpacityChange = { floatingChatOpacity = it },
+                        onGeometryChange = { next ->
+                            floatingChatOffsetXDp = next.offsetXDp
+                            floatingChatOffsetYDp = next.offsetYDp
+                            floatingChatWidthDp = next.widthDp
+                            floatingChatHeightDp = next.heightDp
+                        },
+                        onHide = { floatingChatVisible = false }
+                    )
+                } else {
+                    FloatingChatReopenButton(
+                        onShow = { floatingChatVisible = true },
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                            .padding(bottom = 96.dp, end = 16.dp)
+                    )
+                }
+            }
         }
         if (!isFullscreen && fraction < 0.5f) {
-            val format = (player as? ExoPlayer)?.videoFormat
-            val quality = selectedQuality ?: qualities.firstOrNull { option ->
-                val track = option.trackIndex?.let { option.trackGroup?.getFormat(it) }
-                track != null && track.height == format?.height && track.frameRate == format.frameRate
-            }
-            val playback = RecordedPlayback(position, duration, quality)
             Column(
                 Modifier.weight(1f).fillMaxWidth().navigationBarsPadding()
                     .graphicsLayer { alpha = (1f - fraction * 2f).coerceIn(0f, 1f) }

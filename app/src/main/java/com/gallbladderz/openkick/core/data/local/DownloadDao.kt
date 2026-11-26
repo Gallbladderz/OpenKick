@@ -54,6 +54,12 @@ abstract class DownloadDao {
     ): Int
 
     @Query("""
+        UPDATE downloads SET channelId = :channelId, chatStartedAt = :chatStartedAt
+        WHERE id = :id
+    """)
+    abstract suspend fun updateChatSource(id: String, channelId: Long?, chatStartedAt: String?): Int
+
+    @Query("""
         UPDATE downloads SET status = 'COMPLETED', progress = 100, filePath = :path, fileSizeBytes = :bytes
         WHERE id = :id AND workId = :workId AND status = 'DOWNLOADING'
     """)

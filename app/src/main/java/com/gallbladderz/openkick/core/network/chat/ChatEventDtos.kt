@@ -115,4 +115,26 @@ object CentrifugoErrors {
     const val BAD_REQUEST = 107
     const val NOT_AVAILABLE = 108
 
+    /**
+     * Human-readable description of a Centrifugo error. Known codes get a
+     * specific text, unknown codes fall back to the server message when it is
+     * non-blank, otherwise to a generic message. (Restored: the v1.4 squash
+     * dropped this helper while its tests remained; the same mapping also
+     * exists as string resources in ChatRepository.describeCentrifugoError.)
+     */
+    fun describe(code: Int?, message: String?): String {
+        when (code) {
+            INTERNAL_SERVER_ERROR -> return "Ошибка сервера чата"
+            UNAUTHORIZED -> return "Токен недействителен или истёк"
+            UNKNOWN_CHANNEL -> return "Чат не найден"
+            PERMISSION_DENIED -> return "Нет доступа к этому чату"
+            METHOD_NOT_FOUND -> return "Этот метод чата не поддерживается"
+            ALREADY_SUBSCRIBED -> return "Подписка уже существует"
+            LIMIT_EXCEEDED -> return "Превышен лимит подключений к чату"
+            BAD_REQUEST -> return "Неверный запрос к серверу чата"
+            NOT_AVAILABLE -> return "Чат временно недоступен"
+        }
+        return message?.takeIf { it.isNotBlank() } ?: "Ошибка сервера чата"
+    }
+
 }
